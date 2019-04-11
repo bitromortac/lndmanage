@@ -1,0 +1,7 @@
+grpc_compile/googleapis/*
+*.pyc
+.idea/*
+lndmanage.log
+tests/graph_pickles/
+__pycache__/*
+config.ini
