@@ -13,7 +13,7 @@ Current feature list (use --help flags for subcommands):
 
 Setup
 -----
-Requirements: python3.6, lnd 6.0
+Requirements: python3.6, lnd 0.6
 ```
 $ virtualenv -p python3 ~/.venvs/lndmanage
 $ source ~/.venvs/lndmanage/bin/activate
