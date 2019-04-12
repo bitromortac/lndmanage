@@ -21,14 +21,18 @@ def print_node_status(node):
 
 
 def print_unbalanced_channels(node, unbalancedness_greater_than):
+    logger.info("-------- Description --------")
+    logger.info("ub: unbalancedness (see --help), cap: channel capacity [sats], l: local balance [sats]")
+    logger.info("r: remote balance [sats], bf: peer base fee [msats], fr: peer fee rate")
+    logger.info("c: channel id, a: alias")
     logger.info("-------- Channels --------")
     channels = node.get_unbalanced_channels(unbalancedness_greater_than)
     channels.sort(key=lambda x: x['alias'])
     for c in channels:
         logger.info(
             f"ub:{c['unbalancedness']: 4.2f} cap:{c['capacity']: 9d}"
-            f" l:{c['local_balance']: 9d} r:{c['remote_balance']: 9d} b:{c['fees']['base']: 6d}"
-            f" r:{c['fees']['rate']/1E6: 1.6f} c:{c['chan_id']} a:{c['alias']}")
+            f" l:{c['local_balance']: 9d} r:{c['remote_balance']: 9d} bf:{c['fees']['base']: 6d}"
+            f" fr:{c['fees']['rate']/1E6: 1.6f} c:{c['chan_id']} a:{c['alias']}")
 
 
 if __name__ == '__main__':

@@ -25,8 +25,12 @@ def parse_arguments():
     parser.add_argument('--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
     subparsers = parser.add_subparsers(dest='cmd')
 
-    # getinfo
-    parser_status = subparsers.add_parser('status', help='display node status and channel list',
+    # status
+    parser_status = subparsers.add_parser('status', help='display node status',
+                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # listchannels
+    parser_status = subparsers.add_parser('listchannels', help='get an advanced view of the channel list',
                                           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_status.add_argument(
         '--unbalancedness', type=float,
@@ -83,6 +87,7 @@ def main():
     node = LndNode()
     if args.cmd == 'status':
         print_node_status(node)
+    elif args.cmd == 'listchannels':
         print_unbalanced_channels(node, args.unbalancedness)
     elif args.cmd == 'rebalance':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
