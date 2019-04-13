@@ -27,7 +27,7 @@ def manual_rebalance(node, channel_id_from, channel_id_to, amt, number_of_routes
         f"-------- Attempting advanced rebalancing of {amt_msat} msats"
         f" from channel {channel_id_from} to {channel_id_to}. --------")
 
-    routes = router.get_routes_for_advanced_rebalancing(
+    routes = router.get_routes_for_rebalancing(
         channel_id_from, channel_id_to, amt_msat, number_of_routes
     )
     logger.info("Found {} cheapest routes".format(len(routes)))
@@ -84,14 +84,14 @@ class Rebalancer(object):
             if count > 10:
                 raise RebalanceFailure
 
-            routes = self.router.get_routes_for_advanced_rebalancing(
-                channel_id_from, channel_id_to, amt_msat, number_of_routes=1)
+            routes = self.router.get_routes_for_rebalancing(
+                channel_id_from, channel_id_to, amt_msat)
             if len(routes) == 0:
                 raise NoRouteError
             else:
                 r = routes[0]
 
-            logger.info(f"Next route: fees [msat]: {r.total_fee_msat}, rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
+            logger.info(f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat, fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
                         f" hops: {len(r.channel_hops)}")
             logger.info(f"   Channel hops: {r.channel_hops}")
 
@@ -138,9 +138,8 @@ class Rebalancer(object):
 
                     else:  # usually UnknownNextPeer
                         # then add all the inner hops to the blacklist
-                        logger.error("Unknown next peer.")
+                        logger.error("   Unknown next peer somewhere in route.")
                         inner_hops = r.channel_hops[1:-1]
-                        logger.info(inner_hops)
                         for i_hop, hop in enumerate(inner_hops):
                             failed_channel_source = r.node_hops[i_hop]
                             failed_channel_target = r.node_hops[i_hop + 1]
@@ -175,6 +174,7 @@ class Rebalancer(object):
             if self.effective_fee_rate(c['amt_to_balanced'], c['fees']['base'], c['fees']['rate'])
             < self.max_effective_fee_rate
         ]
+        # TODO: make it possible to specify a strategy
         rebalance_candidates.sort(key=lambda x: x['amt_to_balanced'], reverse=True)
         # rebalance_candidates.sort(key=lambda x: x['fees']['rate'])
         return rebalance_candidates
@@ -255,9 +255,10 @@ class Rebalancer(object):
         if not (0.0 <= chunksize <= 1.0):
             raise ValueError("Chunk size must be between 0.0 and 1.0")
 
-        logger.info(f">>> Trying to rebalance channel {channel_id} with a max rate of {self.max_effective_fee_rate}.")
-        logger.info(f">>> This may take some minutes. Please be patient!")
+        logger.info(f">>> Trying to rebalance channel {channel_id} with a max rate of {self.max_effective_fee_rate}"
+                    f"and a max fee of {self.budget_sat} sat.")
         logger.info(f">>> Chunk size is set to {chunksize}.")
+
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
 
@@ -273,10 +274,17 @@ class Rebalancer(object):
             logger.info(f"Channel already balanced. Unbalancedness: {unbalancedness}")
             return None
 
-        logger.info(f">>> Target amount for rebalancing is {int(amt_target_original)} sats.")
+        logger.info(f">>> Amount required for the channel to be balanced is {int(amt_target_original)} sat.")
 
         rebalance_direction = (1, -1)[unbalancedness < 0]  # maps to the sign of unbalancedness
         rebalance_candidates = self.get_rebalance_candidates(rebalance_direction)
+
+        logger.info(f">>> There are {len(rebalance_candidates)} channels with which we can rebalance (look at logfile).")
+        logger.info(f">>> We will try to rebalance with them one after the other.")
+        logger.info(f">>> NOTE: only individual rebalance requests are optimized for fees,"
+                    f" use --dry flag to get a feeling (we aim here for a high success rate).")
+        logger.info(f">>> Rebalancing can take some time. Please be patient!\n")
+
         self.print_rebalance_candidates(rebalance_candidates)
 
         # create an invoice with a zero amount for all rebalance attempts (reduces number of invoices)
@@ -304,7 +312,7 @@ class Rebalancer(object):
                 amt = int(amt_target_original * chunksize)
 
             logger.info(f"-------- Rebalance from {source_channel} to {target_channel} with {amt} sats --------")
-            logger.info(f"Need to still rebalance {amt_target} to reach the goal of {amt_target_original}."
+            logger.info(f"Need to still rebalance {amt_target} sat to reach the goal of {amt_target_original} sat."
                         f" Fees paid up to now: {total_fees_msat} msats.")
 
             # attempt the rebalance
@@ -318,7 +326,7 @@ class Rebalancer(object):
             except NoRouteError:
                 logger.error("There was no route cheap enough or with enough capacity.\n")
             except DryRunException:
-                logger.info("This was a dry run.\n")
+                logger.info("Would have tried this route now, but it was a dry run.\n")
             except RebalanceFailure:
                 logger.error("Failed to rebalance with this channel.\n")
             except TooExpensive:
