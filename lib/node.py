@@ -15,7 +15,7 @@ import _settings
 from lib.network import Network
 from lib.utilities import convert_dictionary_number_strings_to_ints
 from lib.ln_utilities import extract_short_channel_id_from_string, convert_short_channel_id_to_channel_id
-from lib.exceptions import PaymentTimeOut
+from lib.exceptions import PaymentTimeOut, NoRouteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -344,7 +344,7 @@ class LndNode(Node):
         :return: int, channel_id of the failed channel.
         """
         if "TemporaryChannelFailure" in payment_error:
-            logger.error("   Encountered temporary channel failure. Adding channel to blacklist.")
+            logger.error("   Encountered temporary channel failure.")
             short_channel_groups = extract_short_channel_id_from_string(payment_error)
             channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
             return channel_id
@@ -389,8 +389,11 @@ class LndNode(Node):
             ignored_edges=ignored_channels_api,
             source_pub_key=source_pubkey,
         )
-        response = self._stub.QueryRoutes(request)
-
+        try:
+            response = self._stub.QueryRoutes(request)
+        except _Rendezvous:
+            raise NoRouteError
+        # print(response)
         # We give back only one route, as multiple routes will be deprecated
         channel_route = [h.chan_id for h in response.routes[0].hops]
 
