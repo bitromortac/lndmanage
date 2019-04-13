@@ -1,7 +1,7 @@
 import _settings
 
 from lib.pathfinding import ksp_discard_high_cost_paths
-from lib.exceptions import RouteWithTooSmallCapacity
+from lib.exceptions import RouteWithTooSmallCapacity, NoRouteError
 from lib.rating import ChannelRater
 
 import logging
@@ -59,7 +59,8 @@ class Route(object):
 
             self._node_hops.append(node_left)
 
-            logger.debug(f"From {node_left} to {node_right}")
+            logger.debug(f"Route from {node_left}")
+            logger.debug(f"        to {node_right}")
             logger.debug(f"Policy of forwarding node: {policy}")
 
             fees_msat = policy['fee_base_msat'] + policy['fee_rate_milli_msat'] * forward_msat // 1000000
@@ -90,7 +91,7 @@ class Route(object):
         self.total_fee_msat = sum(fees_msat_container[:-1])
         self.total_time_lock = sum(cltv_delta[:-1]) + self.blockheight + final_cltv
 
-    def debug_route(self):
+    def _debug_route(self):
         """
         Prints detailed information of the route.
         """
@@ -117,7 +118,7 @@ class Router(object):
         self.node = node
         self.channel_rater = ChannelRater()
 
-    def node_route_to_channel_route(self, node_route, amt_msat):
+    def _node_route_to_channel_route(self, node_route, amt_msat):
         """
         Takes a route in terms of a list of nodes and translates it into a list of channels.
 
@@ -125,16 +126,14 @@ class Router(object):
         :param amt_msat: amount to send in sats
         :return: list of channel_ids
         """
-        # TODO refactor this with channel_rater
         channels = []
         for p in range(len(node_route) - 1):
-            # TODO: refactor, code is ugly
             channels.append(
-                self.determine_cheapest_channel_between_two_nodes(
+                self._determine_cheapest_channel_between_two_nodes(
                     node_route[p], node_route[p + 1], amt_msat)[1])
         return channels
 
-    def get_routes_along_nodes(self, node_from, node_to, amt_msat, number_of_routes=10):
+    def get_routes_from_to_nodes(self, node_from, node_to, amt_msat, number_of_routes=10):
         """
         Determines number_of_routes shortest paths between node_from and node_to for an amount of amt_msat.
 
@@ -150,9 +149,13 @@ class Router(object):
         routes = ksp_discard_high_cost_paths(
             self.node.network.graph, node_from, node_to,
             num_k=number_of_routes, weight=weight_function)
+
+        if not routes:
+            raise NoRouteError
+
         return routes
 
-    def determine_cheapest_channel_between_two_nodes(self, node_from, node_to, amt_msat):
+    def _determine_cheapest_channel_between_two_nodes(self, node_from, node_to, amt_msat):
         """
         Determines the cheapest channel between nodes node_from and node_to for an amount of amt_msat.
 
@@ -161,8 +164,6 @@ class Router(object):
         :param amt_msat: amount to send in msats
         :return: channel_id
         """
-        # TODO refactor with channel_rater
-
         number_edges = self.node.network.graph.number_of_edges(node_from, node_to)
         channels_with_calculated_fees = []
         for n in range(number_edges):
@@ -172,17 +173,62 @@ class Router(object):
         sorted_channels = sorted(channels_with_calculated_fees, key=lambda k: k[0])
         return sorted_channels[0]
 
-    def determine_cheapest_fees_between_two_nodes(self, node_from, node_to, amt):
-        return self.determine_cheapest_channel_between_two_nodes(node_from, node_to, amt)[0]
+    def _determine_cheapest_fees_between_two_nodes(self, node_from, node_to, amt):
+        return self._determine_cheapest_channel_between_two_nodes(node_from, node_to, amt)[0]
 
-    def get_routes_for_advanced_rebalancing(self, chan_id_from, chan_id_to, amt_msat, number_of_routes):
+    def get_route_channel_hops_from_to_node_internal(self, source_pubkey, target_pubkey, amt_msat):
         """
-        Calculates a path for channel_id_from to chan_id_to and optimizes for fees for an amount amt.
+        Find routes internally, using networkx to construct a route from a source node to a target node.
+
+        :param source_pubkey: str
+        :param target_pubkey: str
+        :param amt_msat: int
+        :return:
+        """
+        logger.debug(f"Internal route finding:")
+        logger.debug(f"from {source_pubkey}")
+        logger.debug(f"  to {target_pubkey}")
+
+        node_routes = self.get_routes_from_to_nodes(
+            source_pubkey, target_pubkey, amt_msat, number_of_routes=1)
+
+        hops = self._node_route_to_channel_route(node_routes[0], amt_msat)
+
+        # logger.debug(f"(Intermediate) route as channel hops: {hops}")
+        return [hops]
+
+    def get_route_channel_hops_from_to_node_external(self, source_pubkey, target_pubkey, amt_msat):
+        """
+        Find routes externally (relying on the node api) to construct a route from a source node to a target node.
+
+        :param source_pubkey: str
+        :param target_pubkey: str
+        :param amt_msat: int
+        :return:
+        """
+        logger.debug(f"External route finding:")
+        logger.debug(f"from {source_pubkey}")
+        logger.debug(f"  to {target_pubkey}")
+        ignored_channels = list(map(int, self.channel_rater.bad_channels.keys()))
+        ignored_nodes = self.channel_rater.bad_nodes
+
+        hops = self.node.queryroute_external(
+            source_pubkey, target_pubkey, amt_msat,
+            ignored_channels=ignored_channels,
+            ignored_nodes=ignored_nodes,
+        )
+
+        return [hops]
+
+    def get_routes_for_rebalancing(
+            self, chan_id_from, chan_id_to, amt_msat, method='internal'):
+        """
+        Calculates several routes for channel_id_from to chan_id_to and optimizes for fees for an amount amt.
 
         :param chan_id_from:
         :param chan_id_to:
         :param amt_msat:
-        :param number_of_routes:
+        :param method: str: specifies if 'internal', or 'external' method of route computation should be used
         :return: list of :class:`lib.routing.Route` instances
         """
 
@@ -191,36 +237,40 @@ class Router(object):
         this_node = self.node.pub_key
 
         # determine nodes on the other side, between which we need to find a suitable path between
-        # TODO: think about logic
+        # fist hop:start-end ----- last hop: start-end
         if channel_from['node1_pub'] == this_node:
-            node_from = channel_from['node2_pub']
+            first_hop_end = channel_from['node2_pub']
         else:
-            node_from = channel_from['node1_pub']
+            first_hop_end = channel_from['node1_pub']
 
         if channel_to['node1_pub'] == this_node:
-            node_to = channel_to['node2_pub']
+            last_hop_start = channel_to['node2_pub']
         else:
-            node_to = channel_to['node1_pub']
+            last_hop_start = channel_to['node1_pub']
 
-        logger.debug(f"Finding routes from {node_from} to {node_to}.")
-        # find path between the two nodes
-        node_routes = self.get_routes_along_nodes(
-            node_from, node_to, amt_msat, number_of_routes=number_of_routes)
-        logger.debug("Intermediate nodes:")
-        for r in node_routes:
+        # determine inner channel hops
+        # TODO: at the moment the internal method is preferred (slower) due to a caching bug in queryroutes of lnd
+        if method == 'internal':
+            routes_channel_hops = self.get_route_channel_hops_from_to_node_internal(
+                first_hop_end, last_hop_start, amt_msat)
+        else:
+            routes_channel_hops = self.get_route_channel_hops_from_to_node_external(
+                first_hop_end, last_hop_start, amt_msat)
+
+        # pre- and append the outgoing and incoming channels to the route
+        routes_channel_hops_final = []
+        for r in routes_channel_hops:
+            r.insert(0, chan_id_from)
+            r.append(chan_id_to)
+            logger.debug("Channel hops:")
             logger.debug(r)
+            routes_channel_hops_final.append(r)
 
         # initialize Route objects with appropriate fees and expiries
         routes = []
-        for r in node_routes:
-            hops = self.node_route_to_channel_route(r, amt_msat)
-            # add our channels to the hops
-            hops.insert(0, chan_id_from)
-            hops.append(chan_id_to)
-            logger.debug("Channel hops:")
-            logger.debug(hops)
+        for h in routes_channel_hops:
             try:
-                route = Route(self.node, hops, this_node, amt_msat)
+                route = Route(self.node, h, this_node, amt_msat)
                 routes.append(route)
             except RouteWithTooSmallCapacity:
                 continue
