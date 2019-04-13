@@ -3,7 +3,7 @@ lndmanage
 
 Control tool for lightning network daemon ([`lnd`](https://github.com/lightningnetwork/lnd)) node operators, optimized for remote control.
 
-**DISCLAIMER: This is BETA software, so please be careful (there are --dry run flags). No warranty is given.**
+**DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the --reckless flag though). No warranty is given.**
 
 Current feature list (use --help flags for subcommands):
 
@@ -33,7 +33,7 @@ Test:
 ```
 $ ./lndmanage.py status 
 ```
-If if works, you should see the node status and a list of channels.
+If if works, you should see the node status.
 
 Rebalancing a channel
 ---------------------
@@ -45,9 +45,9 @@ The workflow for rebalancing a channels goes as follows:
 * take a channel_id from the list you wish to rebalance (target is a 50:50 balance)
 * do a dry run to see what's waiting for you
 
-  ```$ ./lndmange.py rebalance --dry --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
+  ```$ ./lndmange.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
 
-* read the output and if everything is looking well, then run without the "--dry" flag
+* read the output and if everything is looking well, then run with the "--reckless" flag
 
 
 Compiling grpc in python [development]

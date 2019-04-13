@@ -54,7 +54,7 @@ def parse_arguments():
         help='Sets the maximal effective fee rate to be paid.'
              ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
     parser_rebalance.add_argument(
-        '--dry', help='A dry run is performed.', action='store_true'
+        '--reckless', help='Execute action in the network.', action='store_true'
     )
 
     # circular payment
@@ -70,7 +70,7 @@ def parse_arguments():
         help='Sets the maximal effective fee rate to be paid.'
              ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
     parser_circle.add_argument(
-        '--dry', help='A dry run is performed.', action='store_true'
+        '--reckless', help='Execute action in the network.', action='store_true'
     )
 
     return parser.parse_args()
@@ -91,14 +91,14 @@ def main():
         print_unbalanced_channels(node, args.unbalancedness)
     elif args.cmd == 'rebalance':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-        rebalancer.rebalance(args.channel, dry=args.dry, chunksize=args.chunksize)
+        rebalancer.rebalance(args.channel, dry=not args.reckless, chunksize=args.chunksize)
     elif args.cmd == 'circle':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
         invoice_r_hash = node.get_rebalance_invoice(memo='circular payment')
         try:
             rebalancer.rebalance_two_channels(
                 args.channel_from, args.channel_to,
-                args.amt_sats, invoice_r_hash, args.max_fee_sat, dry=args.dry)
+                args.amt_sats, invoice_r_hash, args.max_fee_sat, dry=not args.reckless)
         except DryRunException:
             logger.info("This was just a dry run.")
         except TooExpensive:
