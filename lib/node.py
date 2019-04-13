@@ -349,6 +349,53 @@ class LndNode(Node):
             channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
             return channel_id
 
+    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat, ignored_nodes=(), ignored_channels=()):
+        """
+        Queries the lnd node for a route. Channels and nodes can be ignored if they failed before.
+
+        :param source_pubkey: str
+        :param target_pubkey: str
+        :param amt_msat: int
+        :param ignored_nodes: list of node pub keys
+        :param ignored_channels: list of channel_ids
+        :return: list of channel_ids
+        """
+        amt_sat = amt_msat // 1000
+
+        # we want to see all routes:
+        max_fee = 10000
+
+        # convert ignored nodes to api format
+        if ignored_nodes:
+            ignored_nodes_api = [bytes.fromhex(n) for n in ignored_nodes]
+        else:
+            ignored_nodes_api = []
+
+        # convert ignored channels to api format
+        if ignored_channels:
+            ignored_channels_api = [ln.EdgeLocator(channel_id=c) for c in ignored_channels]
+        else:
+            ignored_channels_api = []
+
+        logger.debug(f"Ignored for queryroutes: channels: {ignored_channels_api}, nodes: {ignored_nodes_api}")
+
+        request = ln.QueryRoutesRequest(
+            pub_key=target_pubkey,
+            amt=amt_sat,
+            num_routes=1,
+            final_cltv_delta=0,
+            fee_limit=ln.FeeLimit(fixed=max_fee),
+            ignored_nodes=ignored_nodes_api,
+            ignored_edges=ignored_channels_api,
+            source_pub_key=source_pubkey,
+        )
+        response = self._stub.QueryRoutes(request)
+
+        # We give back only one route, as multiple routes will be deprecated
+        channel_route = [h.chan_id for h in response.routes[0].hops]
+
+        return channel_route
+
 
 if __name__ == '__main__':
     import logging.config
