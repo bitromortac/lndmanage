@@ -256,7 +256,7 @@ class Rebalancer(object):
             raise ValueError("Chunk size must be between 0.0 and 1.0")
 
         logger.info(f">>> Trying to rebalance channel {channel_id} with a max rate of {self.max_effective_fee_rate}"
-                    f"and a max fee of {self.budget_sat} sat.")
+                    f" and a max fee of {self.budget_sat} sat.")
         logger.info(f">>> Chunk size is set to {chunksize}.")
 
         if dry:
@@ -281,8 +281,10 @@ class Rebalancer(object):
 
         logger.info(f">>> There are {len(rebalance_candidates)} channels with which we can rebalance (look at logfile).")
         logger.info(f">>> We will try to rebalance with them one after the other.")
-        logger.info(f">>> NOTE: only individual rebalance requests are optimized for fees,"
-                    f" use --dry flag to get a feeling (we aim here for a high success rate).")
+        logger.info(f">>> NOTE: only individual rebalance requests are optimized for fees:\n"
+                    f"    this means that there can be rebalances with less fees afterwards,\n"
+                    f"    so take a look at the dry runs first, i.e. without the --reckless flag,\n"
+                    f"    and set --max-fee-sat and --max-fee-rate accordingly.")
         logger.info(f">>> Rebalancing can take some time. Please be patient!\n")
 
         self.print_rebalance_candidates(rebalance_candidates)
