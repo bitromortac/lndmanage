@@ -7,7 +7,6 @@ kiwisolver==1.0.1
 matplotlib==3.0.3
 networkx==2.2
 numpy==1.16.2
-pkg-resources==0.0.0
 protobuf==3.7.1
 pyparsing==2.4.0
 python-dateutil==2.8.0
