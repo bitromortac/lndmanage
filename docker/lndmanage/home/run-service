@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail
+
+if [[ ! $# -eq 0 ]]; then
+  exec "$@"
+fi
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+. _shared.sh
+
+cd lndmanage
+
+echo "watching..."
+
+finish() {
+  rm -f "$SERVICE_PIPE"
+  echo "finishing..."
+}
+trap finish EXIT
+
+if [[ ! -p "$SERVICE_PIPE" ]]; then
+  mkfifo "$SERVICE_PIPE"
+fi
+
+while true; do
+  cat < "$SERVICE_PIPE"
+done

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+. _shared.sh
+
+cd lndmanage
+
+# report our action to the service if it is watching
+if [[ -p "$SERVICE_PIPE" ]]; then
+  echo "[$$] > ./lndmanage.py $@" > "$SERVICE_PIPE"
+fi
+
+exec ./lndmanage.py "$@"
