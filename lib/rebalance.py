@@ -165,8 +165,11 @@ class Rebalancer(object):
         # filters all unbalanced channels
         rebalance_candidates = [
             c for c in self.channel_list
-            if -1.0 * direction * c['unbalancedness'] > _settings.UNBALANCED_CHANNEL + 1E-6
+            if -1.0 * direction * c['unbalancedness'] > _settings.UNBALANCED_CHANNEL
         ]
+
+        # filter channels, which are already perfectly balanced
+        rebalance_candidates = [c for c in self.channel_list if not c['amt_to_balanced'] == 0]
 
         # filters by max_effective_fee_rate
         rebalance_candidates = [
@@ -174,7 +177,8 @@ class Rebalancer(object):
             if self.effective_fee_rate(c['amt_to_balanced'], c['fees']['base'], c['fees']['rate'])
             < self.max_effective_fee_rate
         ]
-        # TODO: make it possible to specify a strategy
+
+        # TODO: make it possible to specify a sorting strategy
         rebalance_candidates.sort(key=lambda x: x['amt_to_balanced'], reverse=True)
         # rebalance_candidates.sort(key=lambda x: x['fees']['rate'])
         return rebalance_candidates
