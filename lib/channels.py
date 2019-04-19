@@ -54,7 +54,7 @@ def get_channels_hygiene(node):
     return channel_list
 
 
-def print_channels_rebalance(node, unbalancedness_greater_than):
+def print_channels_rebalance(node, unbalancedness_greater_than, sort_by='alias'):
     logger.info("-------- Description --------")
     logger.info(
         "cid: channel id\n"
@@ -68,7 +68,7 @@ def print_channels_rebalance(node, unbalancedness_greater_than):
     )
     logger.info("-------- Channels --------")
     channels = node.get_unbalanced_channels(unbalancedness_greater_than)
-    channels.sort(key=lambda x: x['alias'])
+    channels.sort(key=lambda x: x[sort_by])
     for c in channels:
         logger.info(
             f"cid:{c['chan_id']} "
