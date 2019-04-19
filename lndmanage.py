@@ -3,7 +3,7 @@ import argparse
 import _settings
 
 from lib.node import LndNode
-from lib.node_info import print_node_status, print_unbalanced_channels
+from lib.channels import print_channels_rebalance, print_channels_hygiene
 from lib.rebalance import Rebalancer
 from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive
 
@@ -25,21 +25,32 @@ def parse_arguments():
     parser.add_argument('--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
     subparsers = parser.add_subparsers(dest='cmd')
 
-    # status
-    parser_status = subparsers.add_parser('status', help='display node status',
-                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # cmd: status
+    parser_status = subparsers.add_parser(
+        'status', help='display node status',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    # listchannels
-    parser_status = subparsers.add_parser('listchannels', help='get an advanced view of the channel list',
-                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser_status.add_argument(
+    # cmd: listchannels
+    parser_listchannels = subparsers.add_parser(
+        'listchannels', help='get an advanced view of our channels [subcommands]',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    listchannels_subparsers = parser_listchannels.add_subparsers(dest='subcmd')
+
+    # subcmd: listchannels rebalance
+    parser_listchannels_rebalance = listchannels_subparsers.add_parser(
+        'rebalance', help='displays unbalanced channels')
+    parser_listchannels_rebalance.add_argument(
         '--unbalancedness', type=float,
-        default=0.0,
-        help='Unbalancedness is a way to express how balanced a channel is,'
-             ' a value between [-1, 1] (a perfectly balanced channel has a value of 0).'
-             ' The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
+        default=0.5,
+        help='Unbalancedness is a way to express how balanced a channel is, '
+             'a value between [-1, 1] (a perfectly balanced channel has a value of 0). '
+             'The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
 
-    # rebalance-channel
+    # subcmd: listchannels hygiene
+    parser_listchannels_hygiene = listchannels_subparsers.add_parser(
+        'hygiene', help="displays inactive channels")
+
+    # cmd: rebalance
     parser_rebalance = subparsers.add_parser(
         'rebalance', help='rebalance a channel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_rebalance.add_argument('channel', type=int, help='channel_id')
@@ -54,10 +65,9 @@ def parse_arguments():
         help='Sets the maximal effective fee rate to be paid.'
              ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
     parser_rebalance.add_argument(
-        '--reckless', help='Execute action in the network.', action='store_true'
-    )
+        '--reckless', help='Execute action in the network.', action='store_true')
 
-    # circular payment
+    # cmd: circle
     parser_circle = subparsers.add_parser(
         'circle', help='circular self-payment', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_circle.add_argument('channel_from', type=int, help='channel_from')
@@ -70,15 +80,13 @@ def parse_arguments():
         help='Sets the maximal effective fee rate to be paid.'
              ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
     parser_circle.add_argument(
-        '--reckless', help='Execute action in the network.', action='store_true'
-    )
+        '--reckless', help='Execute action in the network.', action='store_true')
 
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
-
     # program execution
     if args.loglevel:
         # update the loglevel of the stdout handler to the user choice
@@ -86,12 +94,20 @@ def main():
 
     node = LndNode()
     if args.cmd == 'status':
-        print_node_status(node)
+        node.print_status()
+
     elif args.cmd == 'listchannels':
-        print_unbalanced_channels(node, args.unbalancedness)
+        if not args.subcmd:
+            print_channels_rebalance(node, unbalancedness_greater_than=0)
+        if args.subcmd == 'rebalance':
+            print_channels_rebalance(node, args.unbalancedness)
+        elif args.subcmd == 'hygiene':
+            print_channels_hygiene(node)
+
     elif args.cmd == 'rebalance':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
         rebalancer.rebalance(args.channel, dry=not args.reckless, chunksize=args.chunksize)
+
     elif args.cmd == 'circle':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
         invoice_r_hash = node.get_rebalance_invoice(memo='circular payment')
