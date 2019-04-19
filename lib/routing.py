@@ -233,7 +233,12 @@ class Router(object):
         """
 
         channel_from = self.node.network.edges[chan_id_from]
-        channel_to = self.node.network.edges[chan_id_to]
+        try:
+            channel_to = self.node.network.edges[chan_id_to]
+        except KeyError:
+            logger.exception("Channel was not found in network graph, but is present in listchannels.")
+            raise NoRouteError
+
         this_node = self.node.pub_key
 
         # determine nodes on the other side, between which we need to find a suitable path between
