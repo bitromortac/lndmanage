@@ -16,6 +16,13 @@ def convert_short_channel_id_to_channel_id(blockheight, transaction, output):
     return blockheight << 40 | transaction << 16 | output
 
 
+def convert_channel_id_to_short_channel_id(channel_id):
+    """
+    Converts a channel id to blockheight, transaction, output
+    """
+    return channel_id >> 40, channel_id >> 16 & 0xFFFFFF, channel_id & 0xFFFF
+
+
 def extract_short_channel_id_from_string(string):
     """
     Parses a payment error message for the short channel id of the form XXXX:XXXX:XXX.

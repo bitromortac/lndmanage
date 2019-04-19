@@ -260,25 +260,39 @@ class LndNode(Node):
                 policy = {'fee_base_msat': -1,
                           'fee_rate_milli_msat': -1}
             unbalancedness = -(float(c.local_balance) / c.capacity - 0.5) / 0.5
+
+            try:
+                last_update = self.network.edges[c.chan_id]['last_update']
+            except KeyError:
+                # TODO: lncli describegraph doesn't know about private channels
+                last_update = None
+
             channels.append({
-                'private': c.private,
                 'active': c.active,
-                'chan_id': c.chan_id,
                 'alias': self.network.get_node_alias(c.remote_pubkey),
-                'fees': {'base': policy['fee_base_msat'], 'rate': policy['fee_rate_milli_msat']},
-                'remote_pubkey': c.remote_pubkey,
-                'channel_point': c.channel_point,
-                'capacity': c.capacity,
-                'local_balance': c.local_balance,
-                'remote_balance': c.remote_balance,
-                'relative_local_balance': float(c.local_balance) / float(c.capacity),
-                'unbalancedness': unbalancedness,
                 'amt_to_balanced': int(abs(unbalancedness * c.capacity / 2)),
+                'capacity': c.capacity,
+                'chan_id': c.chan_id,
+                'channel_point': c.channel_point,
+                'commit_fee': c.commit_fee,
+                'fees': {'base': policy['fee_base_msat'], 'rate': policy['fee_rate_milli_msat']},
+                'initiator': c.initiator,
+                'last_update': last_update,
+                'local_balance': c.local_balance,
+                'num_updates': c.num_updates,
+                'private': c.private,
+                'relative_local_balance': float(c.local_balance) / float(c.capacity),
+                'remote_pubkey': c.remote_pubkey,
                 'total_satoshis_sent': c.total_satoshis_sent,
                 'total_satoshis_received': c.total_satoshis_received,
-                'num_updates': c.num_updates,
+                'remote_balance': c.remote_balance,
+                'unbalancedness': unbalancedness,
             })
         return sorted(channels, key=lambda x: x['remote_pubkey'])
+
+    def get_inactive_channels(self):
+        channels = self.get_channels(public_only=False, active_only=False)
+        return [c for c in channels if not c['active']]
 
     def get_unbalanced_channels(self, unbalancedness_greater_than=0.0):
         """
@@ -399,10 +413,23 @@ class LndNode(Node):
 
         return channel_route
 
+    def print_status(self):
+        logger.info("-------- Node status --------")
+        balancedness_local = self.total_local_balance / self.total_capacity
+        balancedness_remote = self.total_remote_balance / self.total_capacity
+        logger.info(f"alias: {self.alias}")
+        logger.info(f"pub key: {self.pub_key}")
+        logger.info(f"blockheight: {self.blockheight}")
+        logger.info(f"peers: {self.num_peers}")
+        logger.info(f"channels: {self.total_channels}")
+        logger.info(f"active channels: {self.total_active_channels}")
+        logger.info(f"private channels: {self.total_private_channels}")
+        logger.info(f"capacity: {self.total_capacity}")
+        logger.info(f"balancedness: l:{balancedness_local:.2%} r:{balancedness_remote:.2%}")
+        logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
+        logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
+
 
 if __name__ == '__main__':
-    import logging.config
-    logging.config.dictConfig(_settings.logger_config)
-
     node = LndNode()
     print(node.get_channel_info(000000000000000000))

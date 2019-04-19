@@ -8,7 +8,9 @@ Control tool for lightning network daemon ([`lnd`](https://github.com/lightningn
 Current feature list (use --help flags for subcommands):
 
 * display status summary [./lndmange.py status]
-* display channel summary [./lndmange.py listchannels]
+* display channels [./lndmange.py listchannels]
+  * show unbalanced channels [./lndmange.py listchannels rebalance]
+  * show inactive channels [./lndmange.py listchannels hygiene]
 * rebalancing of channels [./lndmanage.py rebalance channel_id]
 * do circular self-payments [./lndmanage.py circle channel_from channel_to amt_sats]
 
@@ -41,13 +43,13 @@ The workflow for rebalancing a channels goes as follows:
 
 * take a look at all your unbalanced channels with:
 
-  ```$ ./lndmanage.py listchannels --unbalancedness 0.5```
+  ```$ ./lndmanage.py listchannels rebalance```
 * take a channel_id from the list you wish to rebalance (target is a 50:50 balance)
 * do a dry run to see what's waiting for you
 
   ```$ ./lndmange.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
 
-* read the output and if everything is looking well, then run with the "--reckless" flag
+* read the output and if everything looks well, then run with the "--reckless" flag
 
 
 Compiling grpc in python [development]
