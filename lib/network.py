@@ -73,6 +73,7 @@ class Network(object):
                 'node1_pub': e.node1_pub,
                 'node2_pub': e.node2_pub,
                 'capacity': e.capacity,
+                'last_update': e.last_update,
                 'channel_id': e.channel_id,
                 'node1_policy': {
                     'time_lock_delta': e.node1_policy.time_lock_delta,
