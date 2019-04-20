@@ -91,7 +91,8 @@ class Rebalancer(object):
             else:
                 r = routes[0]
 
-            logger.info(f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat, fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
+            logger.info(f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat,"
+                        f" fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
                         f" hops: {len(r.channel_hops)}")
             logger.info(f"   Channel hops: {r.channel_hops}")
 
@@ -169,7 +170,7 @@ class Rebalancer(object):
         ]
 
         # filter channels, which are already perfectly balanced
-        rebalance_candidates = [c for c in self.channel_list if not c['amt_to_balanced'] == 0]
+        rebalance_candidates = [c for c in rebalance_candidates if not c['amt_to_balanced'] == 0]
 
         # filters by max_effective_fee_rate
         rebalance_candidates = [
@@ -202,11 +203,28 @@ class Rebalancer(object):
     @staticmethod
     def print_rebalance_candidates(rebalance_candidates):
         logger.debug(f"-------- Found {len(rebalance_candidates)} candidates for rebalancing --------")
+        logger.debug(
+            "cid: channel id\n"
+            "ub: unbalancedness (see --help)\n"
+            "atb: amount to be balanced [sats]\n"
+            "l: local balance [sats]\n"
+            "r: remote balance [sats]\n"
+            "bf: peer base fee [msats]\n"
+            "fr: peer fee rate\n"
+            "a: alias"
+        )
+
+        logger.debug(f"-------- Candidates --------")
         for c in rebalance_candidates:
             logger.debug(
-                f" ub:{c['unbalancedness']: 4.2f} atb:{c['amt_to_balanced']: 9d}"
-                f" l:{c['local_balance']: 9d} r:{c['remote_balance']: 9d} b:{c['fees']['base']: 6d}"
-                f" r:{c['fees']['rate']/1E6: 1.6f} c:{c['chan_id']} a:{c['alias']}")
+                f"cid:{c['chan_id']} "
+                f"ub:{c['unbalancedness']: 4.2f} "
+                f"atb:{c['amt_to_balanced']: 9d} "
+                f"l:{c['local_balance']: 9d} "
+                f"r:{c['remote_balance']: 9d} "
+                f"bf:{c['fees']['base']: 6d} "
+                f"fr:{c['fees']['rate']/1E6: 1.6f} "
+                f"a:{c['alias']}")
 
     def extract_channel_info(self, chan_id):
         """
@@ -284,6 +302,9 @@ class Rebalancer(object):
         rebalance_candidates = self.get_rebalance_candidates(rebalance_direction)
 
         logger.info(f">>> There are {len(rebalance_candidates)} channels with which we can rebalance (look at logfile).")
+
+        self.print_rebalance_candidates(rebalance_candidates)
+
         logger.info(f">>> We will try to rebalance with them one after the other.")
         logger.info(f">>> NOTE: only individual rebalance requests are optimized for fees:\n"
                     f"    this means that there can be rebalances with less fees afterwards,\n"
@@ -291,7 +312,6 @@ class Rebalancer(object):
                     f"    and set --max-fee-sat and --max-fee-rate accordingly.")
         logger.info(f">>> Rebalancing can take some time. Please be patient!\n")
 
-        self.print_rebalance_candidates(rebalance_candidates)
 
         # create an invoice with a zero amount for all rebalance attempts (reduces number of invoices)
         invoice_r_hash = self.node.get_rebalance_invoice(
