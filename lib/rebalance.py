@@ -338,9 +338,6 @@ class Rebalancer(object):
                 amt = int(amt_target_original * chunksize)
 
             logger.info(f"-------- Rebalance from {source_channel} to {target_channel} with {amt} sats --------")
-            if source_channel == target_channel:
-                logger.error("This makes no sense.")
-                raise ValueError
             logger.info(f"Need to still rebalance {amt_target} sat to reach the goal of {amt_target_original} sat."
                         f" Fees paid up to now: {total_fees_msat} msats.")
 
