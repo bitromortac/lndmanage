@@ -1,22 +1,22 @@
 lndmanage
 ---------
 
-Control tool for lightning network daemon ([`LND`](https://github.com/lightningnetwork/lnd)) node operators, optimized for remote control.
+lndmanage is a command line tool for advanced channel management of an [`LND`](https://github.com/lightningnetwork/lnd) node.
+
+Current feature list (use the ```--help``` flag for subcommands):
+
+* advanced node summary (```status```)
+* compact ```listchannels``` commands:
+  * list channels for rebalancing (```listchannels rebalance```)
+  * list inactive channels for channel hygiene (```listchannels hygiene```)
+* rebalancing of channels (```rebalance```)
+* doing circular self-payments (```circle```)
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
 
-Current feature list (use --help flags for subcommands):
-
-* advanced node summary ```$ ./lndmange.py status```
-* compact listchannels commands ```$ ./lndmange.py listchannels```
-  * list channels for rebalancing ```$ ./lndmange.py listchannels rebalance```
-  * list inactive channels for channel hygiene ```$ ./lndmange.py listchannels hygiene```
-* rebalancing of channels ```$ ./lndmanage.py rebalance channel_id```
-* do circular self-payments ```$ ./lndmanage.py circle channel_from channel_to amt_sats```
-
 Rebalancing a channel
 ---------------------
-The workflow for rebalancing a channels goes as follows:
+The workflow for rebalancing a channel goes as follows:
 
 * take a look at all your unbalanced channels with:
 
