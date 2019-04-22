@@ -97,6 +97,30 @@ $ ./lndmanage.py status
 ```
 If if works, you should see the node status.
 
+Docker
+------
+
+If you prefer to run the tool from a docker container:
+```sh
+cd docker
+
+# review ./lndmanage/home/config_sample.ini
+# note that settings are relevant to situation inside the docker container
+# docker-compose.yml uses network_mode: host
+
+# build the container
+./build.sh 
+
+# run lndmanage inside container via a wrapper script 
+./lndmanage.sh status
+```
+
+To start from scratch:
+```sh
+./clean.sh
+./build.sh --no-cache
+```
+
 Compiling grpc in python [development]
 ----------------------------------------------------
 ```
