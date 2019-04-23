@@ -100,7 +100,7 @@ def main():
         if not args.subcmd:
             print_channels_rebalance(node, unbalancedness_greater_than=0)
         if args.subcmd == 'rebalance':
-            print_channels_rebalance(node, args.unbalancedness, sort_by='unbalancedness')
+            print_channels_rebalance(node, args.unbalancedness, sort_by='ub')
         elif args.subcmd == 'hygiene':
             print_channels_hygiene(node)
 
