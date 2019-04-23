@@ -14,7 +14,8 @@ import _settings
 
 from lib.network import Network
 from lib.utilities import convert_dictionary_number_strings_to_ints
-from lib.ln_utilities import extract_short_channel_id_from_string, convert_short_channel_id_to_channel_id
+from lib.ln_utilities import (extract_short_channel_id_from_string,
+                              convert_short_channel_id_to_channel_id, convert_channel_id_to_short_channel_id)
 from lib.exceptions import PaymentTimeOut, NoRouteError
 
 import logging
@@ -236,7 +237,7 @@ class LndNode(Node):
             self.num_active_channels = raw_info.num_active_channels
             self.num_peers = raw_info.num_peers
 
-    def get_channels(self, active_only=True, public_only=False):
+    def get_channels(self, active_only=False, public_only=False):
         """
         Fetches information (fee settings of the counterparty, channel capacity, balancedness)
          about this node's open channels and saves it into the channels dict attribute.
@@ -249,45 +250,57 @@ class LndNode(Node):
         channels_data = raw_channels.ListFields()[0][1]
         channels = []
         for c in channels_data:
+            # calculate age from blockheight
+            blockheight, _, _ = convert_channel_id_to_short_channel_id(c.chan_id)
+            age_days = (self.blockheight - blockheight) * 10 / (60 * 24)
+            # calculate last update (days ago)
+            try:
+                last_update = (time.time() - self.network.edges[c.chan_id]['last_update']) / (60 * 60 * 24)
+            except TypeError:
+                last_update = float('nan')
+            except KeyError:
+                last_update = float('nan')
+
+            sent_received_per_week = int((c.total_satoshis_sent + c.total_satoshis_received) / (age_days / 7))
+
+            # determine policy
             if self.pub_key < c.remote_pubkey:  # interested in node1
                 policy_node = 'node1_policy'
             else:  # interested in node2
                 policy_node = 'node2_policy'
-
             try:
                 policy = self.network.edges[c.chan_id][policy_node]
             except KeyError:
-                policy = {'fee_base_msat': -1,
-                          'fee_rate_milli_msat': -1}
-            unbalancedness = -(float(c.local_balance) / c.capacity - 0.5) / 0.5
+                policy = {'fee_base_msat': None,
+                          'fee_rate_milli_msat': None}
 
-            try:
-                last_update = self.network.edges[c.chan_id]['last_update']
-            except KeyError:
-                # TODO: lncli describegraph doesn't know about private channels
-                last_update = None
+            # define unbalancedness |ub| large means very unbalanced
+            unbalancedness = -(float(c.local_balance) / c.capacity - 0.5) / 0.5
 
             channels.append({
                 'active': c.active,
+                'age': age_days,
                 'alias': self.network.get_node_alias(c.remote_pubkey),
                 'amt_to_balanced': int(abs(unbalancedness * c.capacity / 2)),
                 'capacity': c.capacity,
                 'chan_id': c.chan_id,
                 'channel_point': c.channel_point,
                 'commit_fee': c.commit_fee,
-                'fees': {'base': policy['fee_base_msat'], 'rate': policy['fee_rate_milli_msat']},
+                'peer_base_fee': policy['fee_base_msat'],
+                'peer_fee_rate': policy['fee_rate_milli_msat'],
                 'initiator': c.initiator,
                 'last_update': last_update,
                 'local_balance': c.local_balance,
                 'num_updates': c.num_updates,
                 'private': c.private,
-                'relative_local_balance': float(c.local_balance) / float(c.capacity),
+                'remote_balance': c.remote_balance,
                 'remote_pubkey': c.remote_pubkey,
+                'sent_received_per_week': sent_received_per_week,
                 'total_satoshis_sent': c.total_satoshis_sent,
                 'total_satoshis_received': c.total_satoshis_received,
-                'remote_balance': c.remote_balance,
                 'unbalancedness': unbalancedness,
             })
+
         return sorted(channels, key=lambda x: x['remote_pubkey'])
 
     def get_inactive_channels(self):
@@ -432,4 +445,3 @@ class LndNode(Node):
 
 if __name__ == '__main__':
     node = LndNode()
-    print(node.get_channel_info(000000000000000000))
