@@ -43,4 +43,3 @@ RUN pip install -r requirements.txt
 
 WORKDIR /root
 COPY "home" .
-RUN cp config_sample.ini lndmanage/config.ini

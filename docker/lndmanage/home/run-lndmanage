@@ -2,15 +2,25 @@
 
 set -e -o pipefail
 
+# this is a special command to allow inspection on this container
+if [[ "$1" == "inspect" ]]; then
+  shift
+  exec "$@"
+fi
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-. _shared.sh
+eval_template() {
+  local template_file=$1
+  eval "cat <<TEMPLATE_EOF_MARKER
+$(<${template_file})
+TEMPLATE_EOF_MARKER
+" 2> /dev/null
+}
+
+# we dynamically prepare config from template by baking in env variables
+eval_template config_template.ini > lndmanage/config.ini
 
 cd lndmanage
-
-# report our action to the service if it is watching
-if [[ -p "$SERVICE_PIPE" ]]; then
-  echo "[$$] > ./lndmanage.py $@" > "$SERVICE_PIPE"
-fi
 
 exec ./lndmanage.py "$@"

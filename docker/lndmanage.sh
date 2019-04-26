@@ -4,9 +4,34 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 . _settings.sh
 
-CONTAINER_ID=$(docker-compose ps -q lndmanage)
-if [[ -z $(docker ps -q --no-trunc | grep "$CONTAINER_ID") ]]; then
-  exec docker-compose run --rm lndmanage run-lndmanage "$@"
-else
-  exec docker-compose exec lndmanage run-lndmanage "$@"
+abs_path() {
+  echo "$(cd "$1"; pwd -P)"
+}
+
+if [[ ! -e "$LNDMANAGE_CACHE_DIR" ]]; then
+  mkdir -p "$LNDMANAGE_CACHE_DIR"
 fi
+LNDMANAGE_CACHE_DIR_ABSOLUTE=$(abs_path "$LNDMANAGE_CACHE_DIR")
+
+if [[ ! -e "$LNDMANAGE_AUX_DIR" ]]; then
+  mkdir -p "$LNDMANAGE_AUX_DIR"
+fi
+LNDMANAGE_AUX_DIR_ABSOLUTE=$(abs_path "$LNDMANAGE_AUX_DIR")
+
+# we use LNDMANAGE_AUX_DIR as ad-hoc volume to pass admin.macaroon and tls.cert into our container
+# it is mapped to /root/aux, config_template.ini assumes that
+cp "$ADMIN_MACAROON_FILE" "$LNDMANAGE_AUX_DIR/admin.macaroon"
+cp "$TLS_CERT_FILE" "$LNDMANAGE_AUX_DIR/tls.cert"
+
+if [[ -n "$LNDMANAGE_VERBOSE" ]]; then
+  set -x
+fi
+exec docker run \
+  --rm \
+  --network host \
+  -v "$LNDMANAGE_CACHE_DIR_ABSOLUTE:/root/lndmanage/cache" \
+  -v "$LNDMANAGE_AUX_DIR_ABSOLUTE:/root/aux" \
+  -e "LND_GRPC_HOST=${LND_GRPC_HOST}" \
+  -ti \
+  lndmanage:local \
+  run-lndmanage "$@"
