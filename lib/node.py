@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-NUM_MAX_FORWARDING_EVENTS = 10000
+NUM_MAX_FORWARDING_EVENTS = 100000
 
 
 class Node(object):
@@ -53,9 +53,9 @@ class LndNode(Node):
         super().__init__()
         self._stub = self.connect()
         self.network = Network(self)
+        self.update_blockheight()
         self.public_active_channels = self.get_channels(public_only=True, active_only=True)
         self.set_info()
-        self.update_blockheight()
 
     @staticmethod
     def connect():
@@ -271,8 +271,9 @@ class LndNode(Node):
             try:
                 policy = self.network.edges[c.chan_id][policy_node]
             except KeyError:
-                policy = {'fee_base_msat': None,
-                          'fee_rate_milli_msat': None}
+                # TODO: if channel is unknown in describegraph we need to set the fees to some error value
+                policy = {'fee_base_msat': -1,
+                          'fee_rate_milli_msat': -1}
 
             # define unbalancedness |ub| large means very unbalanced
             unbalancedness = -(float(c.local_balance) / c.capacity - 0.5) / 0.5
