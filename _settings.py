@@ -28,7 +28,7 @@ NUMBER_CHANNELS_DEFINING_USER_NODE = 3
 
 # -------- rebalancing --------
 # in terms of unbalancedness
-UNBALANCED_CHANNEL = 0.0
+UNBALANCED_CHANNEL = 0.2
 # rebalancing will be done with CHUNK_SIZE of the minimal capacity of the to be balanced channels
 CHUNK_SIZE = 1.0
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import argparse
 import _settings
+import time
 
 from lib.node import LndNode
-from lib.channels import print_channels_rebalance, print_channels_hygiene
+from lib.channels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
 from lib.rebalance import Rebalancer
 from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive
 
@@ -46,9 +47,19 @@ def parse_arguments():
              'a value between [-1, 1] (a perfectly balanced channel has a value of 0). '
              'The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
 
-    # subcmd: listchannels hygiene
-    parser_listchannels_hygiene = listchannels_subparsers.add_parser(
-        'hygiene', help="displays inactive channels")
+    # subcmd: listchannels inactive
+    parser_listchannels_inactive = listchannels_subparsers.add_parser(
+        'inactive', help="displays inactive channels")
+
+    # subcmd: listchannels forwardings
+    parser_listchannels_forwardings = listchannels_subparsers.add_parser(
+        'forwardings', help="displays channels with forwarding information")
+    parser_listchannels_forwardings.add_argument(
+        '--sort-by', default='f/w', type=str, help='sort by column (look at description)')
+    parser_listchannels_forwardings.add_argument(
+        '--from-days-ago', default=365, type=int, help='time interval start (days ago)')
+    parser_listchannels_forwardings.add_argument(
+        '--to-days-ago', default=0, type=int, help='time interval end (days ago)')
 
     # cmd: rebalance
     parser_rebalance = subparsers.add_parser(
@@ -87,6 +98,7 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
+    # print(args)
     # program execution
     if args.loglevel:
         # update the loglevel of the stdout handler to the user choice
@@ -100,9 +112,15 @@ def main():
         if not args.subcmd:
             print_channels_rebalance(node, unbalancedness_greater_than=0)
         if args.subcmd == 'rebalance':
-            print_channels_rebalance(node, args.unbalancedness, sort_by='unbalancedness')
-        elif args.subcmd == 'hygiene':
+            print_channels_rebalance(node, args.unbalancedness, sort_by='ub')
+        elif args.subcmd == 'inactive':
             print_channels_hygiene(node)
+        elif args.subcmd == 'forwardings':
+            # convert time interval into unix timestamp
+            time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+            time_to = time.time() - args.to_days_ago * 24 * 60 * 60
+            print_channels_forwardings(
+                node, sort_by=args.sort_by, time_interval_start=time_from, time_interval_end=time_to)
 
     elif args.cmd == 'rebalance':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)

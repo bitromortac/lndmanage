@@ -175,7 +175,7 @@ class Rebalancer(object):
         # filters by max_effective_fee_rate
         rebalance_candidates = [
             c for c in rebalance_candidates
-            if self.effective_fee_rate(c['amt_to_balanced'], c['fees']['base'], c['fees']['rate'])
+            if self.effective_fee_rate(c['amt_to_balanced'], c['peer_base_fee'], c['peer_fee_rate'])
             < self.max_effective_fee_rate
         ]
 
@@ -222,8 +222,8 @@ class Rebalancer(object):
                 f"atb:{c['amt_to_balanced']: 9d} "
                 f"l:{c['local_balance']: 9d} "
                 f"r:{c['remote_balance']: 9d} "
-                f"bf:{c['fees']['base']: 6d} "
-                f"fr:{c['fees']['rate']/1E6: 1.6f} "
+                f"bf:{c['peer_base_fee']: 6d} "
+                f"fr:{c['peer_fee_rate']/1E6: 1.6f} "
                 f"a:{c['alias']}")
 
     def extract_channel_info(self, chan_id):
