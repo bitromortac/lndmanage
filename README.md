@@ -138,29 +138,7 @@ If if works, you should see the node status.
 Docker
 ------
 
-If you prefer to run the tool from a docker container:
-```sh
-cd docker
-
-# build the container
-./build.sh 
-
-# prior running the container you must specify LND_HOME or ADMIN_MACAROON_FILE and TLS_CERT_FILE
-export TLS_CERT_FILE=$HOME/.lnd/tls.cert
-export ADMIN_MACAROON_FILE=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon  
-
-# you might want to specify LND_GRPC_HOST as well
-# look into _settings.sh for more details on container configuration
-
-# run lndmanage inside a container via this wrapper script: 
-./lndmanage.sh status
-```
-
-To start from scratch:
-```sh
-./clean.sh
-./build.sh --no-cache
-```
+If you prefer to run `lndmanage` from a docker container, `cd docker` and follow [`README`](docker/README.md) there.
 
 Compiling grpc in python [development]
 ----------------------------------------------------
