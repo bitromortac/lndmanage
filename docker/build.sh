@@ -16,5 +16,14 @@ rsync -a \
   "$LNDMANAGE_SRC_DIR" \
   lndmanage/_src
 
+cd lndmanage
+
 echo "Building lndmanage docker container..."
-exec docker-compose build "$@" lndmanage
+if [[ -n "$LNDMANAGE_VERBOSE" ]]; then
+  set -x
+fi
+exec docker build \
+  --build-arg LNDMANAGE_HOST_SRC_PATH=_src \
+  -t lndmanage:local \
+  "$@" \
+  .
