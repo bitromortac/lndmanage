@@ -143,6 +143,7 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
         f"{channel_abbrev['total_forwarding_out']:<10} total forwardings outwards [sats]\n"
         f"{channel_abbrev['median_forwarding_out']:<10} median forwarding outwards [sats]\n"
         f"{channel_abbrev['largest_forwarding_amount_out']:<10} largest forwarding outwards [sats]\n"
+        f"{channel_abbrev['alias']:<10} alias\n"
     )
     logger.info("-------- Channels --------")
     channels = get_forwarding_statistics_channels(node, time_interval_start, time_interval_end)
@@ -168,6 +169,7 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
                 f"{channel_abbrev['total_forwarding_out']:>11}"
                 f"{channel_abbrev['median_forwarding_out']:>8}"
                 f"{channel_abbrev['largest_forwarding_amount_out']:>8}"
+                f"{channel_abbrev['alias']:^15}"
             )
         logger.info(
             f"{c['chan_id']} "
@@ -184,9 +186,9 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
             f"{c['largest_forwarding_amount_in']:7.0f} "
             f"| {c['total_forwarding_out']:8.0f} "
             f"{c['median_forwarding_out']:7.0f} "
-            f"{c['largest_forwarding_amount_out']:7.0f} "
+            f"{c['largest_forwarding_amount_out']:7.0f} | "
+            f"{c['alias'][:10] + '...' if len(c['alias']) > 10 else c['alias']} "
         )
-
 
 if __name__ == '__main__':
     from lib.node import LndNode
