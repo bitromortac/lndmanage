@@ -232,11 +232,13 @@ class Router(object):
         :return: list of :class:`lib.routing.Route` instances
         """
 
-        channel_from = self.node.network.edges[chan_id_from]
         try:
+            channel_from = self.node.network.edges[chan_id_from]
             channel_to = self.node.network.edges[chan_id_to]
         except KeyError:
-            logger.exception("Channel was not found in network graph, but is present in listchannels.")
+            logger.exception(
+                "Channel was not found in network graph, but is present in "
+                "listchannels. Channel needs 6 confirmations to be usable.")
             raise NoRouteError
 
         this_node = self.node.pub_key
