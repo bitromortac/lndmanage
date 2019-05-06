@@ -91,7 +91,6 @@ class Rebalancer(object):
                     reporting_channel_id = self.node.handle_payment_error(result.payment_error)
 
                     if reporting_channel_id:
-                        # determine the following channel that failed
                         try:
                             index_failed_channel = r.channel_hops.index(reporting_channel_id)
                             failed_channel_id = r.channel_hops[index_failed_channel]
@@ -100,10 +99,10 @@ class Rebalancer(object):
                             continue
                         # check if a failed channel was our own, which should, in principle, not happen
                         if failed_channel_id in [channel_id_from, channel_id_to]:
-                            raise Exception(f"Own channel failed. Something is wrong. This is likely due to a wrong "
-                                            f"accounting for the channel reserve and will be fixed in the future. Try"
-                                            f"with smaller absolute target."
-                                            f"Failing channel: {failed_channel_id}")
+                            raise RebalanceFailure(
+                                f"Own channel failed. Something is wrong. This is likely due to a wrong"
+                                f" accounting for the channel reserve and will be fixed in the future. Try"
+                                f" with smaller absolute target. Failing channel: {failed_channel_id}")
 
                         # determine the nodes involved in the channel
                         failed_channel_source = r.node_hops[index_failed_channel - 1]
@@ -293,9 +292,8 @@ class Rebalancer(object):
         channel_reserve = int(0.01 * unbalanced_channel_info['capacity'])
 
         if target:
-            commit_fee = 0
-            if unbalanced_channel_info['initiator']:  # a commit fee needs to be only respected by the channel initiator
-                commit_fee = unbalanced_channel_info['commit_fee']
+            # a commit fee needs to be only respected by the channel initiator
+            commit_fee = 0 if not unbalanced_channel_info['initiator'] else unbalanced_channel_info['commit_fee']
 
             # first naively calculate the local balance change to fulfill the requested target
             local_balance_target = int(unbalanced_channel_info['capacity'] * 0.5 * (-target + 1.0) - commit_fee)
@@ -335,6 +333,12 @@ class Rebalancer(object):
         return amt_target_original
 
     def node_is_multiply_connected(self, pub_key):
+        """
+        Checks if the node is connected to us via several channels.
+
+        :param pub_key: str, public key
+        :return: bool, true if number of channels to the node is larger than 1
+        """
         channels = 0
         for c in self.channel_list:
             if c['remote_pubkey'] == pub_key:

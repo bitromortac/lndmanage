@@ -278,9 +278,7 @@ class LndNode(Node):
                           'fee_rate_milli_msat': -1}
 
             # define unbalancedness |ub| large means very unbalanced
-            commit_fee = 0
-            if c.initiator:
-                commit_fee = c.commit_fee
+            commit_fee = 0 if not c.initiator else c.commit_fee
             unbalancedness = -(float(c.local_balance + commit_fee) / c.capacity - 0.5) * 2
             # inverse of above formula:
             # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
