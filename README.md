@@ -5,15 +5,35 @@ lndmanage is a command line tool for advanced channel management of an [`LND`](h
 
 Current feature list (use the ```--help``` flag for subcommands):
 
-* advanced node summary (```status```)
+* advanced node summary ```status```
 * compact ```listchannels``` commands:
-  * list channels for rebalancing (```listchannels rebalance```)
-  * list inactive channels for channel hygiene (```listchannels inactive```)
-  * list forwarding statistics for each channel (```listchannels forwardings```)
-* rebalancing of channels (```rebalance```)
-* doing circular self-payments (```circle```)
+  * list channels for rebalancing ```listchannels rebalance```
+  * list inactive channels for channel hygiene ```listchannels inactive```
+  * list forwarding statistics for each channel ```listchannels forwardings```
+* rebalancing of channels ```rebalance```
+  * different strategies can be chosen
+  * a target 'balancedness' can be specified (e.g. to empty the channel)
+* doing circular self-payments ```circle```
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
+
+Command line options
+--------------------
+```sh
+usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}]
+                    {status,listchannels,rebalance,circle} ...
+
+Lightning network daemon channel management tool.
+
+positional arguments:
+  {status,listchannels,rebalance,circle}
+    status              display node status
+    listchannels        lists channels with extended information [see also
+                        subcommands with -h]
+    rebalance           rebalance a channel
+    circle              circular self-payment
+
+```
 
 Rebalancing a channel
 ---------------------

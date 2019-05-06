@@ -54,8 +54,8 @@ class LndNode(Node):
         self._stub = self.connect()
         self.network = Network(self)
         self.update_blockheight()
-        self.public_active_channels = self.get_channels(public_only=True, active_only=True)
         self.set_info()
+        self.public_active_channels = self.get_channels(public_only=True, active_only=True)
 
     @staticmethod
     def connect():
@@ -219,6 +219,12 @@ class LndNode(Node):
         """
 
         raw_info = self.get_raw_info()
+        self.pub_key = raw_info.identity_pubkey
+        self.alias = raw_info.alias
+        self.num_active_channels = raw_info.num_active_channels
+        self.num_peers = raw_info.num_peers
+
+        # TODO: remove the following code and implement an advanced status
         all_channels = self.get_channels(active_only=False, public_only=False)
 
         for c in all_channels:
@@ -231,11 +237,6 @@ class LndNode(Node):
                 self.total_active_channels += 1
             if c['private']:
                 self.total_private_channels += 1
-            self.alias = raw_info.alias
-            self.pub_key = raw_info.identity_pubkey
-            self.total_channels = len(self.public_active_channels)
-            self.num_active_channels = raw_info.num_active_channels
-            self.num_peers = raw_info.num_peers
 
     def get_channels(self, active_only=False, public_only=False):
         """
@@ -249,6 +250,7 @@ class LndNode(Node):
         raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
         channels = []
+
         for c in channels_data:
             # calculate age from blockheight
             blockheight, _, _ = convert_channel_id_to_short_channel_id(c.chan_id)
@@ -262,31 +264,35 @@ class LndNode(Node):
                 last_update = float('nan')
 
             sent_received_per_week = int((c.total_satoshis_sent + c.total_satoshis_received) / (age_days / 7))
-
             # determine policy
-            if self.pub_key < c.remote_pubkey:  # interested in node1
-                policy_node = 'node1_policy'
-            else:  # interested in node2
-                policy_node = 'node2_policy'
+
             try:
-                policy = self.network.edges[c.chan_id][policy_node]
+                edge_info = self.network.edges[c.chan_id]
+                if edge_info['node1_pub'] == self.pub_key:  # interested in node2
+                    policy = edge_info['node2_policy']
+                else:  # interested in node1
+                    policy = edge_info['node1_policy']
             except KeyError:
                 # TODO: if channel is unknown in describegraph we need to set the fees to some error value
                 policy = {'fee_base_msat': -1,
                           'fee_rate_milli_msat': -1}
 
             # define unbalancedness |ub| large means very unbalanced
-            unbalancedness = -(float(c.local_balance) / c.capacity - 0.5) / 0.5
+            commit_fee = 0 if not c.initiator else c.commit_fee
+            unbalancedness = -(float(c.local_balance + commit_fee) / c.capacity - 0.5) * 2
+            # inverse of above formula:
+            # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
 
             channels.append({
                 'active': c.active,
                 'age': age_days,
                 'alias': self.network.get_node_alias(c.remote_pubkey),
-                'amt_to_balanced': int(abs(unbalancedness * c.capacity / 2)),
+                'amt_to_balanced': int(unbalancedness * c.capacity / 2 - commit_fee),
                 'capacity': c.capacity,
                 'chan_id': c.chan_id,
                 'channel_point': c.channel_point,
                 'commit_fee': c.commit_fee,
+                'fee_per_kw': c.fee_per_kw,
                 'peer_base_fee': policy['fee_base_msat'],
                 'peer_fee_rate': policy['fee_rate_milli_msat'],
                 'initiator': c.initiator,

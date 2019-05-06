@@ -6,7 +6,7 @@ import time
 from lib.node import LndNode
 from lib.channels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
 from lib.rebalance import Rebalancer
-from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive
+from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive, RebalanceFailure
 
 
 def range_limited_float_type(arg):
@@ -20,9 +20,18 @@ def range_limited_float_type(arg):
     return f
 
 
+def unbalanced_float(x):
+    x = float(x)
+    if x < -1.0 or x > 1.0:
+        raise argparse.ArgumentTypeError(f"{x} not in range [-1.0, 1.0]")
+    return x
+
+
 def parse_arguments():
     # setup the command line parser
-    parser = argparse.ArgumentParser(prog='lndmanage.py')
+    parser = argparse.ArgumentParser(
+        prog='lndmanage.py',
+        description='Lightning network daemon channel management tool.')
     parser.add_argument('--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
     subparsers = parser.add_subparsers(dest='cmd')
 
@@ -33,7 +42,7 @@ def parse_arguments():
 
     # cmd: listchannels
     parser_listchannels = subparsers.add_parser(
-        'listchannels', help='get an advanced view of our channels [subcommands]',
+        'listchannels', help='lists channels with extended information [see also subcommands with -h]',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     listchannels_subparsers = parser_listchannels.add_subparsers(dest='subcmd')
 
@@ -77,6 +86,19 @@ def parse_arguments():
              ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
     parser_rebalance.add_argument(
         '--reckless', help='Execute action in the network.', action='store_true')
+    parser_rebalance.add_argument(
+        '--allow-unbalancing', help=f'Allow channels to get an unbalancedness up to +-{_settings.UNBALANCED_CHANNEL}.',
+        action='store_true')
+    parser_rebalance.add_argument(
+        '--target', help=f'This feature is still experimental!'
+        f' The unbalancedness target is between [-1, 1]. A target of -1 leads to a maximal local balance, a target of 0'
+        f' to a 50:50 balanced channel and a target of 1 to a maximal remote balance. Default is a target of 0.',
+        type=unbalanced_float, default=None)
+    rebalancing_strategies = ['most-affordable-first', 'lowest-feerate-first', 'match-unbalanced']
+    parser_rebalance.add_argument(
+        '--strategy',
+        help=f'Rebalancing strategy.',
+        choices=rebalancing_strategies, type=str, default=None)
 
     # cmd: circle
     parser_circle = subparsers.add_parser(
@@ -123,8 +145,15 @@ def main():
                 node, sort_by=args.sort_by, time_interval_start=time_from, time_interval_end=time_to)
 
     elif args.cmd == 'rebalance':
+        if args.target:
+            logger.warning("Warning: Target is set, this is still an experimental feature.")
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-        rebalancer.rebalance(args.channel, dry=not args.reckless, chunksize=args.chunksize)
+        try:
+            rebalancer.rebalance(
+                args.channel, dry=not args.reckless, chunksize=args.chunksize, target=args.target,
+                allow_unbalancing=args.allow_unbalancing, strategy=args.strategy)
+        except RebalanceFailure as e:
+            logger.error(f"Error: {e}")
 
     elif args.cmd == 'circle':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
