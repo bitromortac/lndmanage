@@ -19,7 +19,7 @@ Current feature list (use the ```--help``` flag for subcommands):
 
 Command line options
 --------------------
-```sh
+```
 usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}]
                     {status,listchannels,rebalance,circle} ...
 
@@ -78,7 +78,7 @@ at the inactive channels with ```$ ./lndmanage.py listchannels inactive```.
 
 You will get an output like:
 
-```sh
+```
 -------- Description --------
 p          true if private channel
 ini        true if we opened channel
