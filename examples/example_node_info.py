@@ -1,5 +1,5 @@
 import _settings
-from lib.channels import print_channels_rebalance
+from lib.listchannels import print_channels_rebalance
 from lib.node import LndNode
 
 import logging.config

@@ -10,6 +10,7 @@ channel_abbrev = {
     'age': 'age',
     'alias': 'a',
     'amount_to_balanced': 'atb',
+    'bandwidth_demand': 'bwd',
     'capacity': 'cap',
     'chan_id': 'cid',
     'channel_point': 'cpt',
@@ -35,8 +36,10 @@ channel_abbrev = {
     'total_forwarding_out': 'out',
     'unbalancedness': 'ub',
     'median_forwarding_in': 'imed',
+    'mean_forwarding_in': 'imean',
     'largest_forwarding_amount_in': 'imax',
     'median_forwarding_out': 'omed',
+    'mean_forwarding_out': 'omean',
     'largest_forwarding_amount_out': 'omax',
 }
 
@@ -135,13 +138,14 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
         f"{channel_abbrev['fees_total_per_week']:<10} fees per week [sats]\n"
         f"{channel_abbrev['unbalancedness']:<10} unbalancedness\n"
         f"{channel_abbrev['flow_direction']:<10} flow direction (positive is outwards)\n"
+        f"{channel_abbrev['bandwidth_demand']:<10} bandwidth demand: capacity / max(mean_in, mean_out)\n"
         f"{channel_abbrev['rebalance_required']:<10} rebalance required if marked with X\n"
         f"{channel_abbrev['capacity']:<10} channel capacity [sats]\n"
         f"{channel_abbrev['total_forwarding_in']:<10} total forwardings inwards [sats]\n"
-        f"{channel_abbrev['median_forwarding_in']:<10} median forwarding inwards [sats]\n"
+        f"{channel_abbrev['mean_forwarding_in']:<10} mean forwarding inwards [sats]\n"
         f"{channel_abbrev['largest_forwarding_amount_in']:<10} largest forwarding inwards [sats]\n"
         f"{channel_abbrev['total_forwarding_out']:<10} total forwardings outwards [sats]\n"
-        f"{channel_abbrev['median_forwarding_out']:<10} median forwarding outwards [sats]\n"
+        f"{channel_abbrev['mean_forwarding_out']:<10} mean forwarding outwards [sats]\n"
         f"{channel_abbrev['largest_forwarding_amount_out']:<10} largest forwarding outwards [sats]\n"
         f"{channel_abbrev['alias']:<10} alias\n"
     )
@@ -161,13 +165,14 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
                 f"{channel_abbrev['fees_total_per_week']:>8}"
                 f"{channel_abbrev['unbalancedness']:>6}"
                 f"{channel_abbrev['flow_direction']:>6}"
+                f"{channel_abbrev['bandwidth_demand']:>5}"
                 f"{channel_abbrev['rebalance_required']:>2}"
                 f"{channel_abbrev['capacity']:>9}"
-                f"{channel_abbrev['total_forwarding_in']:>11}"
-                f"{channel_abbrev['median_forwarding_in']:>8}"
+                f"{channel_abbrev['total_forwarding_in']:>9}"
+                f"{channel_abbrev['mean_forwarding_in']:>8}"
                 f"{channel_abbrev['largest_forwarding_amount_in']:>8}"
-                f"{channel_abbrev['total_forwarding_out']:>11}"
-                f"{channel_abbrev['median_forwarding_out']:>8}"
+                f"{channel_abbrev['total_forwarding_out']:>9}"
+                f"{channel_abbrev['mean_forwarding_out']:>8}"
                 f"{channel_abbrev['largest_forwarding_amount_out']:>8}"
                 f"{channel_abbrev['alias']:^15}"
             )
@@ -179,14 +184,15 @@ def print_channels_forwardings(node, time_interval_start, time_interval_end, sor
             f"{c['fees_total_per_week'] / 1000:7.3f} "
             f"{c['unbalancedness']:5.2f} "
             f"{c['flow_direction']:5.2f} "
+            f"{c['bandwidth_demand']:3.2f} "
             f"{'X' if c['rebalance_required'] else ' '} "
             f"{c['capacity']:8.0f} "
-            f"| {c['total_forwarding_in']:8.0f} "
-            f"{c['median_forwarding_in']:7.0f} "
+            f"{c['total_forwarding_in']:8.0f} "
+            f"{c['mean_forwarding_in']:7.0f} "
             f"{c['largest_forwarding_amount_in']:7.0f} "
-            f"| {c['total_forwarding_out']:8.0f} "
-            f"{c['median_forwarding_out']:7.0f} "
-            f"{c['largest_forwarding_amount_out']:7.0f} | "
+            f"{c['total_forwarding_out']:8.0f} "
+            f"{c['mean_forwarding_out']:7.0f} "
+            f"{c['largest_forwarding_amount_out']:7.0f} "
             f"{c['alias'][:10] + '...' if len(c['alias']) > 10 else c['alias']} "
         )
 
