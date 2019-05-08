@@ -114,21 +114,22 @@ fees       fees total [sats]
 f/w        fees per week [sats]
 ub         unbalancedness
 flow       flow direction (positive is outwards)
+bwd        bandwidth demand: capacity / max(mean_in, mean_out)
 r          rebalance required if marked with X
 cap        channel capacity [sats]
 in         total forwardings inwards [sats]
-imed       median forwarding inwards [sats]
+imean      mean forwarding inwards [sats]
 imax       largest forwarding inwards [sats]
 out        total forwardings outwards [sats]
-omed       median forwarding outwards [sats]
+omean      mean forwarding outwards [sats]
 omax       largest forwarding outwards [sats]
 a          alias
 
 -------- Channels --------
-       cid         nfwd   age  fees     f/w    ub  flow r      cap         in    imed    imax        out    omed    omax    a
-xxxxxxxxxxxxxxxxxx    6   103   907 106.950  0.30  1.00 X  6000000 |        0     nan     nan |  1935309   20000 1800902 | abc
-xxxxxxxxxxxxxxxxxx    3    82   300  35.374  0.74 -0.08    1000000 |   700008  700008  700008 |   600000  600000  600000 | def
-xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 X  6000000 |   993591  993591  993591 |  2450000  750000 1000000 | ghi
+       cid         nfwd   age  fees     f/w    ub  flow  bwd r      cap       in   imean    imax      out   omean    omax  a
+xxxxxxxxxxxxxxxxxx    6   103   907 106.950  0.30  1.00 0.00 X  6000000        0     nan     nan  1935309   20000 1800902 abc
+xxxxxxxxxxxxxxxxxx    3    82   300  35.374  0.74 -0.08 0.70    1000000   700008  700008  700008   600000  600000  600000 def
+xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591  993591  993591  2450000  750000 1000000 ghi
 ...
 ```
 

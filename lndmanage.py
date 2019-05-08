@@ -4,7 +4,7 @@ import _settings
 import time
 
 from lib.node import LndNode
-from lib.channels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
+from lib.listchannels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
 from lib.rebalance import Rebalancer
 from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive, RebalanceFailure
 

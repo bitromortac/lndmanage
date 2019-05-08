@@ -9,6 +9,13 @@ logger.addHandler(logging.NullHandler())
 np.warnings.filterwarnings('ignore')
 
 
+def nan_to_zero(number):
+    if (number is np.nan or number != number):
+        return 0
+    else:
+        return number
+
+
 class ForwardingAnalyzer(object):
     """
     Analyzes forwardings for single channels.
@@ -168,11 +175,15 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
     for c in channels:
         try:  # channel forwarding statistics exists
             channel_statistics = statistics[c['chan_id']]
+            c['bandwidth_demand'] = max(nan_to_zero(channel_statistics['mean_forwarding_in']),
+                                        nan_to_zero(channel_statistics['mean_forwarding_out'])) / c['capacity']
             c['fees_total'] = channel_statistics['fees_total']
             c['fees_total_per_week'] = channel_statistics['fees_total'] / (forwarding_analyzer.max_time_interval / 7)
             c['flow_direction'] = channel_statistics['flow_direction']
             c['median_forwarding_in'] = channel_statistics['median_forwarding_in']
             c['median_forwarding_out'] = channel_statistics['median_forwarding_out']
+            c['mean_forwarding_in'] = channel_statistics['mean_forwarding_in']
+            c['mean_forwarding_out'] = channel_statistics['mean_forwarding_out']
             c['number_forwardings'] = channel_statistics['number_forwardings']
             c['largest_forwarding_amount_in'] = channel_statistics['largest_forwarding_amount_in']
             c['largest_forwarding_amount_out'] = channel_statistics['largest_forwarding_amount_out']
@@ -186,11 +197,14 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
                 c['rebalance_required'] = False
 
         except KeyError:  # no forwarding statistics on channel is available
+            c['bandwidth_demand'] = 0
             c['fees_total'] = 0
             c['fees_total_per_week'] = 0
             c['flow_direction'] = float('nan')
             c['median_forwarding_out'] = float('nan')
             c['median_forwarding_in'] = float('nan')
+            c['mean_forwarding_out'] = float('nan')
+            c['mean_forwarding_in'] = float('nan')
             c['number_forwardings'] = 0
             c['largest_forwarding_amount_in'] = float('nan')
             c['largest_forwarding_amount_out'] = float('nan')
