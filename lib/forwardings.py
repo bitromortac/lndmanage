@@ -1,8 +1,11 @@
 import numpy as np
 from lib.node import LndNode
+from collections import OrderedDict
+
 import _settings
 
 import logging
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -10,8 +13,13 @@ np.warnings.filterwarnings('ignore')
 
 
 def nan_to_zero(number):
-    if (number is np.nan or number != number):
-        return 0
+    """
+    Converts float('nan') to 0
+    :param number: float
+    :return: float
+    """
+    if number is np.nan or number != number:
+        return 0.0
     else:
         return number
 
@@ -21,8 +29,8 @@ class ForwardingAnalyzer(object):
     Analyzes forwardings for single channels.
     """
     def __init__(self, node):
-        self.forwarding_events = node.get_forwarding_events()
-
+        self.node = node
+        self.forwarding_events = self.node.get_forwarding_events()
         self.channels = {}
         self.total_forwarding_amount_sat = 0
         self.total_forwarding_fees_msat = 0
@@ -101,6 +109,51 @@ class ForwardingAnalyzer(object):
         self.max_time_interval = (self.timestamp_last_send - self.timestamp_first_send) / (24 * 60 * 60)
         return channel_statistics
 
+    def get_forwarding_statistics_nodes(self, sort_by='total_forwarding'):
+        """
+        Calculates forwarding statistics based on single channels for their nodes.
+        :param sort_by: str, abbreviation for the dict key
+        :return:
+        """
+        channel_statistics = self.get_forwarding_statistics_channels()
+        closed_channels = self.node.get_closed_channels()
+        open_channels = self.node.get_open_channels()
+        logger.debug(f"Number of channels with known forwardings: {len(closed_channels) + len(open_channels)} "
+                     f"(thereof {len(closed_channels)} closed channels).")
+
+        node_statistics = OrderedDict()
+
+        # go through channel statistics and calculate node statistics
+        for k, n in channel_statistics.items():
+            # historic data can be messy, so we need to take care that the remote pub key is known, otherwise
+            # it is useless information
+
+            channel_data = open_channels.get(k, None)
+            if not channel_data:
+                channel_data = closed_channels.get(k, None)
+
+            if channel_data:
+                remote_pubkey = channel_data['remote_pubkey']
+                if remote_pubkey not in node_statistics.keys():
+                    node_statistics[remote_pubkey] = {
+                        'total_forwarding_in': n['total_forwarding_in'],
+                        'total_forwarding_out': n['total_forwarding_out'],
+                        'total_forwarding': n['total_forwarding_in'] + n['total_forwarding_out'],
+                    }
+                else:
+                    node_statistics[remote_pubkey]['total_forwarding_in'] += n['total_forwarding_in']
+                    node_statistics[remote_pubkey]['total_forwarding_out'] += n['total_forwarding_out']
+                    node_statistics[remote_pubkey]['total_forwarding'] += (n['total_forwarding_in'] +
+                                                                           n['total_forwarding_out'])
+
+        for k, n in node_statistics.items():
+            tot_in = n['total_forwarding_in']
+            tot_out = n['total_forwarding_out']
+            node_statistics[k]['flow_direction'] = -((float(tot_in) / (tot_in + tot_out)) - 0.5) / 0.5
+
+        sorted_dict = OrderedDict(sorted(node_statistics.items(), key=lambda x: -x[1][sort_by]))
+        return sorted_dict
+
 
 class ChannelStatistics(object):
     """
@@ -172,7 +225,7 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
     # join the two data sets:
     channels = node.get_unbalanced_channels(unbalancedness_greater_than=0.0)
 
-    for c in channels:
+    for k, c in channels.items():
         try:  # channel forwarding statistics exists
             channel_statistics = statistics[c['chan_id']]
             c['bandwidth_demand'] = max(nan_to_zero(channel_statistics['mean_forwarding_in']),
@@ -222,7 +275,6 @@ if __name__ == '__main__':
     nd = LndNode()
     fa = ForwardingAnalyzer(nd)
     fa.initialize_forwarding_data(0, 0)
-    stats = fa.get_forwarding_statistics_channels()
-    stats = sorted(stats.items(), key=lambda x: x[1]['fees_total'])
-    for s in stats:
-        print(s)
+    node_stats = fa.get_forwarding_statistics_nodes()
+    for key, value in node_stats.items():
+        print(key, value)
