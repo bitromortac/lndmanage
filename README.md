@@ -10,10 +10,12 @@ Current feature list (use the ```--help``` flag for subcommands):
   * list channels for rebalancing ```listchannels rebalance```
   * list inactive channels for channel hygiene ```listchannels inactive```
   * list forwarding statistics for each channel ```listchannels forwardings```
-* rebalancing of channels ```rebalance```
+* rebalancing of channels ```rebalance```:
   * different strategies can be chosen
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * doing circular self-payments ```circle```
+* recommendation of nodes:
+  * find non-connected nodes with a history of successful forwardings ```recommend-node good-old```
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
 
