@@ -120,7 +120,10 @@ class Network(object):
         :param node_pub_key:
         :return: alias string
         """
-        return self.graph.node[node_pub_key]['alias']
+        try:
+            return self.graph.node[node_pub_key]['alias']
+        except KeyError:
+            return 'unknown alias'
 
 
 if __name__ == '__main__':
