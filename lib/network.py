@@ -59,11 +59,19 @@ class Network(object):
         raw_graph = self.node.get_raw_network_graph()
 
         for n in raw_graph.nodes:
+            if n.addresses:
+                # TODO: handle also ipv6 and onion addresses
+                address = n.addresses[0].addr
+                if 'onion' in address or '[' in address:
+                    address = ''
+            else:
+                address = ''
+
             self.graph.add_node(
                 n.pub_key,
                 alias=n.alias,
                 last_update=n.last_update,
-                # addresses=n.addresses,  # incompatible with pickling
+                address=address,
                 color=n.color)
 
         for e in raw_graph.edges:
@@ -114,13 +122,26 @@ class Network(object):
                     'disabled': e.node1_policy.disabled
                 })
 
-    def get_node_alias(self, node_pub_key):
+    def number_channels(self, node_pub_key):
+        return self.graph.degree[node_pub_key] / 2
+
+    def node_capacity(self, node_pub_key):
+        total_capacity = 0
+        edges = self.graph.edges(node_pub_key, data=True)
+        for e in edges:
+            total_capacity += e[2]['capacity']
+        return total_capacity
+
+    def node_alias(self, node_pub_key):
         """
         Wrapper to get the alias of a node given its public key.
         :param node_pub_key:
         :return: alias string
         """
         return self.graph.node[node_pub_key]['alias']
+
+    def node_address(self, node_pub_key):
+        return self.graph.node[node_pub_key]['address']
 
 
 if __name__ == '__main__':
