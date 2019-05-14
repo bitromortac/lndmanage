@@ -166,7 +166,7 @@ class Rebalancer(object):
         direction = -math.copysign(1, local_balance_change)
 
         # logic to shift the bounds accordingly into the different rebalancing directions
-        for c in self.channel_list:
+        for k, c in self.channel_list.items():
             if direction * c['unbalancedness'] > lower_bound:
                 if allow_unbalancing:
                     c['amt_affordable'] = int(
@@ -255,7 +255,7 @@ class Rebalancer(object):
         :return: channel information
         """
         channel_info = None
-        for c in self.channel_list:
+        for k, c in self.channel_list.items():
             if c['chan_id'] == chan_id:
                 channel_info = c
         if channel_info is None:
@@ -340,7 +340,7 @@ class Rebalancer(object):
         :return: bool, true if number of channels to the node is larger than 1
         """
         channels = 0
-        for c in self.channel_list:
+        for k, c in self.channel_list.items():
             if c['remote_pubkey'] == pub_key:
                 channels += 1
         if channels > 1:
@@ -379,7 +379,7 @@ class Rebalancer(object):
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
 
-        unbalanced_channel_info = self.extract_channel_info(channel_id)
+        unbalanced_channel_info = self.channel_list[channel_id]
 
         # if a target is given and it is set close to -1 or 1, then we need to think about the channel reserve
         initial_local_balance_change = self.maximal_local_balance_change(target, unbalanced_channel_info)

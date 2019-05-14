@@ -2,6 +2,7 @@ import os
 import codecs
 import time
 import datetime
+from collections import OrderedDict
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -55,7 +56,7 @@ class LndNode(Node):
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
-        self.public_active_channels = self.get_channels(public_only=True, active_only=True)
+        self.public_active_channels = self.get_open_channels(public_only=True, active_only=True)
 
     @staticmethod
     def connect():
@@ -225,9 +226,9 @@ class LndNode(Node):
         self.num_peers = raw_info.num_peers
 
         # TODO: remove the following code and implement an advanced status
-        all_channels = self.get_channels(active_only=False, public_only=False)
+        all_channels = self.get_open_channels(active_only=False, public_only=False)
 
-        for c in all_channels:
+        for k, c in all_channels.items():
             self.total_capacity += c['capacity']
             self.total_local_balance += c['local_balance']
             self.total_remote_balance += c['remote_balance']
@@ -238,7 +239,7 @@ class LndNode(Node):
             if c['private']:
                 self.total_private_channels += 1
 
-    def get_channels(self, active_only=False, public_only=False):
+    def get_open_channels(self, active_only=False, public_only=False):
         """
         Fetches information (fee settings of the counterparty, channel capacity, balancedness)
          about this node's open channels and saves it into the channels dict attribute.
@@ -249,7 +250,7 @@ class LndNode(Node):
         """
         raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
-        channels = []
+        channels = OrderedDict()
 
         for c in channels_data:
             # calculate age from blockheight
@@ -283,10 +284,10 @@ class LndNode(Node):
             # inverse of above formula:
             # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
 
-            channels.append({
+            channels[c.chan_id] = {
                 'active': c.active,
                 'age': age_days,
-                'alias': self.network.get_node_alias(c.remote_pubkey),
+                'alias': self.network.node_alias(c.remote_pubkey),
                 'amt_to_balanced': int(unbalancedness * c.capacity / 2 - commit_fee),
                 'capacity': c.capacity,
                 'chan_id': c.chan_id,
@@ -306,13 +307,13 @@ class LndNode(Node):
                 'total_satoshis_sent': c.total_satoshis_sent,
                 'total_satoshis_received': c.total_satoshis_received,
                 'unbalancedness': unbalancedness,
-            })
-
-        return sorted(channels, key=lambda x: x['remote_pubkey'])
+            }
+        sorted_dict = OrderedDict(sorted(channels.items(), key=lambda x: x[1]['alias']))
+        return sorted_dict
 
     def get_inactive_channels(self):
-        channels = self.get_channels(public_only=False, active_only=False)
-        return [c for c in channels if not c['active']]
+        channels = self.get_open_channels(public_only=False, active_only=False)
+        return {k: c for k, c in channels.items() if not c['active']}
 
     def get_unbalanced_channels(self, unbalancedness_greater_than=0.0):
         """
@@ -323,10 +324,10 @@ class LndNode(Node):
         :param unbalancedness_greater_than: unbalancedness interval, default returns all channels
         :return: all channels which are more unbalanced than the specified interval
         """
-        unbalanced_channels = []
-        for c in self.public_active_channels:
-            if abs(c['unbalancedness']) >= unbalancedness_greater_than:
-                unbalanced_channels.append(c)
+        unbalanced_channels = {
+            k: c for k, c in self.public_active_channels.items()
+            if abs(c['unbalancedness']) >= unbalancedness_greater_than
+        }
         return unbalanced_channels
 
     @staticmethod
@@ -368,6 +369,29 @@ class LndNode(Node):
         } for f in forwardings.forwarding_events]
 
         return events
+
+    def get_closed_channels(self):
+        """
+        Fetches all closed channels.
+
+        :return: dict, channel list
+        """
+        request = ln.ClosedChannelsRequest()
+        closed_channels = self._stub.ClosedChannels(request)
+        closed_channels_dict = {}
+        for c in closed_channels.channels:
+            closed_channels_dict[c.chan_id] = {
+                'channel_point': c.channel_point,
+                'chain_hash': c.chain_hash,
+                'closing_tx_hash': c.closing_tx_hash,
+                'remote_pubkey': c.remote_pubkey,
+                'capacity': c.capacity,
+                'close_height': c.close_height,
+                'settled_balance': c.settled_balance,
+                'time_locked_balance': c.time_locked_balance,
+                'close_type': c.close_type,
+            }
+        return closed_channels_dict
 
     @staticmethod
     def handle_payment_error(payment_error):
@@ -452,3 +476,4 @@ class LndNode(Node):
 
 if __name__ == '__main__':
     node = LndNode()
+    print(node.get_closed_channels().keys())
