@@ -7,7 +7,7 @@ from lib.node import LndNode
 from lib.listchannels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
 from lib.rebalance import Rebalancer
 from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive, RebalanceFailure
-from lib.recommend_node import RecommendNode
+from lib.recommend_nodes import RecommendNodes
 
 
 def range_limited_float_type(arg):
@@ -118,22 +118,22 @@ class Parser(object):
             '--reckless', help='Execute action in the network.', action='store_true')
 
         # cmd: recommend-node
-        self.parser_recommend_node = subparsers.add_parser(
-            'recommend-node', help='recommends a node [see also subcommands with -h]',
+        self.parser_recommend_nodes = subparsers.add_parser(
+            'recommend-nodes', help='recommends nodes [see also subcommands with -h]',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_recommend_node.add_argument(
+        self.parser_recommend_nodes.add_argument(
             '--show-connected', action='store_true', default=False, help='specifies if already connected nodes should'
                                                                          ' be removed from list')
-        self.parser_recommend_node.add_argument(
+        self.parser_recommend_nodes.add_argument(
             '--show-addresses', action='store_true', default=False, help='specifies if node addresses should be shown')
-        parser_recommend_node_subparsers = self.parser_recommend_node.add_subparsers(dest='subcmd')
+        parser_recommend_nodes_subparsers = self.parser_recommend_nodes.add_subparsers(dest='subcmd')
 
         # subcmd: recommend-node good-old
-        parser_recommend_node_good_old = parser_recommend_node_subparsers.add_parser(
+        parser_recommend_nodes_good_old = parser_recommend_nodes_subparsers.add_parser(
             'good-old', help='shows nodes already interacted with but no active channels')
-        parser_recommend_node_good_old.add_argument(
+        parser_recommend_nodes_good_old.add_argument(
             '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
-        parser_recommend_node_good_old.add_argument(
+        parser_recommend_nodes_good_old.add_argument(
             '--sort-by', default='tot', type=str, help="sort by column [abbreviation, e.g. 'tot']")
 
     def parse_arguments(self):
@@ -198,15 +198,15 @@ def main():
         except PaymentTimeOut:
             logger.error("Payment failed because the payment timed out. This is an unresolved issue.")
 
-    elif args.cmd == 'recommend-node':
+    elif args.cmd == 'recommend-nodes':
 
         if not args.subcmd:
-            parser.parser_recommend_node.print_help()
+            parser.parser_recommend_nodes.print_help()
             return 0
 
-        recommend_node = RecommendNode(node, show_connected=args.show_connected, show_addresses=args.show_addresses)
+        recommend_nodes = RecommendNodes(node, show_connected=args.show_connected, show_addresses=args.show_addresses)
         if args.subcmd == 'good-old':
-            recommend_node.print_good_old(number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            recommend_nodes.print_good_old(number_of_nodes=args.nnodes, sort_by=args.sort_by)
 
 
 if __name__ == '__main__':

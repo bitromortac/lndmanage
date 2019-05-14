@@ -11,7 +11,7 @@ logging.config.dictConfig(_settings.logger_config)
 logger = logging.getLogger(__name__)
 
 
-class RecommendNode(object):
+class RecommendNodes(object):
     """
     A class to recommend nodes to connect to.
     """
@@ -131,5 +131,5 @@ class RecommendNode(object):
 if __name__ == '__main__':
     from lib.node import LndNode
     nd = LndNode()
-    rn = RecommendNode(nd)
+    rn = RecommendNodes(nd)
     rn.print_good_old()
