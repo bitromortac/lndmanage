@@ -231,7 +231,11 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
             c['bandwidth_demand'] = max(nan_to_zero(channel_statistics['mean_forwarding_in']),
                                         nan_to_zero(channel_statistics['mean_forwarding_out'])) / c['capacity']
             c['fees_total'] = channel_statistics['fees_total']
-            c['fees_total_per_week'] = channel_statistics['fees_total'] / (forwarding_analyzer.max_time_interval / 7)
+            try:  # time interval may be zero, to avoid zero division, replace by NaN
+                c['fees_total_per_week'] = channel_statistics['fees_total'] \
+                                           / (forwarding_analyzer.max_time_interval / 7)
+            except ZeroDivisionError:
+                c['fees_total_per_week'] = float('nan')
             c['flow_direction'] = channel_statistics['flow_direction']
             c['median_forwarding_in'] = channel_statistics['median_forwarding_in']
             c['median_forwarding_out'] = channel_statistics['median_forwarding_out']
