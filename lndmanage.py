@@ -89,11 +89,13 @@ class Parser(object):
         self.parser_rebalance.add_argument(
             '--reckless', help='Execute action in the network.', action='store_true')
         self.parser_rebalance.add_argument(
-            '--allow-unbalancing', help=f'Allow channels to get an unbalancedness up to +-{_settings.UNBALANCED_CHANNEL}.',
+            '--allow-unbalancing', help=f'Allow channels to get an unbalancedness'
+            f' up to +-{_settings.UNBALANCED_CHANNEL}.',
             action='store_true')
         self.parser_rebalance.add_argument(
             '--target', help=f'This feature is still experimental!'
-            f' The unbalancedness target is between [-1, 1]. A target of -1 leads to a maximal local balance, a target of 0'
+            f' The unbalancedness target is between [-1, 1].'
+            f' A target of -1 leads to a maximal local balance, a target of 0'
             f' to a 50:50 balanced channel and a target of 1 to a maximal remote balance. Default is a target of 0.',
             type=unbalanced_float, default=None)
         rebalancing_strategies = ['most-affordable-first', 'lowest-feerate-first', 'match-unbalanced']
@@ -122,19 +124,34 @@ class Parser(object):
             'recommend-nodes', help='recommends nodes [see also subcommands with -h]',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         self.parser_recommend_nodes.add_argument(
-            '--show-connected', action='store_true', default=False, help='specifies if already connected nodes should'
-                                                                         ' be removed from list')
+            '--show-connected', action='store_true', default=False,
+            help='specifies if already connected nodes should be removed from list')
         self.parser_recommend_nodes.add_argument(
-            '--show-addresses', action='store_true', default=False, help='specifies if node addresses should be shown')
+            '--show-addresses', action='store_true', default=False,
+            help='specifies if node addresses should be shown')
         parser_recommend_nodes_subparsers = self.parser_recommend_nodes.add_subparsers(dest='subcmd')
 
         # subcmd: recommend-node good-old
         parser_recommend_nodes_good_old = parser_recommend_nodes_subparsers.add_parser(
-            'good-old', help='shows nodes already interacted with but no active channels')
+            'good-old', help='shows nodes already interacted with but no active channels',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_good_old.add_argument(
             '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
         parser_recommend_nodes_good_old.add_argument(
             '--sort-by', default='tot', type=str, help="sort by column [abbreviation, e.g. 'tot']")
+
+        # subcmd: recommend-node flow-analysis
+        parser_recommend_nodes_flow_analysis = parser_recommend_nodes_subparsers.add_parser(
+            'flow-analysis', help='recommends nodes from a flow analysis',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_flow_analysis.add_argument(
+            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+        parser_recommend_nodes_flow_analysis.add_argument(
+            '--forwarding-events', default=200, type=int,
+            help='sets the number of forwarding events in the flow analysis')
+        parser_recommend_nodes_flow_analysis.add_argument(
+            '--inwarding-nodes', action='store_true',
+            help='if True, inwarding nodes are displayed instead of outwarding')
 
     def parse_arguments(self):
         return self.parser.parse_args()
@@ -199,14 +216,17 @@ def main():
             logger.error("Payment failed because the payment timed out. This is an unresolved issue.")
 
     elif args.cmd == 'recommend-nodes':
-
         if not args.subcmd:
             parser.parser_recommend_nodes.print_help()
             return 0
 
         recommend_nodes = RecommendNodes(node, show_connected=args.show_connected, show_addresses=args.show_addresses)
+
         if args.subcmd == 'good-old':
             recommend_nodes.print_good_old(number_of_nodes=args.nnodes, sort_by=args.sort_by)
+        elif args.subcmd == 'flow-analysis':
+            recommend_nodes.print_flow_analysis(out_direction=(not args.inwarding_nodes),
+                                                number_of_nodes=args.nnodes, forwarding_events=args.forwarding_events)
 
 
 if __name__ == '__main__':
