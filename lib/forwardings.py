@@ -1,15 +1,19 @@
-import numpy as np
-from lib.node import LndNode
 from collections import OrderedDict
 
-import _settings
+import numpy as np
 
+from lib.node import LndNode
+
+import _settings
 import logging
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 np.warnings.filterwarnings('ignore')
+
+NEIGHBOR_WEIGHT = 0.1  # nearest neighbor weight for flow-analysis ~1/(avg. degree)
+NEXT_NEIGHBOR_WEIGHT = 0.02  # nearest neighbor weight for flow-analysis ~1/(avg. degree)^2
 
 
 def nan_to_zero(number):
@@ -154,6 +158,255 @@ class ForwardingAnalyzer(object):
         sorted_dict = OrderedDict(sorted(node_statistics.items(), key=lambda x: -x[1][sort_by]))
         return sorted_dict
 
+    def simple_flow_analysis(self, last_forwardings_to_analyze=100):
+        """
+        Takes each forwarding event and determines the set of incoming nodes (up to second nearest neighbors) and
+        outgoing nodes (up to second nearest neighbors) and does a frequency analyis of both sets, assigning a
+        probability that a certain node was involved in the forwarding process.
+
+        These probability sets are then used to take the difference between both, excluding effectively the large
+        hubs. The sets can be weighted by a quantity of the forwarding process, e.g. the forwarding fee.
+
+        Two lists are returned, the list of demand for sending and a list of nodes with demand of receiving.
+        :param last_forwardings_to_analyze: int, number of last forwardings, which should be analyzed
+
+        :return: sending list, receiving list
+        """
+        # TODO: refine with channel capacities
+        # TODO: refine with update time
+        # TODO: refine with route calculation
+        # TODO: fine tune NEIGHBOR_WEIGHT, NEXT_NEIGHBOR_WEIGHT
+
+        logger.info("Doing simple forwarding analysis.")
+
+        total_incoming_neighbors = {}
+        total_outgoing_neighbors = {}
+
+        logger.info(f"Total forwarding events found: {len(self.forwarding_events)}.")
+        logger.info(f"Carrying out flow analysis for last {last_forwardings_to_analyze} forwarding events.")
+        number_progress_report = last_forwardings_to_analyze // 10
+
+        for nf, f in enumerate(self.forwarding_events[-last_forwardings_to_analyze:]):
+            if nf % number_progress_report == 0:
+                logger.info(f"Analysis progress: {100 * float(nf) / last_forwardings_to_analyze}%")
+
+            chan_id_in = f['chan_id_in']
+            chan_id_out = f['chan_id_out']
+
+            edge_data_in = self.node.network.edges.get(chan_id_in, None)
+            edge_data_out = self.node.network.edges.get(chan_id_out, None)
+
+            if edge_data_in is not None and edge_data_out is not None:
+                # determine incoming node
+                incoming_node_pub_key = edge_data_in['node1_pub'] if edge_data_in['node1_pub'] != self.node.pub_key \
+                    else edge_data_in['node2_pub']
+
+                outgoing_node_pub_key = edge_data_out['node1_pub'] if edge_data_out['node1_pub'] != self.node.pub_key \
+                    else edge_data_out['node2_pub']
+
+                # nodes involved in the forwarding process should be removed
+                excluded_nodes = [self.node.pub_key, incoming_node_pub_key, outgoing_node_pub_key]
+
+                # determine all the nearest and second nearest neighbors (they may appear more than once)
+                incoming_neighbors = self.__determine_joined_neighbors(
+                    incoming_node_pub_key, excluded_nodes=excluded_nodes)
+                outgoing_neighbors = self.__determine_joined_neighbors(
+                    outgoing_node_pub_key, excluded_nodes=excluded_nodes)
+
+                # do a symmetric difference of node sets with weights
+                symmetric_difference_weights = self.__symmetric_difference(incoming_neighbors, outgoing_neighbors)
+
+                # print("size of symmetric difference", len(symmetric_difference_weights))
+
+                final_outgoing_nodes = self.__filter_nodes(symmetric_difference_weights, return_positive_weights=True)
+                final_incoming_nodes = self.__filter_nodes(symmetric_difference_weights, return_positive_weights=False)
+
+                # print("number of outgoing", len(final_outgoing_nodes))
+                # print("number of incoming", len(final_incoming_nodes))
+
+                # normalize the weights
+                normalized_incoming = self.__normalize_neighbors(final_incoming_nodes)
+                normalized_outgoing = self.__normalize_neighbors(final_outgoing_nodes)
+
+                # print("norm out", normalized_outgoing)
+                # print("norm in", normalized_incoming)
+
+                weight = f['fee_msat']
+                # weight = 1
+                # weight = f['amt_in']
+
+                for n, nv in normalized_incoming.items():
+                    try:
+                        total_incoming_neighbors[n] += nv * weight
+                    except KeyError:
+                        total_incoming_neighbors[n] = nv * weight
+
+                for n, nv in normalized_outgoing.items():
+                    try:
+                        total_outgoing_neighbors[n] += nv * weight
+                    except KeyError:
+                        total_outgoing_neighbors[n] = nv * weight
+
+        total_incoming_node_dict = self.__weighted_neighbors_to_sorted_list(total_incoming_neighbors)
+        total_outgoing_node_dict = self.__weighted_neighbors_to_sorted_list(total_outgoing_neighbors)
+
+        # for i in range(20):
+        #     print(total_outgoing_node_list[i], self.node.network.node_alias(total_outgoing_node_list[i][0]))
+
+        return total_incoming_node_dict, total_outgoing_node_dict
+
+    @staticmethod
+    def __weighted_neighbors_to_sorted_list(node_dict):
+        """
+        Converts a node weight dictionary to a sorted list of nodes with weights.
+        :param node_dict: dict with key-value pairs of node_pub_key and weight
+        :return: sorted list
+        """
+        sorted_nodes_dict = OrderedDict()
+        node_list = [(n, nv) for n, nv in node_dict.items()]
+        node_list_sorted = sorted(node_list, key=lambda x: x[1], reverse=True)
+        for n, nv in node_list_sorted:
+            sorted_nodes_dict[n] = {'weight': nv}
+        return sorted_nodes_dict
+
+    def __determine_joined_neighbors(self, node_pub_key, excluded_nodes):
+        """
+        Determines the joined set of nearest and second neighbors and assigns a weight to every node
+        dependent how often they appear.
+        :param node_pub_key: str, public key of the home node
+        :param excluded_nodes: list of str, public keys of excluded nodes in analysis
+        :return: dict, keys: node_pub_keys, values: weights
+        """
+        # print(f"determine joined nearest/second nearest neighbors of node {node_pub_key}")
+
+        neighbors = list(self.node.network.neighbors(node_pub_key))
+        # print(f"neighbors of {node_pub_key}: {len(neighbors)}")
+
+        second_neighbors = list(self.node.network.second_neighbors(node_pub_key))
+        # print(f"second neighbors (non-unique) of {node_pub_key}: {len(second_neighbors)}")
+
+        # determine node_weights
+        neighbor_weights = self.__analyze_neighbors(
+            neighbors, excluded_nodes=excluded_nodes, weight=NEIGHBOR_WEIGHT)
+
+        second_neighbor_weights = self.__analyze_neighbors(
+            second_neighbors, excluded_nodes=excluded_nodes, weight=NEXT_NEIGHBOR_WEIGHT)
+
+        # print("number of neighboring nodes", len(neighbor_weights.keys()))
+        # print("number of second neighbor nodes", len(second_neighbor_weights.keys()))
+
+        joined_neighbors = self.__join_neighbors(neighbor_weights, second_neighbor_weights)
+        # print("number of joined neighbors", len(joined_neighbors.keys()))
+        return joined_neighbors
+
+    @staticmethod
+    def __normalize_neighbors(neighbors_weight_dict):
+        """
+        Normalizes the weights of the neighbors to the total weight of all neighbors.
+        :param neighbors_weight_dict: dict, keys: node_pub_keys, values: weights
+        :return: dict, keys: node_pub_keys, values: normalized weights
+        """
+        total_weight = 0
+        normalized_dict = {}
+        # determine total weight
+        for n, nv in neighbors_weight_dict.items():
+            total_weight += nv
+        # normalize
+        for n, nv in neighbors_weight_dict.items():
+            normalized_dict[n] = float(nv) / total_weight
+
+        return normalized_dict
+
+    @staticmethod
+    def __analyze_neighbors(neighbors, excluded_nodes, weight):
+        """
+        Analyzes a node dict for the frequency of nodes and gives them a weight. An upper bound of the weights is set.
+        :param neighbors: list of node_pub_keys
+        :param excluded_nodes: excluded node_pub_keys for analysis
+        :param weight: float, weight for each individual appearance of a node
+        :return: dict, keys: node_pub_keys, values: node weights
+        """
+        node_weights = {}
+
+        for n in neighbors:
+            if n not in excluded_nodes:
+                if n in node_weights.keys():
+                    node_weights[n] = min(node_weights[n] + weight, 1.0)
+                else:
+                    node_weights[n] = weight
+
+        return node_weights
+
+    @staticmethod
+    def __join_neighbors(first_neighbor_dict, second_neighbor_dict):
+        """
+        Joins two node weight dicts together.
+        :param first_neighbor_dict: dict, keys: node_pub_keys, values: node weights
+        :param second_neighbor_dict: dict, keys: node_pub_keys, values: node weights
+        :return: dict, keys: node_pub_keys, values: node weights
+        """
+        # make a copy of the first node weight dict
+        joined_neighbor_dict = dict(first_neighbor_dict)
+
+        # add all the nodes from the second dict
+        for n, v in second_neighbor_dict.items():
+            if n in joined_neighbor_dict:
+                joined_neighbor_dict[n] = max(joined_neighbor_dict[n], second_neighbor_dict[n])
+            else:
+                joined_neighbor_dict[n] = second_neighbor_dict[n]
+
+        return joined_neighbor_dict
+
+    @staticmethod
+    def __symmetric_difference(first_neighbors_dict, second_neighbors_dict):
+        """
+        Calculates the difference of weights of first and second node dicts, doing also a symmetric difference
+        between the sets of nodes.
+        :param first_neighbors_dict: dict, keys: node_pub_keys, values: node weights
+        :param second_neighbors_dict: dict, keys: node_pub_keys, values: node weights
+        :return: dict, keys: node_pub_keys, values: node weights
+        """
+        first_nodes = set(first_neighbors_dict.keys())
+        second_nodes = set(second_neighbors_dict.keys())
+        # nodes_union = first_nodes.union(second_nodes)
+        # print("unique nodes", len(nodes_union))
+
+        nodes_intersection = first_nodes.intersection(second_nodes)
+        # print("common nodes", len(nodes_intersection))
+
+        unique_first_nodes = first_nodes - nodes_intersection
+        unique_second_nodes = second_nodes - nodes_intersection
+
+        diff_neighbor_dict = {}
+        for n in unique_first_nodes:
+            diff_neighbor_dict[n] = first_neighbors_dict[n]
+
+        for n in unique_second_nodes:
+            diff_neighbor_dict[n] = second_neighbors_dict[n]
+
+        for n in nodes_intersection:
+            delta = first_neighbors_dict[n] - second_neighbors_dict[n]
+            if delta != 0.0:
+                diff_neighbor_dict[n] = delta
+
+        return diff_neighbor_dict
+
+    @staticmethod
+    def __filter_nodes(node_weights, return_positive_weights=True):
+        """
+        Filters out nodes with positive or negative weights and takes the absolute.
+        :param node_weights: dict
+        :param return_positive_weights: bool, if True returns nodes with positive weights, if False negative weights
+        :return:
+        """
+        new_node_weights = {}
+        for n, nv in node_weights.items():
+            if nv > 0 and return_positive_weights:
+                new_node_weights[n] = nv
+            elif nv < 0 and not return_positive_weights:
+                new_node_weights[n] = -nv
+        return new_node_weights
+
 
 class ChannelStatistics(object):
     """
@@ -276,9 +529,12 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
 
 
 if __name__ == '__main__':
+    import time
+    import logging.config
+    logging.config.dictConfig(_settings.logger_config)
+    logger = logging.getLogger()
+
     nd = LndNode()
     fa = ForwardingAnalyzer(nd)
-    fa.initialize_forwarding_data(0, 0)
-    node_stats = fa.get_forwarding_statistics_nodes()
-    for key, value in node_stats.items():
-        print(key, value)
+    fa.initialize_forwarding_data(time_start=0, time_end=time.time())
+    print(fa.simple_flow_analysis())

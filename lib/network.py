@@ -146,6 +146,26 @@ class Network(object):
     def node_address(self, node_pub_key):
         return self.graph.node[node_pub_key]['address']
 
+    def neighbors(self, node_pub_key):
+        """
+        Finds all the node pub keys of nearest neighbor nodes
+        :param node_pub_key:  str
+        :return: node_pub_key: str
+        """
+        neighbors = nx.neighbors(self.graph, node_pub_key)
+        for n in neighbors:
+            yield n
+
+    def second_neighbors(self, node_pub_key):
+        """
+        Finds all the node pub keys of second nearest neighbor nodes (non-unique)
+        :param node_pub_key: str
+        :return: node_pub_key: str
+        """
+        for neighbor_list in [self.graph.neighbors(n) for n in self.graph.neighbors(node_pub_key)]:
+            for n in neighbor_list:
+                yield n
+
 
 if __name__ == '__main__':
     import logging.config

@@ -16,6 +16,7 @@ Current feature list (use the ```--help``` flag for subcommands):
 * doing circular self-payments ```circle```
 * recommendation of nodes:
   * based on historic forwardings of closed channels: find nodes already interacted with ```recommend-nodes good-old```
+  * based on flow-analysis: find nodes payments are likely forwarded to ```recommend-nodes flow-analysis```
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
 
