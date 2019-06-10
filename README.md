@@ -138,7 +138,10 @@ xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591
 
 Setup
 -----
-Requirements: python3.6, lnd 0.6
+Lndmanage will be developed in lockstep with lnd and tagged accordingly. If you are running an older version of lnd
+checkout the according tag.
+
+Requirements: python3.6, lnd v0.6.1
 ```
 $ virtualenv -p python3 ~/.venvs/lndmanage
 $ source ~/.venvs/lndmanage/bin/activate
