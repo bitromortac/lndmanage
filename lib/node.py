@@ -437,7 +437,6 @@ class LndNode(Node):
         request = ln.QueryRoutesRequest(
             pub_key=target_pubkey,
             amt=amt_sat,
-            num_routes=1,
             final_cltv_delta=0,
             fee_limit=ln.FeeLimit(fixed=max_fee),
             ignored_nodes=ignored_nodes_api,
