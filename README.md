@@ -139,9 +139,9 @@ xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591
 Setup
 -----
 Lndmanage will be developed in lockstep with lnd and tagged accordingly. If you are running an older version of lnd
-checkout the according tag.
+checkout the according [tag](https://github.com/bitromortac/lndmanage/releases).
 
-Requirements: python3.6, lnd v0.6.1
+Requirements: python3.6, lnd master pre v0.7
 ```
 $ virtualenv -p python3 ~/.venvs/lndmanage
 $ source ~/.venvs/lndmanage/bin/activate
