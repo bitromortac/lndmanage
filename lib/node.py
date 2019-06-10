@@ -178,21 +178,18 @@ class LndNode(Node):
         invoice = self._stub.AddInvoice(ln.Invoice(value=0, memo=memo))
         return invoice.r_hash
 
-    def send_to_route(self, routes, r_hash_bytes):
+    def send_to_route(self, route, r_hash_bytes):
         """
         Takes bare route (list) and tries to send along it,
         trying to fulfill the invoice labeled by the given hash.
 
-        :param routes: (list) of :class:`lib.routes.Route`
+        :param route: (list) of :class:`lib.routes.Route`
         :param r_hash_bytes: invoice identifier
         :return:
         """
-        if type(routes) == list:
-            lnd_routes = [self.lnd_route(route) for route in routes]
-        else:
-            lnd_routes = [self.lnd_route(routes)]
+        lnd_route = self.lnd_route(route)
         request = ln.SendToRouteRequest(
-            routes=lnd_routes,
+            route=lnd_route,
             payment_hash_string=r_hash_bytes.hex(),
         )
         try:
