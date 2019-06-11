@@ -404,7 +404,7 @@ class LndNode(Node):
             channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
             return channel_id
 
-    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat, ignored_nodes=(), ignored_channels=()):
+    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat, ignored_nodes=(), ignored_channels={}):
         """
         Queries the lnd node for a route. Channels and nodes can be ignored if they failed before.
 
@@ -412,7 +412,7 @@ class LndNode(Node):
         :param target_pubkey: str
         :param amt_msat: int
         :param ignored_nodes: list of node pub keys
-        :param ignored_channels: list of channel_ids
+        :param ignored_channels: dict
         :return: list of channel_ids
         """
         amt_sat = amt_msat // 1000
@@ -428,7 +428,10 @@ class LndNode(Node):
 
         # convert ignored channels to api format
         if ignored_channels:
-            ignored_channels_api = [ln.EdgeLocator(channel_id=c) for c in ignored_channels]
+            ignored_channels_api = []
+            for c, cv in ignored_channels.items():
+                direction_reverse = True if cv['source'] > cv['target'] else False
+                ignored_channels_api.append(ln.EdgeLocator(channel_id=c, direction_reverse=direction_reverse))
         else:
             ignored_channels_api = []
 
