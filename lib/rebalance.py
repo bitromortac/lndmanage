@@ -45,6 +45,7 @@ class Rebalancer(object):
         """
 
         amt_msat = amt_sat * 1000
+        previous_route_channel_hops = []
 
         count = 0
         while True:
@@ -60,6 +61,9 @@ class Rebalancer(object):
                 raise NoRouteError
             else:
                 r = routes[0]
+
+            if previous_route_channel_hops == r.channel_hops:
+                raise NoRouteError("Have tried this route already.")
 
             logger.info(f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat,"
                         f" fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
@@ -84,6 +88,7 @@ class Rebalancer(object):
                     # TODO: handle payment timeout properly
                     raise PaymentTimeOut
 
+                previous_route_channel_hops = r.channel_hops
                 logger.debug(f"Payment error: {result.payment_error}.")
 
                 if result.payment_error:
@@ -105,8 +110,8 @@ class Rebalancer(object):
                                 f" with smaller absolute target. Failing channel: {failed_channel_id}")
 
                         # determine the nodes involved in the channel
-                        failed_channel_source = r.node_hops[index_failed_channel - 1]
-                        failed_channel_target = r.node_hops[index_failed_channel]
+                        failed_channel_source = r.node_hops[index_failed_channel]
+                        failed_channel_target = r.node_hops[index_failed_channel + 1]
                         logger.info(f"   Failed channel: {failed_channel_id}")
                         logger.debug(f"   Failed channel between nodes {failed_channel_source}"
                                      f" and {failed_channel_target}")
@@ -418,7 +423,6 @@ class Rebalancer(object):
                                    "https://github.com/lightningnetwork/lightning-rfc/blob/master/"
                                    "04-onion-routing.md#non-strict-forwarding.\n"
                                    "Tip: keep only the best channel to the node and then rebalance.")
-
 
         rebalance_candidates = self.get_rebalance_candidates(
             channel_id, local_balance_change_left, allow_unbalancing=allow_unbalancing, strategy=strategy)

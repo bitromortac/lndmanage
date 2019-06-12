@@ -209,7 +209,7 @@ class Router(object):
         logger.debug(f"External route finding:")
         logger.debug(f"from {source_pubkey}")
         logger.debug(f"  to {target_pubkey}")
-        ignored_channels = list(map(int, self.channel_rater.bad_channels.keys()))
+        ignored_channels = self.channel_rater.bad_channels
         ignored_nodes = self.channel_rater.bad_nodes
 
         hops = self.node.queryroute_external(
@@ -221,7 +221,7 @@ class Router(object):
         return [hops]
 
     def get_routes_for_rebalancing(
-            self, chan_id_from, chan_id_to, amt_msat, method='internal'):
+            self, chan_id_from, chan_id_to, amt_msat, method='external'):
         """
         Calculates several routes for channel_id_from to chan_id_to and optimizes for fees for an amount amt.
 
@@ -256,10 +256,11 @@ class Router(object):
             last_hop_start = channel_to['node1_pub']
 
         # determine inner channel hops
-        # TODO: at the moment the internal method is preferred (slower) due to a caching bug in queryroutes of lnd
+        # internal method uses networkx dijkstra, this is more independent, but slower
         if method == 'internal':
             routes_channel_hops = self.get_route_channel_hops_from_to_node_internal(
                 first_hop_end, last_hop_start, amt_msat)
+        # rely on external path finding
         else:
             routes_channel_hops = self.get_route_channel_hops_from_to_node_external(
                 first_hop_end, last_hop_start, amt_msat)
