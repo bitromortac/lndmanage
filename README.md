@@ -5,18 +5,19 @@ lndmanage is a command line tool for advanced channel management of an [`LND`](h
 
 Current feature list (use the ```--help``` flag for subcommands):
 
-* advanced node summary ```status```
-* compact ```listchannels``` commands:
+* __advanced node summary ```status```__
+* __compact ```listchannels``` commands:__
   * list channels for rebalancing ```listchannels rebalance```
   * list inactive channels for channel hygiene ```listchannels inactive```
   * list forwarding statistics for each channel ```listchannels forwardings```
-* rebalancing of channels ```rebalance```:
+* __rebalancing of channels ```rebalance```:__
   * different strategies can be chosen
   * a target 'balancedness' can be specified (e.g. to empty the channel)
-* doing circular self-payments ```circle```
-* recommendation of nodes:
+* __doing circular self-payments ```circle```__
+* __recommendation of nodes: ```recommend-nodes```__
   * based on historic forwardings of closed channels: find nodes already interacted with ```recommend-nodes good-old```
-  * based on flow-analysis: find nodes payments are likely forwarded to ```recommend-nodes flow-analysis```
+  * based on a flow analysis: find nodes payments are likely forwarded to ```recommend-nodes flow-analysis```
+  * based on a node file: parses a url/file for node public keys and suggests nodes to connect to for a good connection ```recommend-nodes nodefile```
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
 

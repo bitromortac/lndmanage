@@ -123,9 +123,23 @@ class Network(object):
                 })
 
     def number_channels(self, node_pub_key):
-        return self.graph.degree[node_pub_key] / 2
+        """
+        Determines the degree of a given node.
+        :param node_pub_key: str
+        :return: int
+        """
+        try:
+            number_of_channels = self.graph.degree[node_pub_key] / 2
+        except KeyError:
+            number_of_channels = 0
+        return number_of_channels
 
     def node_capacity(self, node_pub_key):
+        """
+        Calculates the total capacity of a node in satoshi.
+        :param node_pub_key: str
+        :return: int
+        """
         total_capacity = 0
         edges = self.graph.edges(node_pub_key, data=True)
         for e in edges:
@@ -144,6 +158,11 @@ class Network(object):
             return 'unknown alias'
 
     def node_address(self, node_pub_key):
+        """
+        Returns the IP/onion addresses of a node.
+        :param node_pub_key:
+        :return: list
+        """
         return self.graph.node[node_pub_key]['address']
 
     def neighbors(self, node_pub_key):
@@ -165,6 +184,26 @@ class Network(object):
         for neighbor_list in [self.graph.neighbors(n) for n in self.graph.neighbors(node_pub_key)]:
             for n in neighbor_list:
                 yield n
+
+    def nodes_in_neighborhood_of_nodes(self, nodes, blacklist_nodes, limit=100):
+        """
+        Takes a list of nodes and finds the neighbors with most connections to the nodes.
+        :param nodes: list
+        :param blacklist_nodes: list of node_pub_keys to be excluded from counting
+        :return: list of tuples, (str pub_key, int number of neighbors)
+        """
+        nodes = set(nodes)
+        # eliminate blacklisted nodes
+        nodes = nodes.difference(blacklist_nodes)
+        neighboring_nodes = []
+        for general_node in self.graph.nodes:
+            neighbors_general_node = set(self.neighbors(general_node))
+            intersection_with_nodes = nodes.intersection(neighbors_general_node)
+            number_of_connection_with_nodes = len(intersection_with_nodes)
+            neighboring_nodes.append((general_node, number_of_connection_with_nodes))
+
+        sorted_neighboring_nodes = sorted(neighboring_nodes, key=lambda x: x[1], reverse=True)
+        return sorted_neighboring_nodes[:limit]
 
 
 if __name__ == '__main__':
