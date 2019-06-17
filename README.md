@@ -169,6 +169,12 @@ If if works, you should see the node status.
 Some lndmanage commands require the support of the router RPC. The server needs to be enabled in lnd
 directly at install time with ```make install tags="routerrpc"```.
 
+RouterRPC settings for lnd are:
+```
+routerrpc.apriorihopprob=0.95
+routerrpc.penaltyhalftime=60m
+```
+
 Docker
 ------
 
