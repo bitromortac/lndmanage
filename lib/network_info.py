@@ -147,6 +147,21 @@ class NetworkAnalysis(object):
 
         return nx.single_source_shortest_path_length(self.node.network.graph, node_pub_key, cutoff=n)
 
+    def secondary_hops_added(self, node_pub_key):
+        """
+        Determines the number of secondary hops added if connected to the node.
+        :param node_pub_key: str
+        :return: int
+        """
+        potential_new_second_neighbors = set(nx.all_neighbors(self.node.network.graph, node_pub_key))
+        # print('pot new', potential_new_second_neighbors)
+        current_close_neighbors = set(self.get_nodes_n_hops_away(self.node.pub_key, 2).keys())
+        # print('curr close', current_close_neighbors)
+        new_second_neighbors = potential_new_second_neighbors.difference(current_close_neighbors)
+        # print('new sec', new_second_neighbors)
+        # print(len(new_second_neighbors))
+        return len(new_second_neighbors)
+
     def find_nodes_giving_most_secondary_hops(self, node_pub_key, results=10):
         """
         Which node should be added in order to reach the most other nodes with two hops?

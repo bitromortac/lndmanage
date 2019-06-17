@@ -25,6 +25,7 @@ MIN_REL_CHANNEL_CAPACITY = 0.75
 # -------- network analysis --------
 # a user typically has a low number of channels, this number
 NUMBER_CHANNELS_DEFINING_USER_NODE = 3
+NUMBER_CHANNELS_DEFINING_HUB = 200
 
 # -------- rebalancing --------
 # in terms of unbalancedness

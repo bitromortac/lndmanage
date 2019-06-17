@@ -153,6 +153,22 @@ class Parser(object):
             '--inwarding-nodes', action='store_true',
             help='if True, inwarding nodes are displayed instead of outwarding')
 
+        # subcmd: recommend-node nodefile
+        parser_recommend_nodes_nodefile = parser_recommend_nodes_subparsers.add_parser(
+            'nodefile', help='recommends nodes from a given file/url',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_nodefile.add_argument(
+            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+        parser_recommend_nodes_nodefile.add_argument(
+            '--source', type=str,
+            default='https://github.com/lightningnetworkstores/lightningnetworkstores.github.io/raw/master/sites.json',
+            help='url/file to be analyzed')
+        parser_recommend_nodes_nodefile.add_argument(
+            '--distributing-nodes', action='store_true',
+            help='if True, distributing nodes are displayed instead of the bare nodes')
+        parser_recommend_nodes_nodefile.add_argument(
+            '--sort-by', default='cpc', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
+
     def parse_arguments(self):
         return self.parser.parse_args()
 
@@ -227,6 +243,9 @@ def main():
         elif args.subcmd == 'flow-analysis':
             recommend_nodes.print_flow_analysis(out_direction=(not args.inwarding_nodes),
                                                 number_of_nodes=args.nnodes, forwarding_events=args.forwarding_events)
+        elif args.subcmd == 'nodefile':
+            recommend_nodes.print_nodefile(args.source, distributing_nodes=args.distributing_nodes,
+                                           number_of_nodes=args.nnodes, sort_by=args.sort_by)
 
 
 if __name__ == '__main__':
