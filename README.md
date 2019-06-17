@@ -6,19 +6,19 @@ lndmanage is a command line tool for advanced channel management of an [`LND`](h
 Current feature list (use the ```--help``` flag for subcommands):
 
 * __```status``` advanced node summary__
-* __informative ```listchannels``` commands:__
-  * ```listchannels rebalance```: list channels for rebalancing
-  * ```listchannels inactive```: list inactive channels for channel hygiene 
-  * ```listchannels forwardings```: list forwarding statistics for each channel 
+* __```listchannels``` channel listing commands:__
+  * ```listchannels rebalance``` list channels for rebalancing
+  * ```listchannels inactive``` list inactive channels for channel hygiene 
+  * ```listchannels forwardings``` list forwarding statistics for each channel 
 * __```rebalance``` rebalancing of channels:__
   * different strategies can be chosen
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * __```circle``` doing circular self-payments__
-* __```recommend-nodes```: recommendation of nodes:__
-  * ```recommend-nodes good-old```: based on historic forwardings of closed channels: find nodes already interacted with
-  * ```recommend-nodes flow-analysis```: based on a flow analysis: find nodes payments are likely forwarded to
-  * ```recommend-nodes nodefile```: based on a node file: parses a url/file for node public keys and suggests nodes to connect to for a good connection
-    (defaults to [lightning networkstores](http://lightningnetworkstores.com))
+* __```recommend-nodes``` recommendation of nodes:__
+  * ```recommend-nodes good-old``` based on historic forwardings of closed channels: find nodes already interacted with
+  * ```recommend-nodes flow-analysis``` based on fowarding flow analysis: find nodes payments are likely forwarded to
+  * ```recommend-nodes nodefile``` based on a node file: parses a url/file for node public keys and suggests nodes to connect to for a good connection
+    (defaults to the list of [lightning networkstores](http://lightningnetworkstores.com))
 
 **DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
 
