@@ -164,6 +164,11 @@ $ ./lndmanage.py status
 ```
 If if works, you should see the node status.
 
+#### Routerrpc support ####
+
+Some lndmanage commands require the support of the router RPC. The server needs to be enabled in lnd
+directly at install time with ```make install tags="routerrpc"```.
+
 Docker
 ------
 

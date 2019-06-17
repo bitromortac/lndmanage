@@ -10,7 +10,7 @@ class TestLndAPI(unittest.TestCase):
         self.node = LndNode()
 
     def test_chan_info_request(self):
-        channel = self.node._stub.GetChanInfo(ln.ChanInfoRequest(chan_id=000000000000000000))
+        channel = self.node.rpc.GetChanInfo(ln.ChanInfoRequest(chan_id=000000000000000000))
         print(channel.node1_policy.fee_base_msat)
 
     def test_queryroutes(self):
@@ -25,5 +25,5 @@ class TestLndAPI(unittest.TestCase):
             source_pub_key='300000000000000000000000000000000000000000000000000000000000000000',
         )
 
-        response = self.node._stub.QueryRoutes(request)
+        response = self.node.rpc.QueryRoutes(request)
         print(response)

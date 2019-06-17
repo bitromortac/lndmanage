@@ -9,6 +9,10 @@ from grpc._channel import _Rendezvous
 
 import grpc_compiled.rpc_pb2 as ln
 import grpc_compiled.rpc_pb2_grpc as lnrpc
+
+import grpc_compiled.router_pb2 as lnrouter
+import grpc_compiled.router_pb2_grpc as lnrouterrpc
+
 from google.protobuf.json_format import MessageToDict
 
 import _settings
@@ -52,17 +56,19 @@ class LndNode(Node):
     """
     def __init__(self):
         super().__init__()
-        self._stub = self.connect()
+        self.rpc = None
+        self.routerrpc = None
+        self.connect_rpcs()
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
         self.public_active_channels = self.get_open_channels(public_only=True, active_only=True)
 
-    @staticmethod
-    def connect():
+    def connect_rpcs(self):
         """
-        Establishes a connection to lnd using the hostname, tls certificate,
+        Establishes the rpc connections to lnd using the hostname, tls certificate,
         and admin macaroon defined in settings.
+        Optionally connects to more advanced grpcs (like the routerrpc).
         """
         macaroons = True
         os.environ['GRPC_SSL_CIPHER_SUITES'] = '' + \
@@ -97,14 +103,23 @@ class LndNode(Node):
             ('grpc.max_receive_message_length', 50 * 1024 * 1024)  # necessary to circumvent standard size limitation
         ])
 
-        return lnrpc.LightningStub(channel)
+        self.rpc = lnrpc.LightningStub(channel)
+        self.routerrpc = lnrouterrpc.RouterStub(channel)
+
+    def query_missioncontrol(self):
+        """Queries the mission control system of lnd."""
+        try:
+            result = node.routerrpc.QueryMissionControl(lnrouter.QueryMissionControlRequest())
+            return result
+        except _Rendezvous:
+            logger.error('Routerrpc not available [make install tags="routerrpc"] is required.')
 
     def update_blockheight(self):
-        info = self._stub.GetInfo(ln.GetInfoRequest())
+        info = self.rpc.GetInfo(ln.GetInfoRequest())
         self.blockheight = int(info.block_height)
 
     def get_channel_info(self, channel_id):
-        channel = self._stub.GetChanInfo(ln.ChanInfoRequest(chan_id=channel_id))
+        channel = self.rpc.GetChanInfo(ln.ChanInfoRequest(chan_id=channel_id))
         channel_dict = MessageToDict(channel, including_default_value_fields=True)
         channel_dict = convert_dictionary_number_strings_to_ints(channel_dict)
         return channel_dict
@@ -138,7 +153,7 @@ class LndNode(Node):
         :param amt_msat:
         :return: payment result
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=amt_msat // 1000))
+        invoice = self.rpc.AddInvoice(ln.Invoice(value=amt_msat // 1000))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -153,7 +168,7 @@ class LndNode(Node):
         :param memo: str, Comment field for an invoice.
         :return: payment result
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=0, memo=memo))
+        invoice = self.rpc.AddInvoice(ln.Invoice(value=0, memo=memo))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -165,7 +180,7 @@ class LndNode(Node):
         :param amt_msat:
         :return: Hash of invoice preimage.
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=amt_msat // 1000))
+        invoice = self.rpc.AddInvoice(ln.Invoice(value=amt_msat // 1000))
         return invoice.r_hash
 
     def get_rebalance_invoice(self, memo):
@@ -175,7 +190,7 @@ class LndNode(Node):
         :param memo: Comment for the invoice.
         :return: Hash of the invoice preimage.
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=0, memo=memo))
+        invoice = self.rpc.AddInvoice(ln.Invoice(value=0, memo=memo))
         return invoice.r_hash
 
     def send_to_route(self, route, r_hash_bytes):
@@ -193,12 +208,12 @@ class LndNode(Node):
             payment_hash_string=r_hash_bytes.hex(),
         )
         try:
-            return self._stub.SendToRouteSync(request, timeout=5*60)  # timeout after 5 minutes
+            return self.rpc.SendToRouteSync(request, timeout=5 * 60)  # timeout after 5 minutes
         except _Rendezvous:
             raise PaymentTimeOut
 
     def get_raw_network_graph(self):
-        graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+        graph = self.rpc.DescribeGraph(ln.ChannelGraphRequest())
         return graph
 
     def get_raw_info(self):
@@ -207,7 +222,7 @@ class LndNode(Node):
 
         :return: node information
         """
-        return self._stub.GetInfo(ln.GetInfoRequest())
+        return self.rpc.GetInfo(ln.GetInfoRequest())
 
     def set_info(self):
         """
@@ -245,7 +260,7 @@ class LndNode(Node):
         :param public_only: bool, only take public channels into account (off by default)
         :return: list of channels sorted by remote pubkey
         """
-        raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
+        raw_channels = self.rpc.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
         channels = OrderedDict()
 
@@ -350,7 +365,7 @@ class LndNode(Node):
         now = self.timestamp_from_now()
         then = self.timestamp_from_now(offset_days)
 
-        forwardings = self._stub.ForwardingHistory(ln.ForwardingHistoryRequest(
+        forwardings = self.rpc.ForwardingHistory(ln.ForwardingHistoryRequest(
             start_time=then,
             end_time=now,
             num_max_events=NUM_MAX_FORWARDING_EVENTS))
@@ -374,7 +389,7 @@ class LndNode(Node):
         :return: dict, channel list
         """
         request = ln.ClosedChannelsRequest()
-        closed_channels = self._stub.ClosedChannels(request)
+        closed_channels = self.rpc.ClosedChannels(request)
         closed_channels_dict = {}
         for c in closed_channels.channels:
             closed_channels_dict[c.chan_id] = {
@@ -447,7 +462,7 @@ class LndNode(Node):
             source_pub_key=source_pubkey,
         )
         try:
-            response = self._stub.QueryRoutes(request)
+            response = self.rpc.QueryRoutes(request)
         except _Rendezvous:
             raise NoRouteError
         # print(response)
@@ -474,5 +489,9 @@ class LndNode(Node):
 
 
 if __name__ == '__main__':
+    import logging.config
+    logging.config.dictConfig(_settings.logger_config)
+
     node = LndNode()
-    print(node.get_closed_channels().keys())
+    # print(node.get_closed_channels().keys())
+    result = node.query_missioncontrol()
