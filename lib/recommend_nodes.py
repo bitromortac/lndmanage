@@ -7,6 +7,7 @@ from urllib.error import HTTPError
 import _settings
 
 from lib.forwardings import ForwardingAnalyzer
+from lib.network_info import NetworkAnalysis
 
 import logging.config
 logging.config.dictConfig(_settings.logger_config)
@@ -33,6 +34,13 @@ print_node_format = {
         'description': 'capacity per channel [sat]',
         'width': 10,
         'format': '10.0f',
+        'align': '>',
+    },
+    'dist': {
+        'dict_key': 'distance',
+        'description': 'distance [hops]',
+        'width': 5,
+        'format': '5.0f',
         'align': '>',
     },
     'flow': {
@@ -79,6 +87,8 @@ class RecommendNodes(object):
     """
     def __init__(self, node, show_connected=False, show_addresses=False):
         self.node = node
+        self.network_analysis = NetworkAnalysis(self.node)
+
         self.show_connected = show_connected
         self.show_address = show_addresses
 
@@ -212,6 +222,7 @@ class RecommendNodes(object):
                     node_new['total_capacity'] = total_capacity
                     node_new['capacity_per_channel'] = float(total_capacity) / number_channels
                     node_new['address'] = self.node.network.node_address(k)
+                    node_new['distance'] = self.network_analysis.distance(self.node.pub_key, k)
                     if exclude_hubs:
                         if node_new['number_channels'] < _settings.NUMBER_CHANNELS_DEFINING_HUB:
                             nodes_new[k] = node_new
@@ -249,7 +260,7 @@ class RecommendNodes(object):
         else:
             sorted_nodes = OrderedDict(sorted(nodes.items(), key=lambda x: -x[1]['weight']))
             logger.debug(f"Found {len(sorted_nodes)} nodes in flow analysis.")
-            self.print_nodes(nodes, number_of_nodes, 'rpk,nchan,cap,cpc,alias')
+            self.print_nodes(nodes, number_of_nodes, 'rpk,nchan,cap,cpc,dist,alias')
 
     def print_good_old(self, number_of_nodes=20, sort_by='tot'):
         nodes = self.good_old()
@@ -260,7 +271,7 @@ class RecommendNodes(object):
                                               key=lambda x: -x[1][print_node_format[sort_by]['dict_key']]))
             logger.debug(f"Found {len(sorted_nodes)} nodes as good old nodes.")
             logger.debug(f"Sorting nodes by {sort_by}.")
-            self.print_nodes(sorted_nodes, number_of_nodes, 'rpk,tot,flow,nchan,cap,cpc,alias')
+            self.print_nodes(sorted_nodes, number_of_nodes, 'rpk,tot,flow,nchan,cap,cpc,dist,alias')
 
     def print_nodefile(self, source, distributing_nodes, number_of_nodes=20, sort_by='cap'):
         nodes = self.nodefile(source, distributing_nodes)
@@ -272,7 +283,7 @@ class RecommendNodes(object):
                                               key=lambda x: -x[1][print_node_format[sort_by]['dict_key']]))
             logger.debug(f"Found {len(sorted_nodes)} nodes as good old nodes.")
             logger.debug(f"Sorting nodes by {sort_by}.")
-            self.print_nodes(sorted_nodes, number_of_nodes, 'rpk,con,nchan,cap,cpc,alias')
+            self.print_nodes(sorted_nodes, number_of_nodes, 'rpk,con,nchan,cap,cpc,dist,alias')
 
     def print_nodes(self, nodes, number_of_nodes, columns):
         """

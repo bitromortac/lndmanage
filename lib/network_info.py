@@ -197,6 +197,15 @@ class NetworkAnalysis(object):
         for node, number_neighbors in nodes:
             logger.info(f"Node: {node} - new neighbors: {number_neighbors}")
 
+    def distance(self, first_node, second_node):
+        """
+        Calculates the distance in hops from first node to second node.
+        :param first_node: str
+        :param second_node: str
+        :return: int
+        """
+        return nx.shortest_path_length(self.node.network.graph, source=first_node, target=second_node)
+
 
 if __name__ == '__main__':
     from lib.node import LndNode
