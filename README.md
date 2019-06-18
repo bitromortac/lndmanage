@@ -162,7 +162,7 @@ Test:
 ```
 $ ./lndmanage.py status 
 ```
-If if works, you should see the node status.
+If it works, you should see the node status.
 
 Docker
 ------
