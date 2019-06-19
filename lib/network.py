@@ -5,6 +5,8 @@ import pickle
 
 import networkx as nx
 
+from lib.ln_utilities import convert_channel_id_to_short_channel_id
+
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -12,7 +14,9 @@ logger.addHandler(logging.NullHandler())
 
 class Network(object):
     """
-    Contains the network graph. The graph is received from the LND API or from a cached file,
+    Contains the network graph.
+
+    The graph is received from the LND API or from a cached file,
     which contains the graph younger than `settings.CACHING_RETENTION_MINUTES`.
 
     :param node: :class:`lib.node.LndNode` object
@@ -30,9 +34,9 @@ class Network(object):
         Checks if networkx and edges dictionary pickles are present. If they are older than
         CACHING_RETENTION_MINUTES, make fresh pickles, else read them from the files.
         """
-        dir = os.path.dirname(__file__)
-        cache_edges_filename = os.path.join(dir, '..', 'cache', 'graph.gpickle')
-        cache_graph_filename = os.path.join(dir, '..', 'cache', 'edges.gpickle')
+        directory = os.path.dirname(__file__)
+        cache_edges_filename = os.path.join(directory, '..', 'cache', 'graph.gpickle')
+        cache_graph_filename = os.path.join(directory, '..', 'cache', 'edges.gpickle')
 
         try:
             timestamp_graph = os.path.getmtime(cache_graph_filename)
@@ -54,6 +58,7 @@ class Network(object):
     def set_graph_and_edges(self):
         """
         Reads in the networkx graph and edges dictionary.
+
         :return: nx graph and edges dict
         """
         raw_graph = self.node.get_raw_network_graph()
@@ -125,6 +130,7 @@ class Network(object):
     def number_channels(self, node_pub_key):
         """
         Determines the degree of a given node.
+
         :param node_pub_key: str
         :return: int
         """
@@ -137,6 +143,7 @@ class Network(object):
     def node_capacity(self, node_pub_key):
         """
         Calculates the total capacity of a node in satoshi.
+
         :param node_pub_key: str
         :return: int
         """
@@ -149,6 +156,7 @@ class Network(object):
     def node_alias(self, node_pub_key):
         """
         Wrapper to get the alias of a node given its public key.
+
         :param node_pub_key:
         :return: alias string
         """
@@ -160,14 +168,42 @@ class Network(object):
     def node_address(self, node_pub_key):
         """
         Returns the IP/onion addresses of a node.
+
         :param node_pub_key:
         :return: list
         """
         return self.graph.node[node_pub_key]['address']
 
+    def node_age(self, node_pub_key):
+        """
+        Determine the approximate node's age by its oldest channel.
+
+        :param node_pub_key: str
+        :return: float, days
+        """
+
+        # find all channels of nodes
+        node_edges = self.graph.edges(node_pub_key, data=True)
+
+        # collect all channel's ages in terms of blockheights
+        channel_ages = []
+        for e in node_edges:
+            channel_id = e[2]['channel_id']
+            height, index, output = convert_channel_id_to_short_channel_id(channel_id)
+            channel_age = self.node.blockheight - height
+            channel_ages.append(channel_age)
+
+        # determine oldest channel's age
+        node_age = max(channel_ages)
+
+        # convert to days from actual blockheight
+        node_age_days = float(node_age) * 10 / (60 * 24)
+        return node_age_days
+
     def neighbors(self, node_pub_key):
         """
-        Finds all the node pub keys of nearest neighbor nodes
+        Finds all the node pub keys of nearest neighbor nodes.
+
         :param node_pub_key:  str
         :return: node_pub_key: str
         """
@@ -177,7 +213,8 @@ class Network(object):
 
     def second_neighbors(self, node_pub_key):
         """
-        Finds all the node pub keys of second nearest neighbor nodes (non-unique)
+        Finds all the node pub keys of second nearest neighbor nodes (multiple appearances allowed).
+
         :param node_pub_key: str
         :return: node_pub_key: str
         """
@@ -185,11 +222,13 @@ class Network(object):
             for n in neighbor_list:
                 yield n
 
-    def nodes_in_neighborhood_of_nodes(self, nodes, blacklist_nodes, limit=100):
+    def nodes_in_neighborhood_of_nodes(self, nodes, blacklist_nodes, nnodes=100):
         """
         Takes a list of nodes and finds the neighbors with most connections to the nodes.
+
         :param nodes: list
         :param blacklist_nodes: list of node_pub_keys to be excluded from counting
+        :param nnodes: int, limit for the number of nodes returned
         :return: list of tuples, (str pub_key, int number of neighbors)
         """
         nodes = set(nodes)
@@ -203,7 +242,7 @@ class Network(object):
             neighboring_nodes.append((general_node, number_of_connection_with_nodes))
 
         sorted_neighboring_nodes = sorted(neighboring_nodes, key=lambda x: x[1], reverse=True)
-        return sorted_neighboring_nodes[:limit]
+        return sorted_neighboring_nodes[:nnodes]
 
 
 if __name__ == '__main__':
