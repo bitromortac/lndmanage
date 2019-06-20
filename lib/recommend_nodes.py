@@ -46,7 +46,7 @@ print_node_format = {
     },
     'cpc': {
         'dict_key': 'capacity_per_channel',
-        'description': 'capacity per channel [sat]',
+        'description': 'capacity per channel [btc]',
         'width': 10,
         'format': '1.8f',
         'align': '>',
@@ -109,7 +109,7 @@ print_node_format = {
     },
     'opencap': {
         'dict_key': 'openings_total_capacity',
-        'description': 'total capacity of channel openings in timeframe [ksat/time]',
+        'description': 'total capacity of channel openings in timeframe [btc/time]',
         'width': 7,
         'format': '7.3f',
         'align': '>',
@@ -123,7 +123,7 @@ print_node_format = {
     },
     'openavgcap': {
         'dict_key': 'openings_average_capacity',
-        'description': 'average channel capacity of channel openings in timeframe [ksat/time]',
+        'description': 'average channel capacity of channel openings in timeframe [btc/time]',
         'width': 11,
         'format': '11.8f',
         'align': '>',
