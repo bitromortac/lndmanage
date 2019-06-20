@@ -296,7 +296,12 @@ class NetworkAnalysis(object):
         :param second_node: str
         :return: int
         """
-        return nx.shortest_path_length(self.node.network.graph, source=first_node, target=second_node)
+        try:
+            distance = nx.shortest_path_length(self.node.network.graph, source=first_node, target=second_node)
+        except nx.exception.NetworkXNoPath:
+            distance = float('inf')  # some high number
+
+        return distance
 
 
 if __name__ == '__main__':
