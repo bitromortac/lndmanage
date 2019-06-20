@@ -59,7 +59,7 @@ class Parser(object):
                  'The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
 
         # subcmd: listchannels inactive
-        parser_listchannels_inactive = listchannels_subparsers.add_parser(
+        listchannels_subparsers.add_parser(
             'inactive', help="displays inactive channels")
 
         # subcmd: listchannels forwardings
@@ -119,7 +119,7 @@ class Parser(object):
         self.parser_circle.add_argument(
             '--reckless', help='Execute action in the network.', action='store_true')
 
-        # cmd: recommend-node
+        # cmd: recommend-nodes
         self.parser_recommend_nodes = subparsers.add_parser(
             'recommend-nodes', help='recommends nodes [see also subcommands with -h]',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -131,7 +131,8 @@ class Parser(object):
             help='specifies if node addresses should be shown')
         parser_recommend_nodes_subparsers = self.parser_recommend_nodes.add_subparsers(dest='subcmd')
 
-        # subcmd: recommend-node good-old
+        # TODO: put global options to the parent parser (e.g. number of nodes, sort-by flag)
+        # subcmd: recommend-nodes good-old
         parser_recommend_nodes_good_old = parser_recommend_nodes_subparsers.add_parser(
             'good-old', help='shows nodes already interacted with but no active channels',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -140,7 +141,7 @@ class Parser(object):
         parser_recommend_nodes_good_old.add_argument(
             '--sort-by', default='tot', type=str, help="sort by column [abbreviation, e.g. 'tot']")
 
-        # subcmd: recommend-node flow-analysis
+        # subcmd: recommend-nodes flow-analysis
         parser_recommend_nodes_flow_analysis = parser_recommend_nodes_subparsers.add_parser(
             'flow-analysis', help='recommends nodes from a flow analysis',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -152,8 +153,10 @@ class Parser(object):
         parser_recommend_nodes_flow_analysis.add_argument(
             '--inwarding-nodes', action='store_true',
             help='if True, inwarding nodes are displayed instead of outwarding')
+        parser_recommend_nodes_flow_analysis.add_argument(
+            '--sort-by', default='weight', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
 
-        # subcmd: recommend-node nodefile
+        # subcmd: recommend-nodes nodefile
         parser_recommend_nodes_nodefile = parser_recommend_nodes_subparsers.add_parser(
             'nodefile', help='recommends nodes from a given file/url',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -168,6 +171,19 @@ class Parser(object):
             help='if True, distributing nodes are displayed instead of the bare nodes')
         parser_recommend_nodes_nodefile.add_argument(
             '--sort-by', default='cpc', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
+
+        # subcmd: recommend-nodes channel-openings
+        parser_recommend_nodes_channel_openings = parser_recommend_nodes_subparsers.add_parser(
+            'channel-openings', help='recommends nodes from recent channel openings',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_channel_openings.add_argument(
+            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+        parser_recommend_nodes_channel_openings.add_argument(
+            '--from-days-ago', type=int,
+            default=30,
+            help='channel openings starting from a time frame days ago')
+        parser_recommend_nodes_channel_openings.add_argument(
+            '--sort-by', default='msteady', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
 
     def parse_arguments(self):
         return self.parser.parse_args()
@@ -242,9 +258,13 @@ def main():
             recommend_nodes.print_good_old(number_of_nodes=args.nnodes, sort_by=args.sort_by)
         elif args.subcmd == 'flow-analysis':
             recommend_nodes.print_flow_analysis(out_direction=(not args.inwarding_nodes),
-                                                number_of_nodes=args.nnodes, forwarding_events=args.forwarding_events)
+                                                number_of_nodes=args.nnodes, forwarding_events=args.forwarding_events,
+                                                sort_by=args.sort_by)
         elif args.subcmd == 'nodefile':
             recommend_nodes.print_nodefile(args.source, distributing_nodes=args.distributing_nodes,
+                                           number_of_nodes=args.nnodes, sort_by=args.sort_by)
+        elif args.subcmd == 'channel-openings':
+            recommend_nodes.print_channel_openings(from_days_ago=args.from_days_ago,
                                            number_of_nodes=args.nnodes, sort_by=args.sort_by)
 
 

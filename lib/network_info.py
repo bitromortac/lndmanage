@@ -1,6 +1,11 @@
+from collections import defaultdict
+
+import numpy as np
 import networkx as nx
 
 import _settings
+
+from lib.ln_utilities import convert_channel_id_to_short_channel_id
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,10 +16,13 @@ class NetworkAnalysis(object):
     """
     Class for network analysis.
 
-    :param node: :class:`lib.node.LndNode`
     """
 
     def __init__(self, node):
+        """
+        :param node: :class:`lib.node.LndNode`
+        """
+
         self.node = node
         self.nodes_info = self.nodes_information()
 
@@ -39,7 +47,7 @@ class NetworkAnalysis(object):
         Finds node_count nodes in the graph with the largest amount of bitcoin assigned in their channels.
 
         :param node_count: int
-        :return: list of nodes sorted by cacpacity
+        :return: list of nodes sorted by capacity
         """
 
         nodes_and_capacity = []
@@ -150,6 +158,7 @@ class NetworkAnalysis(object):
     def secondary_hops_added(self, node_pub_key):
         """
         Determines the number of secondary hops added if connected to the node.
+
         :param node_pub_key: str
         :return: int
         """
@@ -196,6 +205,89 @@ class NetworkAnalysis(object):
         logger.info("Finding all nodes, which when connected would give n new nodes reachable with two hops.")
         for node, number_neighbors in nodes:
             logger.info(f"Node: {node} - new neighbors: {number_neighbors}")
+
+    def determine_channel_openings(self, from_days_ago):
+        """
+        Determines all channel openings in the last `from_days_ago` days and creates a dictionary of nodes involved.
+
+        The dictionary values contain tuples of channel creation height and capacity of the channels that were opened.
+
+        :param from_days_ago: int
+        :return: dict, keys: node public keys, values: (block height, capacity)
+        """
+
+        logger.info(f"Determining channel openings in the last {from_days_ago} days (excluding already closed ones).")
+        # retrieve all channels in the network
+        all_channels_list = self.node.network.edges.keys()
+
+        # make sure the channels are sorted by age, oldest first
+        all_channels_list = sorted(all_channels_list)
+
+        # determine blockheight from where to start the analysis
+        blockheight_start = self.node.blockheight - from_days_ago * 24 * 6  # we have about six blocks per hour
+
+        # take only youngest channels
+        channels_filtered_and_creation_time = []
+        for cid in all_channels_list:
+            height = convert_channel_id_to_short_channel_id(cid)[0]
+            if height > blockheight_start:
+                channels_filtered_and_creation_time.append((cid, height))
+        logger.info(f"In the last {from_days_ago} days, there were at least {len(channels_filtered_and_creation_time)} "
+                    f"channel openings.")
+
+        # analyze the openings and assign tuples of (creation height, channel capacity) to nodes
+        channel_openings_per_node_dict = defaultdict(list)
+        for c, height in channels_filtered_and_creation_time:
+            edge = self.node.network.edges[c]
+            channel_openings_per_node_dict[edge['node1_pub']].append((height, edge['capacity']))
+            channel_openings_per_node_dict[edge['node2_pub']].append((height, edge['capacity']))
+
+        return channel_openings_per_node_dict
+
+    def calculate_channel_opening_statistics(self, from_days_ago, exclude_openings_less_than=5):
+        """
+        Calculates basic channel opening statistics for each node.
+
+        :param from_days_ago: int
+        :param exclude_openings_less_than: int, nodes with smaller channel openings than this are excluded
+        :return: dict, keys: nodes, values: serveral heuristics
+        """
+
+        openings_per_node_dict = self.determine_channel_openings(from_days_ago)
+        opening_statistics_per_node = {}
+
+        for n, nv in openings_per_node_dict.items():
+            # convert opening characteristics (heights and capacities) to lists
+            heights = [opening[0] for opening in nv]
+            capacities = [opening[1] for opening in nv]
+
+            # calculate the blockheight differences between successive channel openings (tells about frequency)
+            delta_heights = np.diff(heights)
+
+            # calculate median and average differences of channel openings (median can give hints on bursts of openings)
+            median_opening_time = np.median(delta_heights)
+            average_opening_time = np.mean(delta_heights)
+
+            # other interesting quantities
+            openings = len(capacities)
+            openings_total_capacity = sum(capacities)
+            openings_average_capacity = float(openings_total_capacity) / openings
+            node_total_capacity = self.node.network.node_capacity(n)
+            node_number_channels = self.node.network.number_channels(n)
+
+            # put all the data in a dictionary, which can then be handled by the node recommendation class
+            if openings > exclude_openings_less_than:
+                opening_statistics_per_node[n] = {
+                    'opening_median_time': median_opening_time,
+                    'opening_average_time': average_opening_time,
+                    'openings_average_capacity': openings_average_capacity / 1E8,  # in btc
+                    'openings': openings,
+                    'openings_total_capacity': openings_total_capacity / 1E8,  # in btc
+                    'relative_openings': float(openings) / node_number_channels,
+                    'relative_total_capacity': float(openings_total_capacity) / node_total_capacity,  # ksat
+                }
+
+        return opening_statistics_per_node
 
     def distance(self, first_node, second_node):
         """
