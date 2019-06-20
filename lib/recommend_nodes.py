@@ -51,6 +51,13 @@ print_node_format = {
         'format': '1.8f',
         'align': '>',
     },
+    'dist': {
+        'dict_key': 'distance',
+        'description': 'distance [hops]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
     'flow': {
         'dict_key': 'flow_direction',
         'description': 'flow_direction',
@@ -158,6 +165,8 @@ class RecommendNodes(object):
     """
     def __init__(self, node, show_connected=False, show_addresses=False):
         self.node = node
+        self.network_analysis = NetworkAnalysis(self.node)
+
         self.show_connected = show_connected
         self.show_address = show_addresses
         self.network_analysis = NetworkAnalysis(self.node)
@@ -336,6 +345,7 @@ class RecommendNodes(object):
                     node_new['total_capacity'] = float(total_capacity) / 1E8  # in btc
                     node_new['capacity_per_channel'] = float(total_capacity) / number_channels / 1E8  # in btc
                     node_new['address'] = self.node.network.node_address(k)
+                    node_new['distance'] = self.network_analysis.distance(self.node.pub_key, k)
                     if exclude_hubs:
                         if node_new['number_channels'] < _settings.NUMBER_CHANNELS_DEFINING_HUB:
                             nodes_new[k] = node_new
