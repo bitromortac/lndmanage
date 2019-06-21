@@ -5,3 +5,4 @@ lndmanage.log
 tests/graph_pickles/
 __pycache__/*
 config.ini
+venv/*
