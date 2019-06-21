@@ -478,6 +478,7 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
     # join the two data sets:
     channels = node.get_unbalanced_channels(unbalancedness_greater_than=0.0)
 
+    # TODO: improve this code, don't repeat
     for k, c in channels.items():
         try:  # channel forwarding statistics exists
             channel_statistics = statistics[c['chan_id']]
@@ -499,12 +500,15 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
             c['largest_forwarding_amount_out'] = channel_statistics['largest_forwarding_amount_out']
             c['total_forwarding_in'] = channel_statistics['total_forwarding_in']
             c['total_forwarding_out'] = channel_statistics['total_forwarding_out']
-            # action required if flow same direction as unbalancedness
+            # action required if flow same direction as unbalancedness or bandwidth demand too high
+            # TODO: refine 'action_required' by better metric
             if c['unbalancedness'] * c['flow_direction'] > 0 and abs(
                     c['unbalancedness']) > _settings.UNBALANCED_CHANNEL:
-                c['rebalance_required'] = True
+                c['action_required'] = True
             else:
-                c['rebalance_required'] = False
+                c['action_required'] = False
+            if c['bandwidth_demand'] > 0.5:
+                c['action_required'] = True
 
         except KeyError:  # no forwarding statistics on channel is available
             c['bandwidth_demand'] = 0
@@ -520,11 +524,12 @@ def get_forwarding_statistics_channels(node, time_interval_start, time_interval_
             c['largest_forwarding_amount_out'] = float('nan')
             c['total_forwarding_in'] = float('nan')
             c['total_forwarding_out'] = float('nan')
-            # action required if flow same direction as unbalancedness
             if abs(c['unbalancedness']) > _settings.UNBALANCED_CHANNEL:
-                c['rebalance_required'] = True
+                c['action_required'] = True
             else:
-                c['rebalance_required'] = False
+                c['action_required'] = False
+            if c['bandwidth_demand'] > 0.5:
+                c['action_required'] = True
     return channels
 
 

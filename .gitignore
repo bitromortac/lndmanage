@@ -1,8 +1,11 @@
 grpc_compile/googleapis/*
-*.pyc
+nodes/*
 .idea/*
+.vscode/*
+venv/*
 lndmanage.log
 tests/graph_pickles/
 __pycache__/*
 config.ini
+*.pyc
 venv/*

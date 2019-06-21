@@ -4,9 +4,17 @@ import _settings
 import time
 
 from lib.node import LndNode
-from lib.listchannels import print_channels_rebalance, print_channels_hygiene, print_channels_forwardings
+from lib.listchannels import (
+    print_channels_unbalanced,
+    print_channels_inactive,
+    print_channels_forwardings,
+    print_all_channels)
 from lib.rebalance import Rebalancer
-from lib.exceptions import DryRunException, PaymentTimeOut, TooExpensive, RebalanceFailure
+from lib.exceptions import (
+    DryRunException,
+    PaymentTimeOut,
+    TooExpensive,
+    RebalanceFailure)
 from lib.recommend_nodes import RecommendNodes
 
 
@@ -53,24 +61,28 @@ class Parser(object):
             'rebalance', help='displays unbalanced channels')
         parser_listchannels_rebalance.add_argument(
             '--unbalancedness', type=float,
-            default=0.5,
+            default=_settings.UNBALANCED_CHANNEL,
             help='Unbalancedness is a way to express how balanced a channel is, '
                  'a value between [-1, 1] (a perfectly balanced channel has a value of 0). '
                  'The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
+        parser_listchannels_rebalance.add_argument(
+            '--sort-by', default='rev_ub', type=str, help='sort by column (look at description)')
 
         # subcmd: listchannels inactive
-        listchannels_subparsers.add_parser(
+        parser_listchannels_inactive = listchannels_subparsers.add_parser(
             'inactive', help="displays inactive channels")
+        parser_listchannels_inactive.add_argument(
+            '--sort-by', default='lup', type=str, help='sort by column (look at description)')
 
         # subcmd: listchannels forwardings
         parser_listchannels_forwardings = listchannels_subparsers.add_parser(
             'forwardings', help="displays channels with forwarding information")
         parser_listchannels_forwardings.add_argument(
-            '--sort-by', default='f/w', type=str, help='sort by column (look at description)')
-        parser_listchannels_forwardings.add_argument(
             '--from-days-ago', default=365, type=int, help='time interval start (days ago)')
         parser_listchannels_forwardings.add_argument(
             '--to-days-ago', default=0, type=int, help='time interval end (days ago)')
+        parser_listchannels_forwardings.add_argument(
+            '--sort-by', default='f/w', type=str, help='sort by column (look at description)')
 
         # cmd: rebalance
         self.parser_rebalance = subparsers.add_parser(
@@ -210,26 +222,30 @@ def main():
 
     elif args.cmd == 'listchannels':
         if not args.subcmd:
-            print_channels_rebalance(node, unbalancedness_greater_than=0)
+            print_all_channels(node, sort_string='rev_alias')
         if args.subcmd == 'rebalance':
-            print_channels_rebalance(node, args.unbalancedness, sort_by='ub')
+            print_channels_unbalanced(node, args.unbalancedness,
+                                      sort_string=args.sort_by)
         elif args.subcmd == 'inactive':
-            print_channels_hygiene(node)
+            print_channels_inactive(node, sort_string=args.sort_by)
         elif args.subcmd == 'forwardings':
             # convert time interval into unix timestamp
             time_from = time.time() - args.from_days_ago * 24 * 60 * 60
             time_to = time.time() - args.to_days_ago * 24 * 60 * 60
             print_channels_forwardings(
-                node, sort_by=args.sort_by, time_interval_start=time_from, time_interval_end=time_to)
+                node, time_interval_start=time_from, time_interval_end=time_to,
+                sort_string=args.sort_by)
 
     elif args.cmd == 'rebalance':
         if args.target:
-            logger.warning("Warning: Target is set, this is still an experimental feature.")
+            logger.warning("Warning: Target is set, this is still an "
+                           "experimental feature.")
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
         try:
             rebalancer.rebalance(
-                args.channel, dry=not args.reckless, chunksize=args.chunksize, target=args.target,
-                allow_unbalancing=args.allow_unbalancing, strategy=args.strategy)
+                args.channel, dry=not args.reckless, chunksize=args.chunksize,
+                target=args.target, allow_unbalancing=args.allow_unbalancing,
+                strategy=args.strategy)
         except RebalanceFailure as e:
             logger.error(f"Error: {e}")
 
@@ -239,33 +255,43 @@ def main():
         try:
             rebalancer.rebalance_two_channels(
                 args.channel_from, args.channel_to,
-                args.amt_sats, invoice_r_hash, args.max_fee_sat, dry=not args.reckless)
+                args.amt_sats, invoice_r_hash, args.max_fee_sat,
+                dry=not args.reckless)
         except DryRunException:
             logger.info("This was just a dry run.")
         except TooExpensive:
-            logger.error("Payment failed. This is likely due to a too low default --max-fee-rate.")
+            logger.error("Payment failed. This is likely due to a too low "
+                         "default --max-fee-rate.")
         except PaymentTimeOut:
-            logger.error("Payment failed because the payment timed out. This is an unresolved issue.")
+            logger.error("Payment failed because the payment timed out. "
+                         "This is an unresolved issue.")
 
     elif args.cmd == 'recommend-nodes':
         if not args.subcmd:
             parser.parser_recommend_nodes.print_help()
             return 0
 
-        recommend_nodes = RecommendNodes(node, show_connected=args.show_connected, show_addresses=args.show_addresses)
+        recommend_nodes = RecommendNodes(
+            node, show_connected=args.show_connected,
+            show_addresses=args.show_addresses)
 
         if args.subcmd == 'good-old':
-            recommend_nodes.print_good_old(number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            recommend_nodes.print_good_old(number_of_nodes=args.nnodes,
+                                           sort_by=args.sort_by)
         elif args.subcmd == 'flow-analysis':
-            recommend_nodes.print_flow_analysis(out_direction=(not args.inwarding_nodes),
-                                                number_of_nodes=args.nnodes, forwarding_events=args.forwarding_events,
-                                                sort_by=args.sort_by)
+            recommend_nodes.print_flow_analysis(
+                out_direction=(not args.inwarding_nodes),
+                number_of_nodes=args.nnodes,
+                forwarding_events=args.forwarding_events,
+                sort_by=args.sort_by)
         elif args.subcmd == 'nodefile':
-            recommend_nodes.print_nodefile(args.source, distributing_nodes=args.distributing_nodes,
-                                           number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            recommend_nodes.print_nodefile(
+                args.source, distributing_nodes=args.distributing_nodes,
+                number_of_nodes=args.nnodes, sort_by=args.sort_by)
         elif args.subcmd == 'channel-openings':
-            recommend_nodes.print_channel_openings(from_days_ago=args.from_days_ago,
-                                           number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            recommend_nodes.print_channel_openings(
+                from_days_ago=args.from_days_ago,
+                number_of_nodes=args.nnodes, sort_by=args.sort_by)
 
 
 if __name__ == '__main__':
