@@ -7,204 +7,409 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-abbreviations = {
-    'active': 'act',
-    'age': 'age',
-    'alias': 'a',
-    'amount_to_balanced': 'atb',
-    'bandwidth_demand': 'bwd',
-    'capacity': 'cap',
-    'capacity_per_channel': 'cpc',
-    'chan_id': 'cid',
-    'channel_point': 'cpt',
-    'commit_fee': 'cf',
-    'fees_total': 'fees',
-    'fees_total_per_week': 'f/w',
-    'flow_direction': 'flow',
-    'initiator': 'ini',
-    'last_update': 'lup',
-    'local_balance': 'lb',
-    'num_updates': 'nup',
-    'number_forwardings': 'nfwd',
-    'number_channels': 'nchan',
-    'private': 'p',
-    'peer_base_fee': 'bf',
-    'peer_fee_rate': 'fr',
-    'rebalance_required': 'r',
-    'remote_balance': 'rb',
-    'remote_pubkey': 'rpk',
-    'sent_received_per_week': 'sr/w',
-    'total_capacity': 'tcap',
-    'total_satoshis_sent': 's/t',
-    'total_satoshis_received': 'r/t',
-    'total_forwarding_in': 'in',
-    'total_forwarding_out': 'out',
-    'total_forwarding': 'tot',
-    'unbalancedness': 'ub',
-    'median_forwarding_in': 'imed',
-    'mean_forwarding_in': 'imean',
-    'largest_forwarding_amount_in': 'imax',
-    'median_forwarding_out': 'omed',
-    'mean_forwarding_out': 'omean',
-    'largest_forwarding_amount_out': 'omax',
+# define symbols for bool to string conversion
+positive_marker = u"\u2713"
+negative_marker = u"\u2717"
+
+# define printing abbreviations
+# convert key can specify a function, which lets one do unit conversions
+print_channels_format = {
+    'act': {
+        'dict_key': 'active',
+        'description': 'channel is active',
+        'width': 3,
+        'format': '^3',
+        'align': '>',
+        'convert': lambda x: positive_marker if x else negative_marker,
+    },
+    'age': {
+        'dict_key': 'age',
+        'description': 'channel age [days]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'alias': {
+        'dict_key': 'alias',
+        'description': 'alias',
+        'width': 20,
+        'format': '<30.29',
+        'align': '^',
+    },
+    'atb': {
+        'dict_key': 'amount_to_balanced',
+        'description': 'amount to be balanced (local side) [sat]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'bf': {
+        'dict_key': 'peer_base_fee',
+        'description': 'peer base fee [msat]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'bwd': {
+        'dict_key': 'bandwidth_demand',
+        'description': 'bandwidth demand: capacity / max(mean_in, mean_out)',
+        'width': 5,
+        'format': '5.2f',
+        'align': '>',
+    },
+    'cap': {
+        'dict_key': 'capacity',
+        'description': 'channel capacity [sat]',
+        'width': 9,
+        'format': '9d',
+        'align': '>',
+    },
+    'cid': {
+        'dict_key': 'chan_id',
+        'description': 'channel id',
+        'width': 18,
+        'format': '',
+        'align': '^',
+    },
+    'fees': {
+        'dict_key': 'fees_total',
+        'description': 'total fees [sat]',
+        'width': 7,
+        'format': '7.2f',
+        'align': '>',
+        'convert': lambda x: float(x) / 1000
+    },
+    'f/w': {
+        'dict_key': 'fees_total_per_week',
+        'description': 'total fees per week [sat / week]',
+        'width': 6,
+        'format': '6.2f',
+        'align': '>',
+        'convert': lambda x: float(x) / 1000
+    },
+    'flow': {
+        'dict_key': 'flow_direction',
+        'description': 'flow direction (positive is outwards)',
+        'width': 5,
+        'format': '5.2f',
+        'align': '>',
+        # 'convert': lambda x: '>'*int(nan_to_zero(x)*10/3.0) if x > 0 else
+        # '<'*(-int(nan_to_zero(x)*10/3.0))
+    },
+    'fr': {
+        'dict_key': 'peer_fee_rate',
+        'description': 'peer fee rate',
+        'width': 8,
+        'format': '1.6f',
+        'align': '>',
+        'convert': lambda x: x / 1E6
+    },
+    'lup': {
+        'dict_key': 'last_update',
+        'description': 'last update time [days ago]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'lb': {
+        'dict_key': 'local_balance',
+        'description': 'local balance [sat]',
+        'width': 9,
+        'format': '9d',
+        'align': '>',
+    },
+    'nfwd': {
+        'dict_key': 'number_forwardings',
+        'description': 'number of forwardings',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'priv': {
+        'dict_key': 'private',
+        'description': 'channel is private',
+        'width': 5,
+        'format': '^5',
+        'align': '>',
+        'convert': lambda x: positive_marker if x else negative_marker,
+    },
+    'r': {
+        'dict_key': 'action_required',
+        'description': 'action is required',
+        'width': 1,
+        'format': '^1',
+        'align': '>',
+        'convert': lambda x: negative_marker if x else '',
+    },
+    'rb': {
+        'dict_key': 'remote_balance',
+        'description': 'remote balance [sat]',
+        'width': 9,
+        'format': '9d',
+        'align': '>',
+    },
+    'in': {
+        'dict_key': 'total_forwarding_in',
+        'description': 'total forwarding inwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'ini': {
+        'dict_key': 'initiator',
+        'description': 'true if we opened channel',
+        'width': 3,
+        'format': '^3',
+        'align': '>',
+        'convert': lambda x: positive_marker if x else negative_marker,
+    },
+    'tot': {
+        'dict_key': 'total_forwarding',
+        'description': 'total forwarding [sat]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'ub': {
+        'dict_key': 'unbalancedness',
+        'description': 'unbalancedness [-1, 0, 1] (0 is 50:50 balanced)',
+        'width': 5,
+        'format': '5.2f',
+        'align': '>',
+    },
+    'imed': {
+        'dict_key': 'median_forwarding_in',
+        'description': 'median forwarding inwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'imean': {
+        'dict_key': 'mean_forwarding_in',
+        'description': 'mean forwarding inwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'imax': {
+        'dict_key': 'largest_forwarding_amount_in',
+        'description': 'largest forwarding inwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'omed': {
+        'dict_key': 'median_forwarding_out',
+        'description': 'median forwarding outwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'omean': {
+        'dict_key': 'mean_forwarding_out',
+        'description': 'mean forwarding outwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'omax': {
+        'dict_key': 'largest_forwarding_amount_out',
+        'description': 'largest forwarding outwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'out': {
+        'dict_key': 'total_forwarding_out',
+        'description': 'total forwarding outwards [sat]',
+        'width': 10,
+        'format': '10.0f',
+        'align': '>',
+    },
+    'sr/w': {
+        'dict_key': 'sent_received_per_week',
+        'description': 'sent and received per week [sat]',
+        'width': 9,
+        'format': '9d',
+        'align': '>',
+    },
 }
 
-abbreviations_reverse = {v: k for k, v in abbreviations.items()}
+
+def sorting_order(sort_string):
+    """
+    Determines the sorting string and the sorting order.
+
+    If sort_string starts with 'rev_', the sorting order is reversed.
+
+    :param sort_string: str
+    :return: bool
+    """
+
+    reverse_sorting = True
+    if sort_string[:4] == 'rev_':
+        reverse_sorting = False
+        sort_string = sort_string[4:]
+
+    sort_string = print_channels_format[sort_string]['dict_key']
+
+    return sort_string, reverse_sorting
 
 
-def print_channels_rebalance(node, unbalancedness_greater_than, sort_by='a'):
-    logger.info("-------- Description --------")
-    logger.info(
-        f"{abbreviations['unbalancedness']:<10} unbalancedness (see --help)\n"
-        f"{abbreviations['capacity']:<10} channel capacity [sats]\n"
-        f"{abbreviations['local_balance']:<10} local balance [sats]\n"
-        f"{abbreviations['remote_balance']:<10} remote balance [sats]\n"
-        f"{abbreviations['peer_base_fee']:<10} peer base fee [msats]\n"
-        f"{abbreviations['peer_fee_rate']:<10} peer fee rate\n"
-        f"{abbreviations['chan_id']:<10} channel id\n"
-        f"{abbreviations['alias']:<10} alias\n"
-    )
-    logger.info("-------- Channels --------")
-    channels = node.get_unbalanced_channels(unbalancedness_greater_than)
-    channels = OrderedDict(sorted(channels.items(), key=lambda x: x[1][abbreviations_reverse[sort_by]]))
+def print_all_channels(node, sort_string='rev_alias'):
+    """
+    Prints all active and inactive channels.
 
-    for ic, (k, c) in enumerate(channels.items()):
-        if not(ic % 20):
-            logger.info(
-                f"{abbreviations['chan_id']:^18}"
-                f"{abbreviations['unbalancedness']:>6}"
-                f"{abbreviations['capacity']:>10}"
-                f"{abbreviations['local_balance']:>10}"
-                f"{abbreviations['remote_balance']:>10}"
-                f"{abbreviations['peer_base_fee']:>7}"
-                f"{abbreviations['peer_fee_rate']:>10}"
-                f"{abbreviations['alias']:^15}"
-            )
-        logger.info(
-            f"{c['chan_id']} "
-            f"{c['unbalancedness']: 4.2f} "
-            f"{c['capacity']: 9d} "
-            f"{c['local_balance']: 9d} "
-            f"{c['remote_balance']: 9d} "
-            f"{c['peer_base_fee']: 6d} "
-            f"{c['peer_fee_rate']/1E6: 1.6f} "
-            f"{c['alias']}"
-        )
+    :param node:
+    :param sort_string: str
+    """
+
+    channels = node.get_all_channels()
+
+    sort_string, reverse_sorting = sorting_order(sort_string)
+    sort_dict = {
+        'function': lambda x: (x[1][print_channels_format['priv']['dict_key']],
+                               x[1][sort_string]),
+        'string': sort_string,
+        'reverse': reverse_sorting,
+    }
+
+    print_channels(channels, columns='cid,priv,act,ub,cap,lb,rb,bf,fr,alias',
+                   sort_dict=sort_dict)
 
 
-def print_channels_hygiene(node, sort_by='lup'):
-    logger.info("-------- Description --------")
-    logger.info(
-        f"{abbreviations['private']:<10} true if private channel\n"
-        f"{abbreviations['initiator']:<10} true if we opened channel\n"
-        f"{abbreviations['last_update']:<10} last update time [days ago]\n"
-        f"{abbreviations['age']:<10} channel age [days]\n"
-        f"{abbreviations['capacity']:<10} capacity [sats]\n"
-        f"{abbreviations['local_balance']:<10} local balance [sats]\n"
-        f"{abbreviations['sent_received_per_week']:<10} satoshis sent + received per week of lifespan\n"
-        f"{abbreviations['chan_id']:<10} channel id\n"
-        f"{abbreviations['alias']:<10} alias\n"
-    )
-    logger.info("-------- Channels --------")
+def print_channels_unbalanced(node, unbalancedness, sort_string='rev_ub'):
+    """
+    Prints unbalanced channels with |unbalancedness(channel)| > unbalancedness.
+
+    :param node:
+    :param unbalancedness:
+    :param sort_string:
+    """
+
+    channels = node.get_unbalanced_channels(unbalancedness)
+
+    sort_string, reverse_sorting = sorting_order(sort_string)
+    sort_dict = {
+        'function': lambda x: x[1][sort_string],
+        'string': sort_string,
+        'reverse': reverse_sorting,
+    }
+
+    print_channels(channels, columns='cid,ub,cap,lb,rb,bf,fr,alias',
+                   sort_dict=sort_dict)
+
+
+def print_channels_inactive(node, sort_string='lup'):
+    """
+    Prints all inactive channels.
+    
+    :param node: 
+    :param sort_string: 
+    """
+
     channels = node.get_inactive_channels()
-    channels = OrderedDict(sorted(channels.items(), key=lambda x: (x[1]['private'],
-                                                                   -x[1][abbreviations_reverse[sort_by]])))
 
-    for ic, (k, c) in enumerate(channels.items()):
-        if not(ic % 20):
-            logger.info(
-                f"{abbreviations['chan_id']:^18}"
-                f"{abbreviations['private']:>2}"
-                f"{abbreviations['initiator']:>4}"
-                f"{abbreviations['last_update']:>6}"
-                f"{abbreviations['age']:>6}"
-                f"{abbreviations['capacity']:>10}"
-                f"{abbreviations['local_balance']:>10}"
-                f"{abbreviations['sent_received_per_week']:>9}"
-                f"{abbreviations['alias']:^15}"
-            )
-        logger.info(
-            f"{c['chan_id']}"
-            f" {str(c['private'])[0]}"
-            f"   {str(c['initiator'])[0]} "
-            f"{c['last_update']: 5.0f} "
-            f"{c['age']: 5.0f} "
-            f"{c['capacity']: 9d} "
-            f"{c['local_balance']: 9d} "
-            f"{c['sent_received_per_week']: 8d} "
-            f"{c['alias']}"
-        )
+    sort_string, reverse_sorting = sorting_order(sort_string)
+    sort_dict = {
+        'function': lambda x: (-x[1]['private'], x[1][sort_string]),
+        'string': sort_string,
+        'reverse': reverse_sorting,
+    }
+
+    print_channels(channels,
+                   columns='cid,lup,priv,ini,age,ub,cap,lb,rb,sr/w,alias',
+                   sort_dict=sort_dict)
 
 
-def print_channels_forwardings(node, time_interval_start, time_interval_end, sort_by='f/t'):
+def print_channels_forwardings(node, time_interval_start,
+                               time_interval_end, sort_string):
+    """
+    Prints forwarding statistics for each channel.
+
+    :param node:
+    :param time_interval_start:
+    :param time_interval_end:
+    :param sort_string:
+    """
+
+    channels = get_forwarding_statistics_channels(node, time_interval_start,
+                                                  time_interval_end)
+
+    sort_string, reverse_sorting = sorting_order(sort_string)
+    sort_dict = {
+        'function': lambda x: (float('inf') if math.isnan(x[1][sort_string])
+                               else x[1][sort_string],
+                               x[1][print_channels_format['nfwd']['dict_key']],
+                               x[1][print_channels_format['ub']['dict_key']]),
+        'string': sort_string,
+        'reverse': reverse_sorting,
+    }
+
+    print_channels(
+        channels,
+        columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,cap,bf,fr,alias',
+        sort_dict=sort_dict)
+
+
+def print_channels(channels, columns, sort_dict):
+    """
+    General purpose channel printing.
+
+    :param channels: dict
+    :param columns: str
+    :param sort_dict: dict
+    """
+
+    if len(channels) == 0:
+        logger.info(">>> Did not find any channels.")
+
+    channels = OrderedDict(sorted(channels.items(), key=sort_dict['function'],
+               reverse=sort_dict['reverse']))
+
+    logger.info(f"Sorting channels by {sort_dict['string']}.")
+
     logger.info("-------- Description --------")
-    logger.info(
-        f"{abbreviations['chan_id']:<10} channel id\n"
-        f"{abbreviations['number_forwardings']:<10} number of forwardings\n"
-        f"{abbreviations['age']:<10} channel age [days]\n"
-        f"{abbreviations['fees_total']:<10} fees total [sats]\n"
-        f"{abbreviations['fees_total_per_week']:<10} fees per week [sats]\n"
-        f"{abbreviations['unbalancedness']:<10} unbalancedness\n"
-        f"{abbreviations['flow_direction']:<10} flow direction (positive is outwards)\n"
-        f"{abbreviations['bandwidth_demand']:<10} bandwidth demand: capacity / max(mean_in, mean_out)\n"
-        f"{abbreviations['rebalance_required']:<10} rebalance required if marked with X\n"
-        f"{abbreviations['capacity']:<10} channel capacity [sats]\n"
-        f"{abbreviations['total_forwarding_in']:<10} total forwardings inwards [sats]\n"
-        f"{abbreviations['mean_forwarding_in']:<10} mean forwarding inwards [sats]\n"
-        f"{abbreviations['largest_forwarding_amount_in']:<10} largest forwarding inwards [sats]\n"
-        f"{abbreviations['total_forwarding_out']:<10} total forwardings outwards [sats]\n"
-        f"{abbreviations['mean_forwarding_out']:<10} mean forwarding outwards [sats]\n"
-        f"{abbreviations['largest_forwarding_amount_out']:<10} largest forwarding outwards [sats]\n"
-        f"{abbreviations['alias']:<10} alias\n"
-    )
-    logger.info("-------- Channels --------")
-    channels = get_forwarding_statistics_channels(node, time_interval_start, time_interval_end)
-    channels = OrderedDict(sorted(channels.items(),
-                                  key=lambda x: (float('inf') if math.isnan(-x[1][abbreviations_reverse[sort_by]])
-                                                 else -x[1][abbreviations_reverse[sort_by]],
-                                                 -x[1][abbreviations_reverse['nfwd']],
-                                                 -x[1][abbreviations_reverse['ub']])))
+    columns = columns.split(',')
+    for c in columns:
+        logger.info(f"{c:<10} {print_channels_format[c]['description']}")
 
-    for ic, (k, c) in enumerate(channels.items()):
-        if not(ic % 20):
-            logger.info(
-                f"{abbreviations['chan_id']:^18}"
-                f"{abbreviations['number_forwardings']:>5}"
-                f"{abbreviations['age']:>6}"
-                f"{abbreviations['fees_total']:>6}"
-                f"{abbreviations['fees_total_per_week']:>8}"
-                f"{abbreviations['unbalancedness']:>6}"
-                f"{abbreviations['flow_direction']:>6}"
-                f"{abbreviations['bandwidth_demand']:>5}"
-                f"{abbreviations['rebalance_required']:>2}"
-                f"{abbreviations['capacity']:>9}"
-                f"{abbreviations['total_forwarding_in']:>9}"
-                f"{abbreviations['mean_forwarding_in']:>8}"
-                f"{abbreviations['largest_forwarding_amount_in']:>8}"
-                f"{abbreviations['total_forwarding_out']:>9}"
-                f"{abbreviations['mean_forwarding_out']:>8}"
-                f"{abbreviations['largest_forwarding_amount_out']:>8}"
-                f"{abbreviations['alias']:^15}"
-            )
-        logger.info(
-            f"{c['chan_id']} "
-            f"{c['number_forwardings']:4.0f} "
-            f"{c['age']:5.0f} "
-            f"{c['fees_total'] / 1000:5.0f} "
-            f"{c['fees_total_per_week'] / 1000:7.3f} "
-            f"{c['unbalancedness']:5.2f} "
-            f"{c['flow_direction']:5.2f} "
-            f"{c['bandwidth_demand']:3.2f} "
-            f"{'X' if c['rebalance_required'] else ' '} "
-            f"{c['capacity']:8.0f} "
-            f"{c['total_forwarding_in']:8.0f} "
-            f"{c['mean_forwarding_in']:7.0f} "
-            f"{c['largest_forwarding_amount_in']:7.0f} "
-            f"{c['total_forwarding_out']:8.0f} "
-            f"{c['mean_forwarding_out']:7.0f} "
-            f"{c['largest_forwarding_amount_out']:7.0f} "
-            f"{c['alias'][:10] + '...' if len(c['alias']) > 10 else c['alias']} "
-        )
+    logger.info(f"-------- Channels --------")
+    # prepare the column header
+    column_header = ''
+    for c in columns:
+        column_label = print_channels_format[c]['align']
+        column_width = print_channels_format[c]['width']
+        column_header += f"{c:{column_label}{column_width}} "
+
+    # print the channel data
+    for ik, (k, v) in enumerate(channels.items()):
+        if not(ik % 20):
+            logger.info(column_header)
+        row = row_string(v, columns)
+        logger.info(row)
+
+
+def row_string(column_values, columns):
+    """
+    Constructs the formatted row string for table printing.
+
+    :param column_values: dict
+    :param columns: list of str
+    :return: formatted str
+    """
+
+    string = ''
+    for c in columns:
+        format_string = print_channels_format[c]['format']
+        conversion_function = print_channels_format[c].get(
+            'convert', lambda x: x)
+        value = column_values[print_channels_format[c]['dict_key']]
+        converted_value = conversion_function(value)
+        string += f"{converted_value:{format_string}} "
+
+    return string
+
 
 if __name__ == '__main__':
     from lib.node import LndNode
@@ -215,4 +420,3 @@ if __name__ == '__main__':
     logging.config.dictConfig(_settings.logger_config)
 
     nd = LndNode()
-    print_channels_hygiene(nd)

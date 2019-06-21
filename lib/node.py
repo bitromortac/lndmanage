@@ -16,7 +16,8 @@ import _settings
 from lib.network import Network
 from lib.utilities import convert_dictionary_number_strings_to_ints
 from lib.ln_utilities import (extract_short_channel_id_from_string,
-                              convert_short_channel_id_to_channel_id, convert_channel_id_to_short_channel_id)
+                              convert_short_channel_id_to_channel_id,
+                              convert_channel_id_to_short_channel_id)
 from lib.exceptions import PaymentTimeOut, NoRouteError
 
 import logging
@@ -272,8 +273,8 @@ class LndNode(Node):
                     policy = edge_info['node1_policy']
             except KeyError:
                 # TODO: if channel is unknown in describegraph we need to set the fees to some error value
-                policy = {'fee_base_msat': -1,
-                          'fee_rate_milli_msat': -1}
+                policy = {'fee_base_msat': float('nan'),
+                          'fee_rate_milli_msat': float('nan')}
 
             # define unbalancedness |ub| large means very unbalanced
             commit_fee = 0 if not c.initiator else c.commit_fee
@@ -309,8 +310,21 @@ class LndNode(Node):
         return sorted_dict
 
     def get_inactive_channels(self):
+        """
+        Returns all inactive channels.
+        :return: dict of channels
+        """
         channels = self.get_open_channels(public_only=False, active_only=False)
         return {k: c for k, c in channels.items() if not c['active']}
+
+    def get_all_channels(self):
+        """
+        Returns all active and inactive channels.
+
+        :return: dict of channels
+        """
+        channels = self.get_open_channels(public_only=False, active_only=False)
+        return channels
 
     def get_unbalanced_channels(self, unbalancedness_greater_than=0.0):
         """
@@ -415,7 +429,7 @@ class LndNode(Node):
         :param ignored_channels: dict
         :return: list of channel_ids
         """
-        amt_sat = amt_msat // 1000
+        amt_sat = amt_msat// 1000
 
         # we want to see all routes:
         max_fee = 10000
