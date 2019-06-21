@@ -176,7 +176,7 @@ PRINT_CHANNELS_FORMAT = {
     },
     'ub': {
         'dict_key': 'unbalancedness',
-        'description': 'unbalancedness [-1, 0, 1] (0 is 50:50 balanced)',
+        'description': 'unbalancedness [-1 ... 1] (0 is 50:50 balanced)',
         'width': 5,
         'format': '5.2f',
         'align': '>',
