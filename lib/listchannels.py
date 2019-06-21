@@ -1,26 +1,30 @@
+"""
+Module for printing lightning channels.
+"""
+
 import math
+import logging
 from collections import OrderedDict
 
 from lib.forwardings import get_forwarding_statistics_channels
 
-import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # define symbols for bool to string conversion
-positive_marker = u"\u2713"
-negative_marker = u"\u2717"
+POSITIVE_MARKER = u"\u2713"
+NEGATIVE_MARKER = u"\u2717"
 
 # define printing abbreviations
 # convert key can specify a function, which lets one do unit conversions
-print_channels_format = {
+PRINT_CHANNELS_FORMAT = {
     'act': {
         'dict_key': 'active',
         'description': 'channel is active',
         'width': 3,
         'format': '^3',
         'align': '>',
-        'convert': lambda x: positive_marker if x else negative_marker,
+        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
     'age': {
         'dict_key': 'age',
@@ -131,7 +135,7 @@ print_channels_format = {
         'width': 5,
         'format': '^5',
         'align': '>',
-        'convert': lambda x: positive_marker if x else negative_marker,
+        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
     'r': {
         'dict_key': 'action_required',
@@ -139,7 +143,7 @@ print_channels_format = {
         'width': 1,
         'format': '^1',
         'align': '>',
-        'convert': lambda x: negative_marker if x else '',
+        'convert': lambda x: NEGATIVE_MARKER if x else '',
     },
     'rb': {
         'dict_key': 'remote_balance',
@@ -161,7 +165,7 @@ print_channels_format = {
         'width': 3,
         'format': '^3',
         'align': '>',
-        'convert': lambda x: positive_marker if x else negative_marker,
+        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
     'tot': {
         'dict_key': 'total_forwarding',
@@ -251,7 +255,7 @@ def sorting_order(sort_string):
         reverse_sorting = False
         sort_string = sort_string[4:]
 
-    sort_string = print_channels_format[sort_string]['dict_key']
+    sort_string = PRINT_CHANNELS_FORMAT[sort_string]['dict_key']
 
     return sort_string, reverse_sorting
 
@@ -260,7 +264,7 @@ def print_all_channels(node, sort_string='rev_alias'):
     """
     Prints all active and inactive channels.
 
-    :param node:
+    :param node: :class:`lib.node.Node`
     :param sort_string: str
     """
 
@@ -268,7 +272,7 @@ def print_all_channels(node, sort_string='rev_alias'):
 
     sort_string, reverse_sorting = sorting_order(sort_string)
     sort_dict = {
-        'function': lambda x: (x[1][print_channels_format['priv']['dict_key']],
+        'function': lambda x: (x[1][PRINT_CHANNELS_FORMAT['priv']['dict_key']],
                                x[1][sort_string]),
         'string': sort_string,
         'reverse': reverse_sorting,
@@ -282,9 +286,9 @@ def print_channels_unbalanced(node, unbalancedness, sort_string='rev_ub'):
     """
     Prints unbalanced channels with |unbalancedness(channel)| > unbalancedness.
 
-    :param node:
-    :param unbalancedness:
-    :param sort_string:
+    :param node: :class:`lib.node.Node`
+    :param unbalancedness: float
+    :param sort_string: str
     """
 
     channels = node.get_unbalanced_channels(unbalancedness)
@@ -303,9 +307,9 @@ def print_channels_unbalanced(node, unbalancedness, sort_string='rev_ub'):
 def print_channels_inactive(node, sort_string='lup'):
     """
     Prints all inactive channels.
-    
-    :param node: 
-    :param sort_string: 
+
+    :param node: :class:`lib.node.Node`
+    :param sort_string: str
     """
 
     channels = node.get_inactive_channels()
@@ -327,10 +331,10 @@ def print_channels_forwardings(node, time_interval_start,
     """
     Prints forwarding statistics for each channel.
 
-    :param node:
-    :param time_interval_start:
-    :param time_interval_end:
-    :param sort_string:
+    :param node: :class:`lib.node.Node`
+    :param time_interval_start: int
+    :param time_interval_end: int
+    :param sort_string: str
     """
 
     channels = get_forwarding_statistics_channels(node, time_interval_start,
@@ -340,8 +344,8 @@ def print_channels_forwardings(node, time_interval_start,
     sort_dict = {
         'function': lambda x: (float('inf') if math.isnan(x[1][sort_string])
                                else x[1][sort_string],
-                               x[1][print_channels_format['nfwd']['dict_key']],
-                               x[1][print_channels_format['ub']['dict_key']]),
+                               x[1][PRINT_CHANNELS_FORMAT['nfwd']['dict_key']],
+                               x[1][PRINT_CHANNELS_FORMAT['ub']['dict_key']]),
         'string': sort_string,
         'reverse': reverse_sorting,
     }
@@ -361,32 +365,34 @@ def print_channels(channels, columns, sort_dict):
     :param sort_dict: dict
     """
 
-    if len(channels) == 0:
+    if not channels:
         logger.info(">>> Did not find any channels.")
 
-    channels = OrderedDict(sorted(channels.items(), key=sort_dict['function'],
-               reverse=sort_dict['reverse']))
+    channels = OrderedDict(sorted(
+        channels.items(), key=sort_dict['function'],
+        reverse=sort_dict['reverse']))
 
-    logger.info(f"Sorting channels by {sort_dict['string']}.")
+    logger.info("Sorting channels by %s.", sort_dict['string'])
 
     logger.info("-------- Description --------")
     columns = columns.split(',')
-    for c in columns:
-        logger.info(f"{c:<10} {print_channels_format[c]['description']}")
+    for column in columns:
+        logger.info(
+            f"{column:<10} {PRINT_CHANNELS_FORMAT[column]['description']}")
 
-    logger.info(f"-------- Channels --------")
+    logger.info("-------- Channels --------")
     # prepare the column header
     column_header = ''
-    for c in columns:
-        column_label = print_channels_format[c]['align']
-        column_width = print_channels_format[c]['width']
-        column_header += f"{c:{column_label}{column_width}} "
+    for column in columns:
+        column_label = PRINT_CHANNELS_FORMAT[column]['align']
+        column_width = PRINT_CHANNELS_FORMAT[column]['width']
+        column_header += f"{column:{column_label}{column_width}} "
 
     # print the channel data
-    for ik, (k, v) in enumerate(channels.items()):
-        if not(ik % 20):
+    for channel_number, (_, channel_data) in enumerate(channels.items()):
+        if not channel_number % 20:
             logger.info(column_header)
-        row = row_string(v, columns)
+        row = row_string(channel_data, columns)
         logger.info(row)
 
 
@@ -400,11 +406,11 @@ def row_string(column_values, columns):
     """
 
     string = ''
-    for c in columns:
-        format_string = print_channels_format[c]['format']
-        conversion_function = print_channels_format[c].get(
+    for column in columns:
+        format_string = PRINT_CHANNELS_FORMAT[column]['format']
+        conversion_function = PRINT_CHANNELS_FORMAT[column].get(
             'convert', lambda x: x)
-        value = column_values[print_channels_format[c]['dict_key']]
+        value = column_values[PRINT_CHANNELS_FORMAT[column]['dict_key']]
         converted_value = conversion_function(value)
         string += f"{converted_value:{format_string}} "
 
@@ -412,11 +418,10 @@ def row_string(column_values, columns):
 
 
 if __name__ == '__main__':
-    from lib.node import LndNode
-
-    import _settings
     import logging.config
 
+    from lib.node import LndNode
+    import _settings
     logging.config.dictConfig(_settings.logger_config)
 
-    nd = LndNode()
+    node_instance = LndNode()
