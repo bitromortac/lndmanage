@@ -240,181 +240,196 @@ PRINT_CHANNELS_FORMAT = {
 }
 
 
-def sorting_order(sort_string):
+class ListChannels(object):
     """
-    Determines the sorting string and the sorting order.
-
-    If sort_string starts with 'rev_', the sorting order is reversed.
-
-    :param sort_string: str
-    :return: bool
+    A class to list lightning channels.
     """
+    def __init__(self, node):
+        """
+        :param node: :class:`lib.node.Node`
+        """
+        self.node = node
 
-    reverse_sorting = True
-    if sort_string[:4] == 'rev_':
-        reverse_sorting = False
-        sort_string = sort_string[4:]
+    def print_all_channels(self, sort_string='rev_alias'):
+        """
+        Prints all active and inactive channels.
 
-    sort_string = PRINT_CHANNELS_FORMAT[sort_string]['dict_key']
+        :param node: :class:`lib.node.Node`
+        :param sort_string: str
+        """
 
-    return sort_string, reverse_sorting
+        channels = self.node.get_all_channels()
 
+        sort_string, reverse_sorting = self._sorting_order(sort_string)
+        sort_dict = {
+            'function': lambda x: (
+                x[1][PRINT_CHANNELS_FORMAT['priv']['dict_key']],
+                x[1][sort_string]
+                ),
+            'string': sort_string,
+            'reverse': reverse_sorting,
+        }
 
-def print_all_channels(node, sort_string='rev_alias'):
-    """
-    Prints all active and inactive channels.
+        self.print_channels(
+            channels, columns='cid,priv,act,ub,cap,lb,rb,bf,fr,alias',
+            sort_dict=sort_dict)
 
-    :param node: :class:`lib.node.Node`
-    :param sort_string: str
-    """
+    def print_channels_unbalanced(self, unbalancedness, sort_string='rev_ub'):
+        """
+        Prints unbalanced channels with
+        |unbalancedness(channel)| > unbalancedness.
 
-    channels = node.get_all_channels()
+        :param node: :class:`lib.node.Node`
+        :param unbalancedness: float
+        :param sort_string: str
+        """
 
-    sort_string, reverse_sorting = sorting_order(sort_string)
-    sort_dict = {
-        'function': lambda x: (x[1][PRINT_CHANNELS_FORMAT['priv']['dict_key']],
-                               x[1][sort_string]),
-        'string': sort_string,
-        'reverse': reverse_sorting,
-    }
+        channels = self.node.get_unbalanced_channels(unbalancedness)
 
-    print_channels(channels, columns='cid,priv,act,ub,cap,lb,rb,bf,fr,alias',
-                   sort_dict=sort_dict)
+        sort_string, reverse_sorting = self._sorting_order(sort_string)
+        sort_dict = {
+            'function': lambda x: x[1][sort_string],
+            'string': sort_string,
+            'reverse': reverse_sorting,
+        }
 
+        self.print_channels(
+            channels, columns='cid,ub,cap,lb,rb,bf,fr,alias',
+            sort_dict=sort_dict)
 
-def print_channels_unbalanced(node, unbalancedness, sort_string='rev_ub'):
-    """
-    Prints unbalanced channels with |unbalancedness(channel)| > unbalancedness.
+    def print_channels_inactive(self, sort_string='lup'):
+        """
+        Prints all inactive channels.
 
-    :param node: :class:`lib.node.Node`
-    :param unbalancedness: float
-    :param sort_string: str
-    """
+        :param node: :class:`lib.node.Node`
+        :param sort_string: str
+        """
 
-    channels = node.get_unbalanced_channels(unbalancedness)
+        channels = self.node.get_inactive_channels()
 
-    sort_string, reverse_sorting = sorting_order(sort_string)
-    sort_dict = {
-        'function': lambda x: x[1][sort_string],
-        'string': sort_string,
-        'reverse': reverse_sorting,
-    }
+        sort_string, reverse_sorting = self._sorting_order(sort_string)
+        sort_dict = {
+            'function': lambda x: (-x[1]['private'], x[1][sort_string]),
+            'string': sort_string,
+            'reverse': reverse_sorting,
+        }
 
-    print_channels(channels, columns='cid,ub,cap,lb,rb,bf,fr,alias',
-                   sort_dict=sort_dict)
+        self.print_channels(
+            channels, columns='cid,lup,priv,ini,age,ub,cap,lb,rb,sr/w,alias',
+            sort_dict=sort_dict)
 
+    def print_channels_forwardings(self, time_interval_start,
+                                   time_interval_end, sort_string):
 
-def print_channels_inactive(node, sort_string='lup'):
-    """
-    Prints all inactive channels.
+        """
+        Prints forwarding statistics for each channel.
 
-    :param node: :class:`lib.node.Node`
-    :param sort_string: str
-    """
+        :param node: :class:`lib.node.Node`
+        :param time_interval_start: int
+        :param time_interval_end: int
+        :param sort_string: str
+        """
 
-    channels = node.get_inactive_channels()
+        channels = get_forwarding_statistics_channels(
+            self.node, time_interval_start, time_interval_end)
 
-    sort_string, reverse_sorting = sorting_order(sort_string)
-    sort_dict = {
-        'function': lambda x: (-x[1]['private'], x[1][sort_string]),
-        'string': sort_string,
-        'reverse': reverse_sorting,
-    }
+        sort_string, reverse_sorting = self._sorting_order(sort_string)
+        sort_dict = {
+            'function': lambda x: (
+                float('inf') if math.isnan(x[1][sort_string])
+                else x[1][sort_string],
+                x[1][PRINT_CHANNELS_FORMAT['nfwd']['dict_key']],
+                x[1][PRINT_CHANNELS_FORMAT['ub']['dict_key']]
+                ),
+            'string': sort_string,
+            'reverse': reverse_sorting,
+        }
 
-    print_channels(channels,
-                   columns='cid,lup,priv,ini,age,ub,cap,lb,rb,sr/w,alias',
-                   sort_dict=sort_dict)
+        self.print_channels(
+            channels,
+            columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,cap,bf,fr,alias',
+            sort_dict=sort_dict)
 
+    def print_channels(self, channels, columns, sort_dict):
+        """
+        General purpose channel printing.
 
-def print_channels_forwardings(node, time_interval_start,
-                               time_interval_end, sort_string):
-    """
-    Prints forwarding statistics for each channel.
+        :param channels: dict
+        :param columns: str
+        :param sort_dict: dict
+        """
 
-    :param node: :class:`lib.node.Node`
-    :param time_interval_start: int
-    :param time_interval_end: int
-    :param sort_string: str
-    """
+        if not channels:
+            logger.info(">>> Did not find any channels.")
 
-    channels = get_forwarding_statistics_channels(node, time_interval_start,
-                                                  time_interval_end)
+        channels = OrderedDict(sorted(
+            channels.items(), key=sort_dict['function'],
+            reverse=sort_dict['reverse']))
 
-    sort_string, reverse_sorting = sorting_order(sort_string)
-    sort_dict = {
-        'function': lambda x: (float('inf') if math.isnan(x[1][sort_string])
-                               else x[1][sort_string],
-                               x[1][PRINT_CHANNELS_FORMAT['nfwd']['dict_key']],
-                               x[1][PRINT_CHANNELS_FORMAT['ub']['dict_key']]),
-        'string': sort_string,
-        'reverse': reverse_sorting,
-    }
+        logger.info("Sorting channels by %s.", sort_dict['string'])
 
-    print_channels(
-        channels,
-        columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,cap,bf,fr,alias',
-        sort_dict=sort_dict)
+        logger.info("-------- Description --------")
+        columns = columns.split(',')
+        for column in columns:
+            logger.info(
+                "%-10s %s", column,
+                PRINT_CHANNELS_FORMAT[column]['description'])
 
+        logger.info("-------- Channels --------")
+        # prepare the column header
+        column_header = ''
+        for column in columns:
+            column_label = PRINT_CHANNELS_FORMAT[column]['align']
+            column_width = PRINT_CHANNELS_FORMAT[column]['width']
+            column_header += f"{column:{column_label}{column_width}} "
 
-def print_channels(channels, columns, sort_dict):
-    """
-    General purpose channel printing.
+        # print the channel data
+        for channel_number, (_, channel_data) in enumerate(channels.items()):
+            if not channel_number % 20:
+                logger.info(column_header)
+            row = self._row_string(channel_data, columns)
+            logger.info(row)
 
-    :param channels: dict
-    :param columns: str
-    :param sort_dict: dict
-    """
+    @staticmethod
+    def _row_string(column_values, columns):
+        """
+        Constructs the formatted row string for table printing.
 
-    if not channels:
-        logger.info(">>> Did not find any channels.")
+        :param column_values: dict
+        :param columns: list of str
+        :return: formatted str
+        """
 
-    channels = OrderedDict(sorted(
-        channels.items(), key=sort_dict['function'],
-        reverse=sort_dict['reverse']))
+        string = ''
+        for column in columns:
+            format_string = PRINT_CHANNELS_FORMAT[column]['format']
+            conversion_function = PRINT_CHANNELS_FORMAT[column].get(
+                'convert', lambda x: x)
+            value = column_values[PRINT_CHANNELS_FORMAT[column]['dict_key']]
+            converted_value = conversion_function(value)
+            string += f"{converted_value:{format_string}} "
 
-    logger.info("Sorting channels by %s.", sort_dict['string'])
+        return string
 
-    logger.info("-------- Description --------")
-    columns = columns.split(',')
-    for column in columns:
-        logger.info(
-            f"{column:<10} {PRINT_CHANNELS_FORMAT[column]['description']}")
+    @staticmethod
+    def _sorting_order(sort_string):
+        """
+        Determines the sorting string and the sorting order.
 
-    logger.info("-------- Channels --------")
-    # prepare the column header
-    column_header = ''
-    for column in columns:
-        column_label = PRINT_CHANNELS_FORMAT[column]['align']
-        column_width = PRINT_CHANNELS_FORMAT[column]['width']
-        column_header += f"{column:{column_label}{column_width}} "
+        If sort_string starts with 'rev_', the sorting order is reversed.
 
-    # print the channel data
-    for channel_number, (_, channel_data) in enumerate(channels.items()):
-        if not channel_number % 20:
-            logger.info(column_header)
-        row = row_string(channel_data, columns)
-        logger.info(row)
+        :param sort_string: str
+        :return: bool
+        """
 
+        reverse_sorting = True
+        if sort_string[:4] == 'rev_':
+            reverse_sorting = False
+            sort_string = sort_string[4:]
 
-def row_string(column_values, columns):
-    """
-    Constructs the formatted row string for table printing.
+        sort_string = PRINT_CHANNELS_FORMAT[sort_string]['dict_key']
 
-    :param column_values: dict
-    :param columns: list of str
-    :return: formatted str
-    """
-
-    string = ''
-    for column in columns:
-        format_string = PRINT_CHANNELS_FORMAT[column]['format']
-        conversion_function = PRINT_CHANNELS_FORMAT[column].get(
-            'convert', lambda x: x)
-        value = column_values[PRINT_CHANNELS_FORMAT[column]['dict_key']]
-        converted_value = conversion_function(value)
-        string += f"{converted_value:{format_string}} "
-
-    return string
+        return sort_string, reverse_sorting
 
 
 if __name__ == '__main__':
