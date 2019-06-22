@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 import argparse
-import _settings
 import time
 
 from lib.node import LndNode
-from lib.listchannels import (
-    print_channels_unbalanced,
-    print_channels_inactive,
-    print_channels_forwardings,
-    print_all_channels)
+from lib.listchannels import ListChannels
 from lib.rebalance import Rebalancer
 from lib.exceptions import (
     DryRunException,
@@ -17,19 +12,29 @@ from lib.exceptions import (
     RebalanceFailure)
 from lib.recommend_nodes import RecommendNodes
 
+import _settings
 
-def range_limited_float_type(arg):
-    """ Type function for argparse - a float within some predefined bounds """
+
+def range_limited_float_type(unchecked_value):
+    """
+    Type function for argparse - a float within some predefined bounds
+
+    :param: unchecked_value: float
+    """
     try:
-        f = float(arg)
+        value = float(unchecked_value)
     except ValueError:
         raise argparse.ArgumentTypeError("Must be a floating point number")
-    if f < 1E-6 or f > 1:
-        raise argparse.ArgumentTypeError("Argument must be < " + str(1E-6) + " and > " + str(1))
-    return f
+    if value < 1E-6 or value > 1:
+        raise argparse.ArgumentTypeError(
+            "Argument must be < " + str(1E-6) + " and > " + str(1))
+    return value
 
 
 def unbalanced_float(x):
+    """
+    Checks if the value is a valid unbalancedness between [-1 ... 1]
+    """
     x = float(x)
     if x < -1.0 or x > 1.0:
         raise argparse.ArgumentTypeError(f"{x} not in range [-1.0, 1.0]")
@@ -42,7 +47,8 @@ class Parser(object):
         self.parser = argparse.ArgumentParser(
             prog='lndmanage.py',
             description='Lightning network daemon channel management tool.')
-        self.parser.add_argument('--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
+        self.parser.add_argument(
+            '--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
         subparsers = self.parser.add_subparsers(dest='cmd')
 
         # cmd: status
@@ -52,9 +58,12 @@ class Parser(object):
 
         # cmd: listchannels
         self.parser_listchannels = subparsers.add_parser(
-            'listchannels', help='lists channels with extended information [see also subcommands with -h]',
+            'listchannels',
+            help='lists channels with extended information '
+                 '[see also subcommands with -h]',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        listchannels_subparsers = self.parser_listchannels.add_subparsers(dest='subcmd')
+        listchannels_subparsers = self.parser_listchannels.add_subparsers(
+            dest='subcmd')
 
         # subcmd: listchannels rebalance
         parser_listchannels_rebalance = listchannels_subparsers.add_parser(
@@ -62,55 +71,71 @@ class Parser(object):
         parser_listchannels_rebalance.add_argument(
             '--unbalancedness', type=float,
             default=_settings.UNBALANCED_CHANNEL,
-            help='Unbalancedness is a way to express how balanced a channel is, '
-                 'a value between [-1, 1] (a perfectly balanced channel has a value of 0). '
-                 'The flag excludes channels with an absolute unbalancedness smaller than UNBALANCEDNESS.')
+            help='Unbalancedness is a way to express how balanced a '
+                 'channel is, a value between [-1, 1] (a perfectly balanced '
+                 'channel has a value of 0). The flag excludes channels with '
+                 'an absolute unbalancedness smaller than UNBALANCEDNESS.')
         parser_listchannels_rebalance.add_argument(
-            '--sort-by', default='rev_ub', type=str, help='sort by column (look at description)')
+            '--sort-by', default='rev_ub', type=str,
+            help='sort by column (look at description)')
 
         # subcmd: listchannels inactive
         parser_listchannels_inactive = listchannels_subparsers.add_parser(
             'inactive', help="displays inactive channels")
         parser_listchannels_inactive.add_argument(
-            '--sort-by', default='lup', type=str, help='sort by column (look at description)')
+            '--sort-by', default='lup', type=str,
+            help='sort by column (look at description)')
 
         # subcmd: listchannels forwardings
         parser_listchannels_forwardings = listchannels_subparsers.add_parser(
-            'forwardings', help="displays channels with forwarding information")
+            'forwardings',
+            help="displays channels with forwarding information")
         parser_listchannels_forwardings.add_argument(
-            '--from-days-ago', default=365, type=int, help='time interval start (days ago)')
+            '--from-days-ago', default=365, type=int,
+            help='time interval start (days ago)')
         parser_listchannels_forwardings.add_argument(
-            '--to-days-ago', default=0, type=int, help='time interval end (days ago)')
+            '--to-days-ago', default=0, type=int,
+            help='time interval end (days ago)')
         parser_listchannels_forwardings.add_argument(
-            '--sort-by', default='f/w', type=str, help='sort by column (look at description)')
+            '--sort-by', default='f/w', type=str,
+            help='sort by column (look at description)')
 
         # cmd: rebalance
         self.parser_rebalance = subparsers.add_parser(
-            'rebalance', help='rebalance a channel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_rebalance.add_argument('channel', type=int, help='channel_id')
+            'rebalance', help='rebalance a channel',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_rebalance.add_argument('channel', type=int,
+                                           help='channel_id')
         self.parser_rebalance.add_argument(
-            '--max-fee-sat', type=int, default=20, help='Sets the maximal fees in satoshis to be paid.')
+            '--max-fee-sat', type=int, default=20,
+            help='Sets the maximal fees in satoshis to be paid.')
         self.parser_rebalance.add_argument(
-            '--chunksize', type=float, default=1.0, help='Specifies if the individual rebalance attempts should be '
-                                                         'split into smaller relative amounts. This increases success'
-                                                         ' rates, but also increases costs!')
+            '--chunksize', type=float, default=1.0,
+            help='Specifies if the individual rebalance attempts should be '
+                 'split into smaller relative amounts. This increases success'
+                 ' rates, but also increases costs!')
         self.parser_rebalance.add_argument(
             '--max-fee-rate', type=range_limited_float_type, default=5E-5,
             help='Sets the maximal effective fee rate to be paid.'
-                 ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
+                 ' The effective fee rate is defined by '
+                 '(base_fee + amt * fee_rate) / amt.')
         self.parser_rebalance.add_argument(
-            '--reckless', help='Execute action in the network.', action='store_true')
+            '--reckless', help='Execute action in the network.',
+            action='store_true')
         self.parser_rebalance.add_argument(
-            '--allow-unbalancing', help=f'Allow channels to get an unbalancedness'
+            '--allow-unbalancing',
+            help=f'Allow channels to get an unbalancedness'
             f' up to +-{_settings.UNBALANCED_CHANNEL}.',
             action='store_true')
         self.parser_rebalance.add_argument(
-            '--target', help=f'This feature is still experimental!'
-            f' The unbalancedness target is between [-1, 1].'
-            f' A target of -1 leads to a maximal local balance, a target of 0'
-            f' to a 50:50 balanced channel and a target of 1 to a maximal remote balance. Default is a target of 0.',
+            '--target', help=f'This feature is still experimental! '
+            f'The unbalancedness target is between [-1, 1]. '
+            f'A target of -1 leads to a maximal local balance, a target of 0 '
+            f'to a 50:50 balanced channel and a target of 1 to a maximal '
+            f'remote balance. Default is a target of 0.',
             type=unbalanced_float, default=None)
-        rebalancing_strategies = ['most-affordable-first', 'lowest-feerate-first', 'match-unbalanced']
+        rebalancing_strategies = ['most-affordable-first',
+                                  'lowest-feerate-first', 'match-unbalanced']
         self.parser_rebalance.add_argument(
             '--strategy',
             help=f'Rebalancing strategy.',
@@ -118,84 +143,115 @@ class Parser(object):
 
         # cmd: circle
         self.parser_circle = subparsers.add_parser(
-            'circle', help='circular self-payment', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_circle.add_argument('channel_from', type=int, help='channel_from')
-        self.parser_circle.add_argument('channel_to', type=int, help='channel_from')
-        self.parser_circle.add_argument('amt_sats', type=int, help='amount in satoshis')
+            'circle', help='circular self-payment',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_circle.add_argument('channel_from', type=int,
+                                        help='channel_from')
+        self.parser_circle.add_argument('channel_to', type=int,
+                                        help='channel_from')
+        self.parser_circle.add_argument('amt_sats', type=int,
+                                        help='amount in satoshis')
         self.parser_circle.add_argument(
-            '--max-fee-sat', type=int, default=20, help='Sets the maximal fees in satoshis to be paid.')
+            '--max-fee-sat', type=int, default=20,
+            help='Sets the maximal fees in satoshis to be paid.')
         self.parser_circle.add_argument(
             '--max-fee-rate', type=range_limited_float_type, default=5E-5,
-            help='Sets the maximal effective fee rate to be paid.'
-                 ' The effective fee rate is defined by (base_fee + amt * fee_rate) / amt.')
+            help='Sets the maximal effective fee rate to be paid. '
+                 'The effective fee rate is defined by '
+                 '(base_fee + amt * fee_rate) / amt.')
         self.parser_circle.add_argument(
-            '--reckless', help='Execute action in the network.', action='store_true')
+            '--reckless', help='Execute action in the network.',
+            action='store_true')
 
         # cmd: recommend-nodes
         self.parser_recommend_nodes = subparsers.add_parser(
-            'recommend-nodes', help='recommends nodes [see also subcommands with -h]',
+            'recommend-nodes',
+            help='recommends nodes [see also subcommands with -h]',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         self.parser_recommend_nodes.add_argument(
             '--show-connected', action='store_true', default=False,
-            help='specifies if already connected nodes should be removed from list')
+            help='specifies if already connected nodes should be '
+                 'removed from list')
         self.parser_recommend_nodes.add_argument(
             '--show-addresses', action='store_true', default=False,
             help='specifies if node addresses should be shown')
-        parser_recommend_nodes_subparsers = self.parser_recommend_nodes.add_subparsers(dest='subcmd')
+        parser_recommend_nodes_subparsers = \
+            self.parser_recommend_nodes.add_subparsers(
+                dest='subcmd')
 
-        # TODO: put global options to the parent parser (e.g. number of nodes, sort-by flag)
+        # TODO: put global options to the
+        #  parent parser (e.g. number of nodes, sort-by flag)
+
         # subcmd: recommend-nodes good-old
-        parser_recommend_nodes_good_old = parser_recommend_nodes_subparsers.add_parser(
-            'good-old', help='shows nodes already interacted with but no active channels',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_good_old = \
+            parser_recommend_nodes_subparsers.add_parser(
+                'good-old',
+                help='shows nodes already interacted with but no '
+                     'active channels',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_good_old.add_argument(
-            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+            '--nnodes', default=20, type=int,
+            help='sets the number of nodes displayed')
         parser_recommend_nodes_good_old.add_argument(
-            '--sort-by', default='tot', type=str, help="sort by column [abbreviation, e.g. 'tot']")
+            '--sort-by', default='tot', type=str,
+            help="sort by column [abbreviation, e.g. 'tot']")
 
         # subcmd: recommend-nodes flow-analysis
-        parser_recommend_nodes_flow_analysis = parser_recommend_nodes_subparsers.add_parser(
-            'flow-analysis', help='recommends nodes from a flow analysis',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_flow_analysis = \
+            parser_recommend_nodes_subparsers.add_parser(
+                'flow-analysis', help='recommends nodes from a flow analysis',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_flow_analysis.add_argument(
-            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+            '--nnodes', default=20, type=int,
+            help='sets the number of nodes displayed')
         parser_recommend_nodes_flow_analysis.add_argument(
             '--forwarding-events', default=200, type=int,
             help='sets the number of forwarding events in the flow analysis')
         parser_recommend_nodes_flow_analysis.add_argument(
             '--inwarding-nodes', action='store_true',
-            help='if True, inwarding nodes are displayed instead of outwarding')
+            help='if True, inwarding nodes are displayed '
+                 'instead of outwarding')
         parser_recommend_nodes_flow_analysis.add_argument(
-            '--sort-by', default='weight', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
+            '--sort-by', default='weight', type=str,
+            help="sort by column [abbreviation, e.g. 'nchan']")
 
         # subcmd: recommend-nodes nodefile
-        parser_recommend_nodes_nodefile = parser_recommend_nodes_subparsers.add_parser(
-            'nodefile', help='recommends nodes from a given file/url',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_nodefile = \
+            parser_recommend_nodes_subparsers.add_parser(
+                'nodefile', help='recommends nodes from a given file/url',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_nodefile.add_argument(
-            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+            '--nnodes', default=20, type=int,
+            help='sets the number of nodes displayed')
         parser_recommend_nodes_nodefile.add_argument(
             '--source', type=str,
-            default='https://github.com/lightningnetworkstores/lightningnetworkstores.github.io/raw/master/sites.json',
+            default='https://github.com/lightningnetworkstores/'
+                    'lightningnetworkstores.github.io/raw/master/sites.json',
             help='url/file to be analyzed')
         parser_recommend_nodes_nodefile.add_argument(
             '--distributing-nodes', action='store_true',
-            help='if True, distributing nodes are displayed instead of the bare nodes')
+            help='if True, distributing nodes are '
+                 'displayed instead of the bare nodes')
         parser_recommend_nodes_nodefile.add_argument(
-            '--sort-by', default='cpc', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
+            '--sort-by', default='cpc', type=str,
+            help="sort by column [abbreviation, e.g. 'nchan']")
 
         # subcmd: recommend-nodes channel-openings
-        parser_recommend_nodes_channel_openings = parser_recommend_nodes_subparsers.add_parser(
-            'channel-openings', help='recommends nodes from recent channel openings',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_channel_openings = \
+            parser_recommend_nodes_subparsers.add_parser(
+                'channel-openings',
+                help='recommends nodes from recent channel openings',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_channel_openings.add_argument(
-            '--nnodes', default=20, type=int, help='sets the number of nodes displayed')
+            '--nnodes', default=20, type=int,
+            help='sets the number of nodes displayed')
         parser_recommend_nodes_channel_openings.add_argument(
             '--from-days-ago', type=int,
             default=30,
             help='channel openings starting from a time frame days ago')
         parser_recommend_nodes_channel_openings.add_argument(
-            '--sort-by', default='msteady', type=str, help="sort by column [abbreviation, e.g. 'nchan']")
+            '--sort-by', default='msteady', type=str,
+            help="sort by column [abbreviation, e.g. 'nchan']")
 
     def parse_arguments(self):
         return self.parser.parse_args()
@@ -221,19 +277,21 @@ def main():
         node.print_status()
 
     elif args.cmd == 'listchannels':
+        listchannels = ListChannels(node)
         if not args.subcmd:
-            print_all_channels(node, sort_string='rev_alias')
+            listchannels.print_all_channels('rev_alias')
         if args.subcmd == 'rebalance':
-            print_channels_unbalanced(node, args.unbalancedness,
-                                      sort_string=args.sort_by)
+            listchannels.print_channels_unbalanced(
+                args.unbalancedness, sort_string=args.sort_by)
         elif args.subcmd == 'inactive':
-            print_channels_inactive(node, sort_string=args.sort_by)
+            listchannels.print_channels_inactive(
+                sort_string=args.sort_by)
         elif args.subcmd == 'forwardings':
             # convert time interval into unix timestamp
             time_from = time.time() - args.from_days_ago * 24 * 60 * 60
             time_to = time.time() - args.to_days_ago * 24 * 60 * 60
-            print_channels_forwardings(
-                node, time_interval_start=time_from, time_interval_end=time_to,
+            listchannels.print_channels_forwardings(
+                time_interval_start=time_from, time_interval_end=time_to,
                 sort_string=args.sort_by)
 
     elif args.cmd == 'rebalance':
@@ -296,6 +354,7 @@ def main():
 
 if __name__ == '__main__':
     import logging.config
+
     logging.config.dictConfig(_settings.logger_config)
     logger = logging.getLogger()
 
