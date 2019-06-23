@@ -51,7 +51,7 @@ class Rebalancer(object):
         while True:
             # only attempt a fixed number of times
             count += 1
-            if count > 10:
+            if count > _settings.REBALANCING_TRIALS:
                 raise RebalanceFailure
 
             routes = self.router.get_routes_for_rebalancing(

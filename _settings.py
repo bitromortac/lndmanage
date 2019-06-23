@@ -30,8 +30,10 @@ NUMBER_CHANNELS_DEFINING_HUB = 200
 # -------- rebalancing --------
 # in terms of unbalancedness
 UNBALANCED_CHANNEL = 0.2
-# rebalancing will be done with CHUNK_SIZE of the minimal capacity of the to be balanced channels
+# rebalancing will be done with CHUNK_SIZE of the minimal capacity
+# of the to be balanced channels
 CHUNK_SIZE = 1.0
+REBALANCING_TRIALS = 30
 
 # -------- logging --------
 # debug level can be INFO or DEBUG
