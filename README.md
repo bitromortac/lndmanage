@@ -1,7 +1,8 @@
 lndmanage
 ---------
 
-lndmanage is a command line tool for advanced channel management of an [`LND`](https://github.com/lightningnetwork/lnd) node.
+lndmanage is a command line tool for advanced channel management of an 
+[`LND`](https://github.com/lightningnetwork/lnd) node.
 
 Current feature list (use the ```--help``` flag for subcommands):
 
@@ -15,17 +16,22 @@ Current feature list (use the ```--help``` flag for subcommands):
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * __```circle``` doing circular self-payments__
 * __```recommend-nodes``` recommendation of nodes:__
-  * ```recommend-nodes good-old``` based on historic forwardings of closed channels:
+  * ```recommend-nodes good-old``` based on 
+  historic forwardings of closed channels:
   find nodes already interacted with
-  * ```recommend-nodes flow-analysis``` based on fowarding flow analysis:
+  * ```recommend-nodes flow-analysis``` based on forwarding flow analysis:
   find nodes payments are likely forwarded to
   * ```recommend-nodes nodefile``` based on a node file:
-  parses a url/file for node public keys and suggests nodes to connect to for a good connection 
-  (defaults to the list of [lightning networkstores](http://lightningnetworkstores.com))
-  * ```recommend-nodes channel-openings``` based on recent channel openings in the network:
-  find nodes which show increased recent channel opening activity 
-
-**DISCLAIMER: This is BETA software, so please be careful (All actions are executed as a dry run unless you call lndmanage with the ```--reckless``` flag though). No warranty is given.**
+  parses a url/file for node public keys and suggests nodes to connect to for 
+  a good connection (defaults to the list of 
+  [lightning networkstores](http://lightningnetworkstores.com))
+  * ```recommend-nodes channel-openings``` based on recent channel 
+  openings in the network: find nodes which show increased recent channel 
+  opening activity 
+   
+**DISCLAIMER: This is BETA software, so please be careful (All actions are 
+  executed as a dry run unless you call lndmanage with the ```--reckless``` 
+  flag though). No warranty is given.**
 
 Command line options
 --------------------
@@ -73,17 +79,24 @@ The workflow for rebalancing a channel goes as follows:
   xxxxxxxxxxxxxxxxxx  0.59    400000     81971    306335    400  0.000101 jkl
   ...
   ```
-* the ```ub``` field tells you how unbalanced your channel is and in which direction
-* take a channel_id from the list you wish to rebalance (target is a 50:50 balance)
+* the ```ub``` field tells you how unbalanced your channel is 
+  and in which direction
+* take a channel_id from the list you wish
+  to rebalance (target is a 50:50 balance)
 * do a dry run to see what's waiting for you
 
   ```$ ./lndmange.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
 
-* read the output and if everything looks well, then run with the ```--reckless``` flag
+* read the output and if everything looks well, 
+  then run with the ```--reckless``` flag
+* in order to increase the success probability of your rebalancing you
+  can try to do it in smaller chunks, which can be set by the flag
+  `--chunksize 0.5` (in this example only half the amounts are used)
 
 Channel hygiene
 ---------------------
-Inactive channels lock up capital, which can be used elsewhere. In order to close those channels it is useful to take a look
+Inactive channels lock up capital, which can be used elsewhere. 
+In order to close those channels it is useful to take a look
 at the inactive channels with ```$ ./lndmanage.py listchannels inactive```.
 
 You will get an output like:
@@ -107,11 +120,12 @@ xxxxxxxxxxxxxxxxxx T   F    20   113     40000         0        0 def
 xxxxxxxxxxxxxxxxxx F   T    19    21   1200000      1000        0 ghi
 ...
 ```
-Channels, which were updated a long time ago (```lup```) are likely to be inactive in the future and may be closed.
+Channels, which were updated a long time ago (```lup```) are likely to be 
+inactive in the future and may be closed.
 
 Another way to see if funds have to be reallocated is to have a look at
-the forwarding statistics of, e.g., the last two months of the individual channels
- with ```$./lndmanage.py listchannels forwardings --from-days-ago 60 --sort-by='fees'```
+the forwarding statistics of, e.g., the last two months of the individual 
+channels with ```$./lndmanage.py listchannels forwardings --from-days-ago 60 --sort-by='fees'```
  (here sorted by total fees, but it can be sorted by any column field).
 
 The output will look like:
@@ -152,8 +166,9 @@ remembered. These annotations will then appear in the `listchannels` views.
 
 Setup
 -----
-Lndmanage will be developed in lockstep with lnd and tagged accordingly. If you are running an older version of lnd
-checkout the according [tag](https://github.com/bitromortac/lndmanage/releases).
+Lndmanage will be developed in lockstep with lnd and tagged accordingly. 
+If you are running an older version of lnd checkout the according 
+[tag](https://github.com/bitromortac/lndmanage/releases).
 
 Requirements: python3.6, lnd master pre v0.7
 ```
@@ -170,8 +185,9 @@ Edit configuration (config.ini):
 * tls_cert_file: location of the tls certificate
 * admin_macaroon_file: location of the admin macaroon
 
-Test:
+Before running, make sure the python environment is active:
 ```
+$ source ~/.venvs/lndmanage/bin/activate
 $ ./lndmanage.py status 
 ```
 If it works, you should see the node status.
@@ -179,7 +195,8 @@ If it works, you should see the node status.
 Docker
 ------
 
-If you prefer to run `lndmanage` from a docker container, `cd docker` and follow [`README`](docker/README.md) there.
+If you prefer to run `lndmanage` from a docker container, `cd docker` 
+and follow [`README`](docker/README.md) there.
 
 Compiling grpc in python [development]
 ----------------------------------------------------
