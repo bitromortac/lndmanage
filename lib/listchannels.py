@@ -2,6 +2,7 @@
 Module for printing lightning channels.
 """
 
+import os
 import math
 import logging
 from collections import OrderedDict
@@ -14,6 +15,9 @@ logger.addHandler(logging.NullHandler())
 # define symbols for bool to string conversion
 POSITIVE_MARKER = u"\u2713"
 NEGATIVE_MARKER = u"\u2717"
+ALIAS_LENGTH = 25
+ANNOTATION_LENGTH = 25
+
 
 # define printing abbreviations
 # convert key can specify a function, which lets one do unit conversions
@@ -36,9 +40,18 @@ PRINT_CHANNELS_FORMAT = {
     'alias': {
         'dict_key': 'alias',
         'description': 'alias',
-        'width': 20,
-        'format': '<30.29',
+        'width': ALIAS_LENGTH,
+        'format': '.<'+str(ALIAS_LENGTH),
         'align': '^',
+        'convert': lambda x: alias_cutoff(x),
+    },
+    'annotation': {
+        'dict_key': 'annotation',
+        'description': 'channel annotation',
+        'width': ANNOTATION_LENGTH,
+        'format': '.<'+str(ANNOTATION_LENGTH),
+        'align': '^',
+        'convert': lambda x: alias_cutoff(x),
     },
     'atb': {
         'dict_key': 'amount_to_balanced',
@@ -240,6 +253,19 @@ PRINT_CHANNELS_FORMAT = {
 }
 
 
+def alias_cutoff(alias):
+    """
+    Cuts off the node alias at a certain length and removes unicode
+    characters from the node alias.
+    :param alias: str
+    :return: str
+    """
+    if len(alias) > ALIAS_LENGTH:
+        return alias[:ALIAS_LENGTH-3] + '...'
+    else:
+        return alias
+
+
 class ListChannels(object):
     """
     A class to list lightning channels.
@@ -254,11 +280,10 @@ class ListChannels(object):
         """
         Prints all active and inactive channels.
 
-        :param node: :class:`lib.node.Node`
         :param sort_string: str
         """
 
-        channels = self.node.get_all_channels()
+        channels = self._add_channel_annotations(self.node.get_all_channels())
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
@@ -270,8 +295,9 @@ class ListChannels(object):
             'reverse': reverse_sorting,
         }
 
-        self.print_channels(
-            channels, columns='cid,priv,act,ub,cap,lb,rb,bf,fr,alias',
+        self._print_channels(
+            channels, columns='cid,priv,act,ub,cap,lb,rb,bf,'
+                              'fr,annotation,alias',
             sort_dict=sort_dict)
 
     def print_channels_unbalanced(self, unbalancedness, sort_string='rev_ub'):
@@ -279,12 +305,12 @@ class ListChannels(object):
         Prints unbalanced channels with
         |unbalancedness(channel)| > unbalancedness.
 
-        :param node: :class:`lib.node.Node`
         :param unbalancedness: float
         :param sort_string: str
         """
 
-        channels = self.node.get_unbalanced_channels(unbalancedness)
+        channels = self._add_channel_annotations(
+            self.node.get_unbalanced_channels(unbalancedness))
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
@@ -293,19 +319,19 @@ class ListChannels(object):
             'reverse': reverse_sorting,
         }
 
-        self.print_channels(
-            channels, columns='cid,ub,cap,lb,rb,bf,fr,alias',
+        self._print_channels(
+            channels, columns='cid,ub,cap,lb,rb,bf,fr,annotation,alias',
             sort_dict=sort_dict)
 
     def print_channels_inactive(self, sort_string='lup'):
         """
         Prints all inactive channels.
 
-        :param node: :class:`lib.node.Node`
         :param sort_string: str
         """
 
-        channels = self.node.get_inactive_channels()
+        channels = self._add_channel_annotations(
+            self.node.get_inactive_channels())
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
@@ -314,8 +340,9 @@ class ListChannels(object):
             'reverse': reverse_sorting,
         }
 
-        self.print_channels(
-            channels, columns='cid,lup,priv,ini,age,ub,cap,lb,rb,sr/w,alias',
+        self._print_channels(
+            channels, columns='cid,lup,priv,ini,age,ub,cap,lb,rb,'
+                              'sr/w,annotation,alias',
             sort_dict=sort_dict)
 
     def print_channels_forwardings(self, time_interval_start,
@@ -324,7 +351,6 @@ class ListChannels(object):
         """
         Prints forwarding statistics for each channel.
 
-        :param node: :class:`lib.node.Node`
         :param time_interval_start: int
         :param time_interval_end: int
         :param sort_string: str
@@ -332,6 +358,8 @@ class ListChannels(object):
 
         channels = get_forwarding_statistics_channels(
             self.node, time_interval_start, time_interval_end)
+
+        channels = self._add_channel_annotations(channels)
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
@@ -345,12 +373,76 @@ class ListChannels(object):
             'reverse': reverse_sorting,
         }
 
-        self.print_channels(
+        self._print_channels(
             channels,
-            columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,cap,bf,fr,alias',
+            columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,'
+                    'cap,bf,fr,annotation,alias',
             sort_dict=sort_dict)
 
-    def print_channels(self, channels, columns, sort_dict):
+    @staticmethod
+    def _add_channel_annotations(channels):
+        """
+        Appends metadata to existing channel dicts.
+
+        :param channels: dict
+        :return: dict
+        """
+        # mapping between the channel point and channel id
+        logger.debug("Adding annotations from file 'channel_annotations'.")
+        channel_point_mapping = {k: v['channel_point'].split(':')[0]
+                                 for k, v in channels.items()}
+        directory = os.path.dirname(__file__)
+        channel_annotations_file = os.path.join(
+            directory, '..', 'channel_annotations')
+        channel_annotations_funding_id = {}
+        channel_annotations_channel_id = {}
+
+        with open(channel_annotations_file, 'r') as file:
+            for line in file.readlines():
+                # ignore commenting lines
+                if line[0] == '#':
+                    continue
+                annotation = [a.strip() for a in line.split('|')]
+                if len(annotation) != 2:
+                    raise ValueError(
+                        'Wrong format in channel annotations:\n'
+                        'Use format (per each line):\n'
+                        'funding txn | channel description'
+                    )
+                # check if
+                if len(annotation[0]) == 18 and annotation[0].isnumeric():
+                    # valid channel id
+                    channel_annotations_channel_id[int(annotation[0])] = \
+                        annotation[1]
+                elif len(annotation[0]) == 64 and annotation[0].isalnum():
+                    # valid funding transaction id
+                    channel_annotations_funding_id[annotation[0]] = \
+                        annotation[1]
+                else:
+                    raise ValueError(
+                        'First part needs to be either a channel id or the '
+                        'funding transaction id. \n'
+                        'The funding transaction id can be found with '
+                        '`lncli listchannels` under the channel point (the '
+                        'characters before the colon).'
+                    )
+
+        for channel_id, channel_values in channels.items():
+            # get the annotation by channel id first
+            annotation = channel_annotations_channel_id.get(channel_id, None)
+            # if no channel annotation, try with funding id
+            if annotation is None:
+                annotation = channel_annotations_funding_id.get(
+                    channel_point_mapping[channel_id], None)
+
+            if annotation is not None:
+                channels[channel_id]['annotation'] = annotation
+            else:
+                channels[channel_id]['annotation'] = ''
+
+        return channels
+
+    def _print_channels(self, channels, columns, sort_dict):
         """
         General purpose channel printing.
 
@@ -440,3 +532,4 @@ if __name__ == '__main__':
     logging.config.dictConfig(_settings.logger_config)
 
     node_instance = LndNode()
+    listchannels = ListChannels(node_instance)

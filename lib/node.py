@@ -273,8 +273,8 @@ class LndNode(Node):
                     policy = edge_info['node1_policy']
             except KeyError:
                 # TODO: if channel is unknown in describegraph we need to set the fees to some error value
-                policy = {'fee_base_msat': float('nan'),
-                          'fee_rate_milli_msat': float('nan')}
+                policy = {'fee_base_msat': float(-999),
+                          'fee_rate_milli_msat': float(999)}
 
             # define unbalancedness |ub| large means very unbalanced
             commit_fee = 0 if not c.initiator else c.commit_fee
