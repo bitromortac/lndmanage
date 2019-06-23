@@ -81,7 +81,7 @@ The workflow for rebalancing a channel goes as follows:
 
 * read the output and if everything looks well, then run with the ```--reckless``` flag
 
-Doing channel hygiene
+Channel hygiene
 ---------------------
 Inactive channels lock up capital, which can be used elsewhere. In order to close those channels it is useful to take a look
 at the inactive channels with ```$ ./lndmanage.py listchannels inactive```.
@@ -142,6 +142,13 @@ xxxxxxxxxxxxxxxxxx    3    82   300  35.374  0.74 -0.08 0.70    1000000   700008
 xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591  993591  993591  2450000  750000 1000000 ghi
 ...
 ```
+
+Channel opening strategies
+--------------------------
+Lndmanage supports a channel annotation functionality. By adding the funding
+transaction id or channel id to the file `channel_annotations` specified by the
+format in the file, a comment on why one has opened a specific channel can be
+remembered. These annotations will then appear in the `listchannels` views.
 
 Setup
 -----
