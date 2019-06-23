@@ -21,7 +21,7 @@ if __name__ == '__main__':
     time_end = time.time()
     print(time_end - time_start)
 
-    print("K shortest paths with approximate costs [msats]:")
+    print("K shortest paths with approximate costs [msat]:")
     paths, costs = ksp(node.network.graph, source, target, num_k=5, weight=weight_function)
     for path, cost in zip(paths, costs):
         print(path, cost)

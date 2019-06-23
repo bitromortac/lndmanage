@@ -20,7 +20,7 @@ def ksp_discard_high_cost_paths(graph, source, target, num_k, weight):
     """
     final_routes = []
     routes, route_costs = ksp(graph, source, target, num_k, weight)
-    logger.debug("Approximate costs [msats] of routes:")
+    logger.debug("Approximate costs [msat] of routes:")
     for r, rc in zip(routes, route_costs):
         if rc < _settings.PENALTY:
             logger.debug(f"  {rc} msat: {r}")

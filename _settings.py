@@ -16,7 +16,7 @@ CACHING_RETENTION_MINUTES = 30
 PENALTY = 1E9
 # if a penalty should be applied for long paths
 PREFER_SHORT_PATHS = True
-# penalty per hop in msats, used together with PREFER_SHORT_PATHS
+# penalty per hop in msat, used together with PREFER_SHORT_PATHS
 LONG_PATH_PENALTY_MSAT = 2000
 # exclude channels, which have less than amt * MIN_REL_CHANNEL_CAPACITY
 # this can be used to increase success rates

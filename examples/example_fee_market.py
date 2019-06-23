@@ -53,7 +53,7 @@ def plot_base_fees(base_fees):
 
     plt.hist(base_fees, bins=bins_log)
     plt.loglog()
-    plt.xlabel("Base rate bins [msats]")
+    plt.xlabel("Base rate bins [msat]")
     plt.ylabel("Number of channels")
     plt.show()
 

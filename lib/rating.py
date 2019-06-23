@@ -24,7 +24,7 @@ class ChannelRater(object):
         :param u: source node
         :param v: target node
         :param e: fee policy of the edges
-        :param amt_msat: amount in msats
+        :param amt_msat: amount in msat
         :return: cost of the channel in msat
         """
         node_penalty = 0

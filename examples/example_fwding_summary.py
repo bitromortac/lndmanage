@@ -20,7 +20,7 @@ def plot_forwardings(forwarding_events):
     plt.xticks(rotation=45)
     plt.scatter(times, amounts, s=2)
     plt.yscale('log')
-    plt.ylabel('Forwarding amount [sats]')
+    plt.ylabel('Forwarding amount [sat]')
     plt.show()
 
 
@@ -40,7 +40,7 @@ def plot_fees(forwarding_events):
     plt.xticks(rotation=45)
     plt.scatter(times, amounts, c=color, norm=colors.LogNorm(vmin=1E-6, vmax=1E-3), s=2)
     plt.yscale('log')
-    plt.ylabel('Fees [msats]')
+    plt.ylabel('Fees [msat]')
     plt.ylim((0.5, 1E+6))
     plt.colorbar(label='effective feerate (base + rate)')
     plt.show()
@@ -76,8 +76,8 @@ def statistics_forwardings(forwarding_events):
     fee_rate /= transactions
     print("-------- Forwarding statistics --------")
     print("Number of forwardings: {}".format(transactions))
-    print("Total forwardings [sats]: {}".format(total_amount))
-    print("Total fees earned [sats]: {:.3f}".format(total_fees / 1000.))
+    print("Total forwardings [sat]: {}".format(total_amount))
+    print("Total fees earned [sat]: {:.3f}".format(total_fees / 1000.))
     print("Average fee rate: {:.6f}".format(fee_rate))
 
     print("-------- Popular channels --------")

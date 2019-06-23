@@ -63,10 +63,10 @@ The workflow for rebalancing a channel goes as follows:
   ```
   -------- Description --------
   ub         unbalancedness (see --help)
-  cap        channel capacity [sats]
-  lb         local balance [sats]
-  rb         remote balance [sats]
-  bf         peer base fee [msats]
+  cap        channel capacity [sat]
+  lb         local balance [sat]
+  rb         remote balance [sat]
+  bf         peer base fee [msat]
   fr         peer fee rate
   cid        channel id
   a          alias
@@ -107,8 +107,8 @@ p          true if private channel
 ini        true if we opened channel
 lup        last update time [days ago]
 age        channel age [days]
-cap        capacity [sats]
-lb         local balance [sats]
+cap        capacity [sat]
+lb         local balance [sat]
 sr/w       satoshis sent + received per week of lifespan
 cid        channel id
 a          alias
@@ -134,19 +134,19 @@ The output will look like:
 cid        channel id
 nfwd       number of forwardings
 age        channel age [days]
-fees       fees total [sats]
-f/w        fees per week [sats]
+fees       fees total [sat]
+f/w        fees per week [sat]
 ub         unbalancedness
 flow       flow direction (positive is outwards)
 bwd        bandwidth demand: capacity / max(mean_in, mean_out)
 r          rebalance required if marked with X
-cap        channel capacity [sats]
-in         total forwardings inwards [sats]
-imean      mean forwarding inwards [sats]
-imax       largest forwarding inwards [sats]
-out        total forwardings outwards [sats]
-omean      mean forwarding outwards [sats]
-omax       largest forwarding outwards [sats]
+cap        channel capacity [sat]
+in         total forwardings inwards [sat]
+imean      mean forwarding inwards [sat]
+imax       largest forwarding inwards [sat]
+out        total forwardings outwards [sat]
+omean      mean forwarding outwards [sat]
+omax       largest forwarding outwards [sat]
 a          alias
 
 -------- Channels --------

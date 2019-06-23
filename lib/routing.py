@@ -20,7 +20,7 @@ class Route(object):
     :param node: :class:`lib.node.Node` instance
     :param channel_hops: list of chan_ids along which the route shall be constructed
     :param node_dest: pub_key of destination node
-    :param amt_msat: amount to send in msats
+    :param amt_msat: amount to send in msat
     """
 
     def __init__(self, node, channel_hops, node_dest, amt_msat):
@@ -123,7 +123,7 @@ class Router(object):
         Takes a route in terms of a list of nodes and translates it into a list of channels.
 
         :param node_route: list of pubkeys
-        :param amt_msat: amount to send in sats
+        :param amt_msat: amount to send in sat
         :return: list of channel_ids
         """
         channels = []
@@ -139,7 +139,7 @@ class Router(object):
 
         :param node_from: pubkey
         :param node_to: pubkey
-        :param amt_msat: amount to send in msats
+        :param amt_msat: amount to send in msat
         :param number_of_routes: int
         :return: number_of_routes lists of node pubkeys
         """
@@ -161,7 +161,7 @@ class Router(object):
 
         :param node_from: pubkey
         :param node_to: pubkey
-        :param amt_msat: amount to send in msats
+        :param amt_msat: amount to send in msat
         :return: channel_id
         """
         number_edges = self.node.network.graph.number_of_edges(node_from, node_to)

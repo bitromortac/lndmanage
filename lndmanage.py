@@ -149,7 +149,7 @@ class Parser(object):
                                         help='channel_from')
         self.parser_circle.add_argument('channel_to', type=int,
                                         help='channel_from')
-        self.parser_circle.add_argument('amt_sats', type=int,
+        self.parser_circle.add_argument('amt_sat', type=int,
                                         help='amount in satoshis')
         self.parser_circle.add_argument(
             '--max-fee-sat', type=int, default=20,
@@ -313,7 +313,7 @@ def main():
         try:
             rebalancer.rebalance_two_channels(
                 args.channel_from, args.channel_to,
-                args.amt_sats, invoice_r_hash, args.max_fee_sat,
+                args.amt_sat, invoice_r_hash, args.max_fee_sat,
                 dry=not args.reckless)
         except DryRunException:
             logger.info("This was just a dry run.")
