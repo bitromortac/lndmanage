@@ -1,0 +1,11 @@
+# This file has the purpose of labeling lightning channels
+# Annotations can be added by placing lines with the following format
+# in this file (one line per channel):
+#
+# funding_transaction_id | description
+# or
+# channel_id | description
+#
+# examples:
+# mavh27t03e0hcp3ni7wcj3avhln8o5lleno0noaiiwlivkp0yk3gwfx2bskjx70v0u | node has a high capacity per channel
+# 635263839283742663 | transaction flow out
