@@ -109,28 +109,32 @@ print_node_format = {
     },
     'openrel': {
         'dict_key': 'relative_openings',
-        'description': 'number of channel openings per number of total channels of node in timeframe [1/time]',
+        'description': 'number of channel openings per number of total '
+                       'channels of node in timeframe [1/time]',
         'width': 8,
         'format': '8.2f',
         'align': '>',
     },
     'opencap': {
         'dict_key': 'openings_total_capacity',
-        'description': 'total capacity of channel openings in timeframe [btc/time]',
+        'description': 'total capacity of channel openings in '
+                       'timeframe [btc/time]',
         'width': 7,
         'format': '7.3f',
         'align': '>',
     },
     'opencaprel': {
         'dict_key': 'relative_total_capacity',
-        'description': 'total capacity of channel openings per capacity of node in timeframe [1/time]',
+        'description': 'total capacity of channel openings per capacity '
+                       'of node in timeframe [1/time]',
         'width': 11,
         'format': '11.2f',
         'align': '>',
     },
     'openavgcap': {
         'dict_key': 'openings_average_capacity',
-        'description': 'average channel capacity of channel openings in timeframe [btc/time]',
+        'description': 'average channel capacity of channel openings '
+                       'in timeframe [btc/time]',
         'width': 11,
         'format': '11.8f',
         'align': '>',
@@ -171,56 +175,81 @@ class RecommendNodes(object):
         self.show_address = show_addresses
         self.network_analysis = NetworkAnalysis(self.node)
 
-    def print_flow_analysis(self, out_direction=True, number_of_nodes=20, forwarding_events=200, sort_by='weight'):
-        nodes = self.flow_analysis(out_direction, last_forwardings_to_analyze=forwarding_events)
+    def print_flow_analysis(self, out_direction=True, number_of_nodes=20,
+                            forwarding_events=200, sort_by='weight'):
+        nodes = self.flow_analysis(
+            out_direction, last_forwardings_to_analyze=forwarding_events)
         format_string = 'rpk,nchan,cap,cpc,alias'
-        self.print_nodes(nodes, number_of_nodes, format_string, sort_by=sort_by)
+        self.print_nodes(
+            nodes, number_of_nodes, format_string, sort_by=sort_by)
 
     def print_good_old(self, number_of_nodes=20, sort_by='tot'):
         nodes = self.good_old()
         format_string = 'rpk,tot,flow,nchan,cap,cpc,alias'
         self.print_nodes(nodes, number_of_nodes, format_string, sort_by)
 
-    def print_nodefile(self, source, distributing_nodes, number_of_nodes=20, sort_by='cap'):
-        nodes = self.nodefile(source, distributing_nodes)
+    def print_external_source(self, source, distributing_nodes,
+                              number_of_nodes=20, sort_by='cap'):
+
+        nodes = self.external_source(source, distributing_nodes)
         logger.info(f"Showing nodes from source {source}.")
         format_string = 'rpk,con,nchan,cap,cpc,alias'
-        self.print_nodes(nodes, number_of_nodes, format_string, sort_by=sort_by)
+        self.print_nodes(
+            nodes, number_of_nodes, format_string, sort_by=sort_by)
 
-    def print_channel_openings(self, from_days_ago=14, number_of_nodes=20, sort_by='open'):
+    def print_channel_openings(self, from_days_ago=14, number_of_nodes=20,
+                               sort_by='open'):
+
         nodes = self.channel_opening_statistics(from_days_ago)
-        format_string = 'rpk,open,opencap,openrel,opencaprel,openavgcap,openmed,openavg,nchan,cap,cpc,age,alias'
-        self.print_nodes(nodes, number_of_nodes, format_string, sort_by=sort_by)
+        format_string = 'rpk,open,opencap,openrel,opencaprel,openavgcap,' \
+                        'openmed,openavg,nchan,cap,cpc,age,alias'
+        self.print_nodes(
+            nodes, number_of_nodes, format_string, sort_by=sort_by)
 
     def good_old(self):
         """
-        Gives back a list of nodes to which we already had a good relationship with historic forwardings.
+        Gives back a list of nodes to which we already had a good relationship
+        with historic forwardings.
+
         :return: dict, nodes sorted by total amount forwarded
         """
         forwarding_analyzer = ForwardingAnalyzer(self.node)
-        forwarding_analyzer.initialize_forwarding_data(0, time.time())  # analyze all historic forwardings
+        # analyze all historic forwardings
+        forwarding_analyzer.initialize_forwarding_data(0, time.time())
         nodes = forwarding_analyzer.get_forwarding_statistics_nodes()
         nodes = self.add_metadata_and_remove_pruned(nodes)
         return nodes
 
-    def flow_analysis(self, out_direction=True, last_forwardings_to_analyze=200):
+    def flow_analysis(self, out_direction=True,
+                      last_forwardings_to_analyze=200):
         """
-        Does a flow analysis and suggests nodes which have demand for inbound liquidity.
-        :param out_direction: bool, if True outward flowing nodes are displayed
-        :param last_forwardings_to_analyze: int, number of forwardings in analysis
+        Does a flow analysis and suggests nodes which have demand for
+        inbound liquidity.
+
+        :param out_direction: bool, if True outward flowing
+                              nodes are displayed
+        :param last_forwardings_to_analyze: int, number of
+                                            forwardings in analysis
         :return: nodes dict with metadata
         """
         forwarding_analyzer = ForwardingAnalyzer(self.node)
-        forwarding_analyzer.initialize_forwarding_data(0, time.time())  # analyze all historic forwardings
-        nodes_in, nodes_out = forwarding_analyzer.simple_flow_analysis(last_forwardings_to_analyze)
+        # analyze all historic forwardings
+        forwarding_analyzer.initialize_forwarding_data(0, time.time())
+        nodes_in, nodes_out = forwarding_analyzer.simple_flow_analysis(
+            last_forwardings_to_analyze)
         raw_nodes = nodes_out if out_direction else nodes_in
         nodes = self.add_metadata_and_remove_pruned(raw_nodes)
         return nodes
 
-    def nodefile(self, source, distributing_nodes=False, exclude_hubs=True):
+    def external_source(self, source, distributing_nodes=False,
+                        exclude_hubs=True):
         """
-        Parses a file/url (source) for node public keys and displays additional info.
-        If distributing_nodes is set to True, nodes which are well connected to the nodes in the nodefile are displayed.
+        Parses a file/url (source) for node public keys and displays
+        additional info.
+
+        If distributing_nodes is set to True, nodes which are well connected to
+        the nodes in the external source are displayed.
+
         Big hubs can be excluded by exclude_hubs.
         :param source: str
         :param distributing_nodes: bool
@@ -257,32 +286,44 @@ class RecommendNodes(object):
                 logger.exception(e)
 
         if not source_found:
-            raise FileNotFoundError(f"Didn't find anything under the source you provided: {source}")
+            raise FileNotFoundError(f"Didn't find anything under the source "
+                                    f"you provided: {source}")
 
         # match the node public keys
         pattern = re.compile("[a-z0-9]{66}")
         nodes = re.finditer(pattern, text)
 
-        # create an empty dict for nodes, connections is the number of connections to the target nodes
+        # create an empty dict for nodes, connections is the number of
+        # connections to the target nodes
         nodes = {n.group(): {'connections': 0} for n in nodes}
 
-        # instead of analyzing the nodes extracted from the data source, we can look at their neighbors
-        # these neighbors can be seen as nodes, which distribute our capital to the target nodes
+        # instead of analyzing the nodes extracted from the data source,
+        # we can look at their neighbors these neighbors can be seen as nodes,
+        # which distribute our capital to the target nodes
         if distributing_nodes:
-            logger.info("Determining nodes that are well connected to the nodes from the node file.")
+            logger.info("Determining nodes that are well connected to the "
+                        "nodes from the node file.")
 
-            # it makes sense to exclude large hubs in the search, because everybody is already connected to them
+            # it makes sense to exclude large hubs in the search,
+            # because everybody is already connected to them
             if exclude_hubs:  # we exclude hubs in the neighbor analysis
-                nodes_list = [n for n in nodes.keys()
-                              if self.node.network.number_channels(n) < _settings.NUMBER_CHANNELS_DEFINING_HUB]
+                nodes_list = [
+                    n for n in nodes.keys()
+                    if self.node.network.number_channels(n) < _settings.NUMBER_CHANNELS_DEFINING_HUB
+                ]
             else:
                 nodes_list = nodes.keys()
 
-            # we also want to avoid to count the nodes we are already connected to with blacklist_nodes
-            blacklist_nodes = list(self.node.network.neighbors(self.node.pub_key))
+            # we also want to avoid to count the nodes we are already
+            # connected to with blacklist_nodes
+            blacklist_nodes = list(
+                self.node.network.neighbors(self.node.pub_key))
 
-            node_neighbors_list = self.node.network.nodes_in_neighborhood_of_nodes(nodes_list, blacklist_nodes)
-            # set the number of connections to target nodes in the node dictionary
+            node_neighbors_list = \
+                self.node.network.nodes_in_neighborhood_of_nodes(
+                    nodes_list, blacklist_nodes)
+            # set the number of connections to target nodes in
+            # the node dictionary
             nodes = {n[0]: {'connections': n[1]} for n in node_neighbors_list}
 
         nodes = self.add_metadata_and_remove_pruned(nodes, exclude_hubs)
@@ -291,37 +332,51 @@ class RecommendNodes(object):
 
     def channel_opening_statistics(self, from_days_ago):
         """
-        Fetches the channel opening statistics of the last `from_days_ago` days for the network analysis class and
-        adds some additional heuristics.
+        Fetches the channel opening statistics of the last `from_days_ago`
+        days for the network analysis class and adds some
+        additional heuristics.
 
         :param from_days_ago: int
         :return: dict, keys: node public keys, values: several heuristics
         """
 
-        nodes = self.network_analysis.calculate_channel_opening_statistics(from_days_ago)
+        nodes = \
+            self.network_analysis.calculate_channel_opening_statistics(
+                from_days_ago)
         nodes = self.add_metadata_and_remove_pruned(nodes)
 
         # add the node age and other interesting metrics
         for n, nv in nodes.items():
             node_age = self.node.network.node_age(n)
             nodes[n]['age_days'] = node_age
-            # goal of this metric: find bust-like channel openings of older nodes
-            # the motivation behind this is that this could be the behavior of a node which first did testing on
-            # some service, but then all of a sudden goes live, whose moment we want to catch
-            nodes[n]['metric_burst'] = nv['relative_total_capacity'] * (nv['openings_total_capacity']) ** 2 * node_age \
+
+            # goal of this metric:
+            # find bust-like channel openings of older nodes
+            # the motivation behind this is that this could be the behavior
+            # of a node which first did testing on some service,
+            # but then all of a sudden goes live, whose moment we want to catch
+
+            nodes[n]['metric_burst'] = \
+                nv['relative_total_capacity'] * \
+                (nv['openings_total_capacity']) ** 2 * node_age \
                 / max(1, nv['opening_median_time'])  # avoid division by zero
-            # goal of this metric: find steady nodes with lots of capacity opening
-            # the motivation behind this is that this could be the behavior of experienced node operators
-            # who dedicate themselves to their nodes and add a lot of value to the network
+
+            # goal of this metric:
+            # find steady nodes with lots of capacity opening the motivation
+            # behind this is that this could be the behavior of experienced
+            # node operators who dedicate themselves to their nodes and add
+            # a lot of value to the network
             nodes[n]['metric_steady'] = nv['opening_median_time'] * (nv['openings_total_capacity'])**2
 
         return nodes
 
     def add_metadata_and_remove_pruned(self, nodes, exclude_hubs=False):
         """
-        Adds metadata like the number of channels, total capacity, ip address to the dict of nodes.
+        Adds metadata like the number of channels, total capacity,
+        ip address to the dict of nodes.
 
-        This should be added to every node recommendation method, as it cleans out the obvious bad nodes to
+        This should be added to every node recommendation method,
+        as it cleans out the obvious bad nodes to
         which we don't want to connect to.
 
         If exclude_hubs is set to True, big nodes will be removed from nodes.
@@ -342,20 +397,26 @@ class RecommendNodes(object):
                 total_capacity = self.node.network.node_capacity(k)
                 node_new['number_channels'] = number_channels
                 if number_channels > 0:
-                    node_new['total_capacity'] = float(total_capacity) / 1E8  # in btc
-                    node_new['capacity_per_channel'] = float(total_capacity) / number_channels / 1E8  # in btc
+                    node_new['total_capacity'] = \
+                        float(total_capacity) / 1E8  # in btc
+                    node_new['capacity_per_channel'] = \
+                        float(total_capacity) / number_channels / 1E8  # in btc
                     node_new['address'] = self.node.network.node_address(k)
-                    node_new['distance'] = self.network_analysis.distance(self.node.pub_key, k)
+                    node_new['distance'] = \
+                        self.network_analysis.distance(self.node.pub_key, k)
                     if exclude_hubs:
                         if node_new['number_channels'] < _settings.NUMBER_CHANNELS_DEFINING_HUB:
                             nodes_new[k] = node_new
                     else:
                         nodes_new[k] = node_new
-            except KeyError:  # it was a pruned node if it is not found in the graph and it shouldn't be recommended
+            # it was a pruned node if it is not found in the graph and
+            # it shouldn't be recommended
+            except KeyError:
                 pass
 
         if exclude_hubs:
-            logger.info(f"Excluding hubs (defined by number of channels > {_settings.NUMBER_CHANNELS_DEFINING_HUB}).")
+            logger.info(f"Excluding hubs (defined by number of channels > "
+                        f"{_settings.NUMBER_CHANNELS_DEFINING_HUB}).")
         if not self.show_connected:
             nodes_new = self.exclude_connected_nodes(nodes_new)
 
@@ -387,47 +448,63 @@ class RecommendNodes(object):
         """
         General purpose printing function for flexible node tables.
 
-        Columns is a string, which includes the order and items of columns with a comma delimiter like so:
+        Columns is a string, which includes the order and items of columns
+        with a comma delimiter like so:
+
         columns = "rpk,nchan,cap,cpc,a"
 
-        Sorting can be reversed by adding a "rev_" string before the sorting string.
+        Sorting can be reversed by adding a "rev_" string before the
+        sorting string.
 
         :param nodes: dict
         :param number_of_nodes: int
         :param columns: str
-        :param sort_by: str, sorting string, these can be the keys of the node dictionary
+        :param sort_by: str, sorting string, these can be the keys
+                             of the node dictionary
         """
 
         if len(nodes) == 0:
             logger.info(">>> Did not find any nodes.")
         else:
-            logger.info(f"Found {len(nodes.keys())} nodes for node recommendation.")
+            logger.info(f"Found {len(nodes.keys())} nodes for "
+                        f"node recommendation.")
 
         # some logic to reverse the sorting order
-        reverse_sorting = True  # largest first
-        if sort_by[:4] == 'rev_':  # if there is a marker 'rev_' in front, reverse the sorting
+        # largest first
+        reverse_sorting = True
+
+        # if there is a marker 'rev_' in front, reverse the sorting
+        if sort_by[:4] == 'rev_':
             reverse_sorting = False
             sort_by = sort_by[4:]
-        nodes = OrderedDict(sorted(nodes.items(), key=lambda x: x[1][print_node_format[sort_by]['dict_key']],
-                                   reverse=reverse_sorting))
+        nodes = OrderedDict(
+            sorted(nodes.items(),
+                   key=lambda x: x[1][print_node_format[sort_by]['dict_key']],
+                   reverse=reverse_sorting))
+
         logger.info(f"Sorting nodes by {sort_by}.")
 
         logger.info("-------- Description --------")
         columns = columns.split(',')
         for c in columns:
             logger.info(f"{c:<10} {print_node_format[c]['description']}")
-        logger.info(f"-------- Nodes (limited to {number_of_nodes} nodes) --------")
+        logger.info(f"-------- Nodes (limited to "
+                    f"{number_of_nodes} nodes) --------")
 
         # prepare the column header
-        column_header_list = [f"{c:{print_node_format[c]['align']}{print_node_format[c]['width']}}" for c in columns]
+        column_header_list = [
+            f"{c:{print_node_format[c]['align']}{print_node_format[c]['width']}}"
+            for c in columns]
         column_header = " ".join(column_header_list)
         logger.info(column_header)
 
         for ik, (k, v) in enumerate(nodes.items()):
             if ik > number_of_nodes:
                 break
-            # print each row in a formated way specified in the print_node dictionary
-            row = [f"{v[print_node_format[c]['dict_key']]:{print_node_format[c]['format']}}"
+            # print each row in a formated way specified in the
+            # print_node dictionary
+            row = [
+                f"{v[print_node_format[c]['dict_key']]:{print_node_format[c]['format']}}"
                    for c in columns if c != 'rpk']
             # add whitespace buffers between columns
             row_string = " ".join(row)

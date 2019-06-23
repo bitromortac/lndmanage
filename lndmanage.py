@@ -215,24 +215,24 @@ class Parser(object):
             '--sort-by', default='weight', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
 
-        # subcmd: recommend-nodes nodefile
-        parser_recommend_nodes_nodefile = \
+        # subcmd: recommend-nodes external_source
+        parser_recommend_nodes_external_source = \
             parser_recommend_nodes_subparsers.add_parser(
-                'nodefile', help='recommends nodes from a given file/url',
+                'external-source', help='recommends nodes from a given file/url',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser_recommend_nodes_nodefile.add_argument(
+        parser_recommend_nodes_external_source.add_argument(
             '--nnodes', default=20, type=int,
             help='sets the number of nodes displayed')
-        parser_recommend_nodes_nodefile.add_argument(
+        parser_recommend_nodes_external_source.add_argument(
             '--source', type=str,
             default='https://github.com/lightningnetworkstores/'
                     'lightningnetworkstores.github.io/raw/master/sites.json',
             help='url/file to be analyzed')
-        parser_recommend_nodes_nodefile.add_argument(
+        parser_recommend_nodes_external_source.add_argument(
             '--distributing-nodes', action='store_true',
             help='if True, distributing nodes are '
                  'displayed instead of the bare nodes')
-        parser_recommend_nodes_nodefile.add_argument(
+        parser_recommend_nodes_external_source.add_argument(
             '--sort-by', default='cpc', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
 
@@ -342,8 +342,8 @@ def main():
                 number_of_nodes=args.nnodes,
                 forwarding_events=args.forwarding_events,
                 sort_by=args.sort_by)
-        elif args.subcmd == 'nodefile':
-            recommend_nodes.print_nodefile(
+        elif args.subcmd == 'external-source':
+            recommend_nodes.print_external_source(
                 args.source, distributing_nodes=args.distributing_nodes,
                 number_of_nodes=args.nnodes, sort_by=args.sort_by)
         elif args.subcmd == 'channel-openings':

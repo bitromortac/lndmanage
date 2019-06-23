@@ -21,7 +21,7 @@ Current feature list (use the ```--help``` flag for subcommands):
   find nodes already interacted with
   * ```recommend-nodes flow-analysis``` based on forwarding flow analysis:
   find nodes payments are likely forwarded to
-  * ```recommend-nodes nodefile``` based on a node file:
+  * ```recommend-nodes external-source``` based on an external source:
   parses a url/file for node public keys and suggests nodes to connect to for 
   a good connection (defaults to the list of 
   [lightning networkstores](http://lightningnetworkstores.com))
