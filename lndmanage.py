@@ -208,9 +208,9 @@ class Parser(object):
             '--forwarding-events', default=200, type=int,
             help='sets the number of forwarding events in the flow analysis')
         parser_recommend_nodes_flow_analysis.add_argument(
-            '--inwarding-nodes', action='store_true',
-            help='if True, inwarding nodes are displayed '
-                 'instead of outwarding')
+            '--inwards', action='store_true',
+            help='if True, inward-flowing nodes are displayed '
+                 'instead of outward-flowing nodes')
         parser_recommend_nodes_flow_analysis.add_argument(
             '--sort-by', default='weight', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
@@ -338,7 +338,7 @@ def main():
                                            sort_by=args.sort_by)
         elif args.subcmd == 'flow-analysis':
             recommend_nodes.print_flow_analysis(
-                out_direction=(not args.inwarding_nodes),
+                out_direction=(not args.inwards),
                 number_of_nodes=args.nnodes,
                 forwarding_events=args.forwarding_events,
                 sort_by=args.sort_by)
