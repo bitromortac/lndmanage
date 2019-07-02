@@ -28,6 +28,7 @@ Current feature list (use the ```--help``` flag for subcommands):
   * ```recommend-nodes channel-openings``` based on recent channel 
   openings in the network: find nodes which show increased recent channel 
   opening activity 
+* __```update-fees``` optimize channel fee rates__
    
 **DISCLAIMER: This is BETA software, so please be careful (All actions are 
   executed as a dry run unless you call lndmanage with the ```--reckless``` 
