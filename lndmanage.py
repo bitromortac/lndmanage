@@ -5,6 +5,7 @@ import time
 from lib.node import LndNode
 from lib.listchannels import ListChannels
 from lib.rebalance import Rebalancer
+from lib.fee_setting import FeeSetter
 from lib.exceptions import (
     DryRunException,
     PaymentTimeOut,
@@ -253,6 +254,39 @@ class Parser(object):
             '--sort-by', default='msteady', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
 
+        # cmd: update-fees
+        self.parser_update_fees = subparsers.add_parser(
+            'update-fees',
+            description='This command increases/decreases the fee rate of all '
+                        'the channels by a maximal amount of +/-25% by taking '
+                        'into account the unbalancedness, the flow direction '
+                        'and the demand of the individual channel. The goal '
+                        'is to increase the fee rate of highly used outgoing '
+                        'channels and decrease the fee rate for barely used '
+                        'outgoing channels. The command prints out a list '
+                        'of changes and then asks the user for permission.',
+            help='change the fees of all channels taking into '
+                 'account the unbalancedness, flow, and demand for the '
+                 'channel',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_update_fees.add_argument(
+            '--cltv', type=int, default=20,
+            help='CLTV time delta in fee policy')
+        self.parser_update_fees.add_argument(
+            '--base-fee-msat', type=int, default=20,
+            help='base fee in msat')
+        self.parser_update_fees.add_argument(
+            '--min-fee-rate', type=float, default=0.000001,
+            help='fees rates are always kept above this amount')
+        self.parser_update_fees.add_argument(
+            '--from-days-ago', type=int, default=7,
+            help='sets the number of days over which the last fees are taken '
+                 'into account when estimating the demand')
+        self.parser_update_fees.add_argument(
+            '--reckless', help='Update the fees without asking the user '
+                               'explicitly.',
+            action='store_true')
+
     def parse_arguments(self):
         return self.parser.parse_args()
 
@@ -350,6 +384,15 @@ def main():
             recommend_nodes.print_channel_openings(
                 from_days_ago=args.from_days_ago,
                 number_of_nodes=args.nnodes, sort_by=args.sort_by)
+
+    elif args.cmd == 'update-fees':
+        feesetter = FeeSetter(node)
+        feesetter.set_fees_demand(
+            cltv=args.cltv, from_days_ago=args.from_days_ago,
+            base_fee_msat=args.base_fee_msat, reckless=args.reckless,
+            min_fee_rate=args.min_fee_rate
+        )
+        pass
 
 
 if __name__ == '__main__':

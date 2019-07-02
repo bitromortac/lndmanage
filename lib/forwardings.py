@@ -249,8 +249,10 @@ class ForwardingAnalyzer(object):
                     else edge_data_out['node2_pub']
 
                 # nodes involved in the forwarding process should be removed
-                excluded_nodes = [self.node.pub_key, incoming_node_pub_key,
-                    outgoing_node_pub_key]
+                excluded_nodes = [
+                    self.node.pub_key, incoming_node_pub_key,
+                    outgoing_node_pub_key
+                ]
 
                 # determine all the nearest and second nearest
                 # neighbors (they may appear more than once)

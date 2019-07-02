@@ -21,6 +21,7 @@ from lib.ln_utilities import (extract_short_channel_id_from_string,
 from lib.exceptions import PaymentTimeOut, NoRouteError
 
 import logging
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -57,7 +58,8 @@ class LndNode(Node):
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
-        self.public_active_channels = self.get_open_channels(public_only=True, active_only=True)
+        self.public_active_channels = self.get_open_channels(
+            public_only=True, active_only=True)
 
     @staticmethod
     def connect():
@@ -66,20 +68,24 @@ class LndNode(Node):
         and admin macaroon defined in settings.
         """
         macaroons = True
-        os.environ['GRPC_SSL_CIPHER_SUITES'] = '' + \
-                                               'ECDHE-RSA-AES128-GCM-SHA256:' + \
-                                               'ECDHE-RSA-AES128-SHA256:' + \
-                                               'ECDHE-RSA-AES256-SHA384:' + \
-                                               'ECDHE-RSA-AES256-GCM-SHA384:' + \
-                                               'ECDHE-ECDSA-AES128-GCM-SHA256:' + \
-                                               'ECDHE-ECDSA-AES128-SHA256:' + \
-                                               'ECDHE-ECDSA-AES256-SHA384:' + \
-                                               'ECDHE-ECDSA-AES256-GCM-SHA384'
+        os.environ['GRPC_SSL_CIPHER_SUITES'] = \
+            '' + \
+            'ECDHE-RSA-AES128-GCM-SHA256:' + \
+            'ECDHE-RSA-AES128-SHA256:' + \
+            'ECDHE-RSA-AES256-SHA384:' + \
+            'ECDHE-RSA-AES256-GCM-SHA384:' + \
+            'ECDHE-ECDSA-AES128-GCM-SHA256:' + \
+            'ECDHE-ECDSA-AES128-SHA256:' + \
+            'ECDHE-ECDSA-AES256-SHA384:' + \
+            'ECDHE-ECDSA-AES256-GCM-SHA384'
 
-        cert = open(os.path.expanduser(_settings.config['network']['tls_cert_file']), 'rb').read()
+        cert = open(os.path.expanduser(
+            _settings.config['network']['tls_cert_file']), 'rb').read()
 
         if macaroons:
-            with open(os.path.expanduser(_settings.config['network']['admin_macaroon_file']), 'rb') as f:
+            with open(os.path.expanduser(
+                    _settings.config['network']['admin_macaroon_file']),
+                    'rb') as f:
                 macaroon_bytes = f.read()
                 macaroon = codecs.encode(macaroon_bytes, 'hex')
 
@@ -94,9 +100,12 @@ class LndNode(Node):
         else:
             creds = grpc.ssl_channel_credentials(cert)
 
-        channel = grpc.secure_channel(_settings.config['network']['lnd_grpc_host'], creds, options=[
-            ('grpc.max_receive_message_length', 50 * 1024 * 1024)  # necessary to circumvent standard size limitation
-        ])
+        # necessary to circumvent standard size limitation
+        max_size = 50 * 1024 * 1024
+        channel = grpc.secure_channel(
+            _settings.config['network']['lnd_grpc_host'], creds, options=[
+                ('grpc.max_receive_message_length', max_size)
+            ])
 
         return lnrpc.LightningStub(channel)
 
@@ -105,8 +114,10 @@ class LndNode(Node):
         self.blockheight = int(info.block_height)
 
     def get_channel_info(self, channel_id):
-        channel = self._stub.GetChanInfo(ln.ChanInfoRequest(chan_id=channel_id))
-        channel_dict = MessageToDict(channel, including_default_value_fields=True)
+        channel = self._stub.GetChanInfo(
+            ln.ChanInfoRequest(chan_id=channel_id))
+        channel_dict = MessageToDict(
+            channel, including_default_value_fields=True)
         channel_dict = convert_dictionary_number_strings_to_ints(channel_dict)
         return channel_dict
 
@@ -194,7 +205,8 @@ class LndNode(Node):
             payment_hash_string=r_hash_bytes.hex(),
         )
         try:
-            return self._stub.SendToRouteSync(request, timeout=5*60)  # timeout after 5 minutes
+            # time out after 5 minutes
+            return self._stub.SendToRouteSync(request, timeout=5*60)
         except _Rendezvous:
             raise PaymentTimeOut
 
@@ -213,8 +225,8 @@ class LndNode(Node):
     def set_info(self):
         """
         Fetches information about this node and computes total capacity,
-        local and remote total balance, how many satoshis were sent and received,
-        and some networking peer stats.
+        local and remote total balance, how many satoshis were sent
+        and received, and some networking peer stats.
         """
 
         raw_info = self.get_raw_info()
@@ -224,7 +236,8 @@ class LndNode(Node):
         self.num_peers = raw_info.num_peers
 
         # TODO: remove the following code and implement an advanced status
-        all_channels = self.get_open_channels(active_only=False, public_only=False)
+        all_channels = self.get_open_channels(
+            active_only=False, public_only=False)
 
         for k, c in all_channels.items():
             self.total_capacity += c['capacity']
@@ -239,61 +252,80 @@ class LndNode(Node):
 
     def get_open_channels(self, active_only=False, public_only=False):
         """
-        Fetches information (fee settings of the counterparty, channel capacity, balancedness)
-         about this node's open channels and saves it into the channels dict attribute.
+        Fetches information (fee settings of the counterparty, channel
+        capacity, balancedness) about this node's open channels and saves
+        it into the channels dict attribute.
 
-        :param active_only: bool, only take active channels into account (default)
-        :param public_only: bool, only take public channels into account (off by default)
+        :param active_only: bool, only take active channels into account
+        :param public_only: bool, only take public channels into account
         :return: list of channels sorted by remote pubkey
         """
-        raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
+        raw_channels = self._stub.ListChannels(
+            ln.ListChannelsRequest(
+                active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
         channels = OrderedDict()
 
         for c in channels_data:
             # calculate age from blockheight
-            blockheight, _, _ = convert_channel_id_to_short_channel_id(c.chan_id)
+            blockheight, _, _ = convert_channel_id_to_short_channel_id(
+                c.chan_id)
             age_days = (self.blockheight - blockheight) * 10 / (60 * 24)
             # calculate last update (days ago)
             try:
-                last_update = (time.time() - self.network.edges[c.chan_id]['last_update']) / (60 * 60 * 24)
+                last_update = (
+                        (time.time() -
+                         self.network.edges[c.chan_id]['last_update'])
+                        / (60 * 60 * 24))
             except TypeError:
                 last_update = float('nan')
             except KeyError:
                 last_update = float('nan')
 
-            sent_received_per_week = int((c.total_satoshis_sent + c.total_satoshis_received) / (age_days / 7))
+            sent_received_per_week = int(
+                (c.total_satoshis_sent + c.total_satoshis_received) /
+                (age_days / 7))
             # determine policy
 
             try:
                 edge_info = self.network.edges[c.chan_id]
-                if edge_info['node1_pub'] == self.pub_key:  # interested in node2
-                    policy = edge_info['node2_policy']
-                else:  # interested in node1
-                    policy = edge_info['node1_policy']
+                if edge_info['node1_pub'] == self.pub_key:
+                    policy_peer = edge_info['node2_policy']
+                    policy_local = edge_info['node1_policy']
+                else:
+                    policy_peer = edge_info['node1_policy']
+                    policy_local = edge_info['node2_policy']
             except KeyError:
-                # TODO: if channel is unknown in describegraph we need to set the fees to some error value
-                policy = {'fee_base_msat': float(-999),
-                          'fee_rate_milli_msat': float(999)}
+                policy_peer = {
+                    'fee_base_msat': float(-999),
+                    'fee_rate_milli_msat': float(999)}
+                policy_local = {
+                    'fee_base_msat': float(-999),
+                    'fee_rate_milli_msat': float(999)}
 
             # define unbalancedness |ub| large means very unbalanced
             commit_fee = 0 if not c.initiator else c.commit_fee
-            unbalancedness = -(float(c.local_balance + commit_fee) / c.capacity - 0.5) * 2
+            unbalancedness = -(float(c.local_balance + commit_fee) / c.capacity
+                               - 0.5) * 2
             # inverse of above formula:
-            # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
+            # c.local_balance =
+            # c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
 
             channels[c.chan_id] = {
                 'active': c.active,
                 'age': age_days,
                 'alias': self.network.node_alias(c.remote_pubkey),
-                'amt_to_balanced': int(unbalancedness * c.capacity / 2 - commit_fee),
+                'amt_to_balanced': int(unbalancedness * c.capacity / 2 -
+                                       commit_fee),
                 'capacity': c.capacity,
                 'chan_id': c.chan_id,
                 'channel_point': c.channel_point,
                 'commit_fee': c.commit_fee,
                 'fee_per_kw': c.fee_per_kw,
-                'peer_base_fee': policy['fee_base_msat'],
-                'peer_fee_rate': policy['fee_rate_milli_msat'],
+                'peer_base_fee': policy_peer['fee_base_msat'],
+                'peer_fee_rate': policy_peer['fee_rate_milli_msat'],
+                'local_base_fee': policy_local['fee_base_msat'],
+                'local_fee_rate': policy_local['fee_rate_milli_msat'],
                 'initiator': c.initiator,
                 'last_update': last_update,
                 'local_balance': c.local_balance,
@@ -306,7 +338,8 @@ class LndNode(Node):
                 'total_satoshis_received': c.total_satoshis_received,
                 'unbalancedness': unbalancedness,
             }
-        sorted_dict = OrderedDict(sorted(channels.items(), key=lambda x: x[1]['alias']))
+        sorted_dict = OrderedDict(
+            sorted(channels.items(), key=lambda x: x[1]['alias']))
         return sorted_dict
 
     def get_inactive_channels(self):
@@ -332,14 +365,55 @@ class LndNode(Node):
         (-1...1, -1 for outbound unbalanced, 1 for inbound unbalanced)
         larger than unbalancedness_greater_than.
 
-        :param unbalancedness_greater_than: unbalancedness interval, default returns all channels
-        :return: all channels which are more unbalanced than the specified interval
+        :param unbalancedness_greater_than: float, unbalancedness interval,
+                                            default returns all channels
+        :return: dict, all channels which are more unbalanced
+                       than the specified interval
         """
         unbalanced_channels = {
             k: c for k, c in self.public_active_channels.items()
             if abs(c['unbalancedness']) >= unbalancedness_greater_than
         }
         return unbalanced_channels
+
+    def get_channel_fee_policies(self):
+        """
+        Gets the node's channel fee policies for every open channel.
+
+        :return: dict
+        """
+        feereport = self._stub.FeeReport(ln.FeeReportRequest())
+        channels = {}
+        for fee in feereport.channel_fees:
+            channels[fee.chan_point] = {
+                'base_fee_msat': fee.base_fee_msat,
+                'fee_per_mil': fee.fee_per_mil,
+                'fee_rate': fee.fee_rate,
+            }
+        return channels
+
+    def set_channel_fee_policies(self, channels):
+        """
+        Sets the node's channel fee policy for every channel.
+
+        :param channels: dict
+        """
+
+        for channel_point, channel_fee_policy in channels.items():
+
+            funding_txid, output_index = channel_point.split(':')
+            output_index = int(output_index)
+
+            channel_point = ln.ChannelPoint(
+                funding_txid_str=funding_txid, output_index=output_index)
+
+            update_request = ln.PolicyUpdateRequest(
+                chan_point=channel_point,
+                base_fee_msat=channel_fee_policy['base_fee_msat'],
+                fee_rate=channel_fee_policy['fee_rate'],
+                time_lock_delta=channel_fee_policy['cltv'],
+            )
+            self._stub.UpdateChannelPolicy(request=update_request)
 
     @staticmethod
     def timestamp_from_now(offset_days=0):
@@ -364,10 +438,11 @@ class LndNode(Node):
         now = self.timestamp_from_now()
         then = self.timestamp_from_now(offset_days)
 
-        forwardings = self._stub.ForwardingHistory(ln.ForwardingHistoryRequest(
-            start_time=then,
-            end_time=now,
-            num_max_events=NUM_MAX_FORWARDING_EVENTS))
+        forwardings = self._stub.ForwardingHistory(
+            ln.ForwardingHistoryRequest(
+                start_time=then,
+                end_time=now,
+                num_max_events=NUM_MAX_FORWARDING_EVENTS))
 
         events = [{
             'timestamp': f.timestamp,
@@ -414,13 +489,18 @@ class LndNode(Node):
         """
         if "TemporaryChannelFailure" in payment_error:
             logger.error("   Encountered temporary channel failure.")
-            short_channel_groups = extract_short_channel_id_from_string(payment_error)
-            channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
+            short_channel_groups = extract_short_channel_id_from_string(
+                payment_error)
+            channel_id = convert_short_channel_id_to_channel_id(
+                *short_channel_groups)
             return channel_id
 
-    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat, ignored_nodes=(), ignored_channels={}):
+    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat,
+                            ignored_nodes=(), ignored_channels=None):
         """
-        Queries the lnd node for a route. Channels and nodes can be ignored if they failed before.
+        Queries the lnd node for a route.
+
+        Channels and nodes can be ignored if they failed before.
 
         :param source_pubkey: str
         :param target_pubkey: str
@@ -429,7 +509,8 @@ class LndNode(Node):
         :param ignored_channels: dict
         :return: list of channel_ids
         """
-        amt_sat = amt_msat// 1000
+
+        amt_sat = amt_msat // 1000
 
         # we want to see all routes:
         max_fee = 10000
@@ -444,12 +525,15 @@ class LndNode(Node):
         if ignored_channels:
             ignored_channels_api = []
             for c, cv in ignored_channels.items():
-                direction_reverse = True if cv['source'] > cv['target'] else False
-                ignored_channels_api.append(ln.EdgeLocator(channel_id=c, direction_reverse=direction_reverse))
+                direction_reverse = cv['source'] > cv['target']
+                ignored_channels_api.append(
+                    ln.EdgeLocator(channel_id=c,
+                                   direction_reverse=direction_reverse))
         else:
             ignored_channels_api = []
 
-        logger.debug(f"Ignored for queryroutes: channels: {ignored_channels_api}, nodes: {ignored_nodes_api}")
+        logger.debug(f"Ignored for queryroutes: channels: "
+                     f"{ignored_channels_api}, nodes: {ignored_nodes_api}")
 
         request = ln.QueryRoutesRequest(
             pub_key=target_pubkey,
@@ -482,9 +566,12 @@ class LndNode(Node):
         logger.info(f"active channels: {self.total_active_channels}")
         logger.info(f"private channels: {self.total_private_channels}")
         logger.info(f"capacity: {self.total_capacity}")
-        logger.info(f"balancedness: l:{balancedness_local:.2%} r:{balancedness_remote:.2%}")
-        logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
-        logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
+        logger.info(f"balancedness: l:{balancedness_local:.2%} "
+                    f"r:{balancedness_remote:.2%}")
+        logger.info(f"total satoshis received (current channels): "
+                    f"{self.total_satoshis_received}")
+        logger.info(f"total satoshis sent (current channels): "
+                    f"{self.total_satoshis_sent}")
 
 
 if __name__ == '__main__':

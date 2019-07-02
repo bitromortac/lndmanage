@@ -1,3 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+
 def yes_no_question():
     """
     Asks the user a yes/no question and translates it into bool.
@@ -13,4 +19,4 @@ def yes_no_question():
     elif choice in no:
         return False
     else:
-        print("Please respond with 'yes' or 'no'")
+        logger.info("Please respond with 'yes' or 'no'")
