@@ -170,7 +170,7 @@ Lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-Requirements: python3.6, lnd master pre v0.7
+Requirements: python3.6, lnd v0.7.0-beta
 ```
 $ virtualenv -p python3 ~/.venvs/lndmanage
 $ source ~/.venvs/lndmanage/bin/activate
@@ -201,7 +201,7 @@ and follow [`README`](docker/README.md) there.
 Compiling grpc in python [development]
 ----------------------------------------------------
 ```
-$ cd grpc_compile
+$ cd grpc_compiled
 $ pip install grpcio grpcio-tools googleapis-common-protos
 $ git clone https://github.com/googleapis/googleapis.git
 $ curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto

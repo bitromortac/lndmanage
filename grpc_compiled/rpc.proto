@@ -212,7 +212,7 @@ service Lightning {
     /** lncli: `walletbalance`
     WalletBalance returns total unspent outputs(confirmed and unconfirmed), all
     confirmed unspent outputs and all unconfirmed unspent outputs under control
-    of the wallet. 
+    of the wallet.
     */
     rpc WalletBalance (WalletBalanceRequest) returns (WalletBalanceResponse) {
         option (google.api.http) = {
@@ -398,7 +398,7 @@ service Lightning {
     rpc SubscribeChannelEvents (ChannelEventSubscription) returns (stream ChannelEventUpdate);
 
     /** lncli: `closedchannels`
-    ClosedChannels returns a description of all the closed channels that 
+    ClosedChannels returns a description of all the closed channels that
     this node was a participant in.
     */
     rpc ClosedChannels (ClosedChannelsRequest) returns (ClosedChannelsResponse) {
@@ -814,6 +814,9 @@ message Transaction {
 
     /// Addresses that received funds for this transaction
     repeated string dest_addresses = 8 [ json_name = "dest_addresses" ];
+
+    /// The raw transaction hex.
+    string raw_tx_hex = 9 [ json_name = "raw_tx_hex" ];
 }
 message GetTransactionsRequest {
 }
@@ -1723,6 +1726,9 @@ message Route {
 message NodeInfoRequest {
     /// The 33-byte hex-encoded compressed public of the target node 
     string pub_key = 1;
+
+    /// If true, will include all known channels associated with the node.
+    bool include_channels = 2;
 }
 
 message NodeInfo {
@@ -2155,9 +2161,25 @@ message Payment {
 
     /// The optional payment request being fulfilled.
     string payment_request = 9 [json_name = "payment_request"];
+
+    enum PaymentStatus {
+        UNKNOWN = 0;
+        IN_FLIGHT = 1;
+        SUCCEEDED = 2;
+        FAILED = 3;
+    }
+
+    // The status of the payment.
+    PaymentStatus status = 10 [json_name = "status"];
 }
 
 message ListPaymentsRequest {
+    /**
+    If true, then return payments that have not yet fully completed. This means
+    that pending payments, as well as failed payments will show up if this
+    field is set to True.
+    */
+    bool include_incomplete = 1;
 }
 
 message ListPaymentsResponse {
