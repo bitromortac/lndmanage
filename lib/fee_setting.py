@@ -18,7 +18,7 @@ class FeeSetter(object):
         """
         self.node = node
         self.forwarding_analyzer = ForwardingAnalyzer(node)
-        self.channel_fee_settings = node.get_channel_fee_policies()
+        self.channel_fee_policies = node.get_channel_fee_policies()
 
     def set_fees_demand(self, cltv=20, base_fee_msat=30, from_days_ago=7,
                         min_fee_rate=0.000001, reckless=False):
@@ -39,7 +39,7 @@ class FeeSetter(object):
         """
         time_end = time.time()
         time_start = time_end - from_days_ago * 24 * 60 * 60
-
+        self.time_interval_days = from_days_ago
         self.forwarding_analyzer.initialize_forwarding_data(
             time_start, time_end)
 
@@ -83,29 +83,30 @@ class FeeSetter(object):
                 fees_sat = 0
             else:
                 flow = channel_stats['flow_direction']
-                fees_sat = channel_stats['fees_total'] // 1000
+                fees_sat = channel_stats['fees_total'] / 1000
 
             ub = channel_data['unbalancedness']
-            remote_balance = channel_data['remote_balance']
-            remote_balance = max(1, remote_balance)  # avoid zero division
+            capacity = channel_data['capacity']
 
             fee_rate = \
-                self.channel_fee_settings[
+                self.channel_fee_policies[
                     channel_data['channel_point']]['fee_rate']
 
             logger.info(">>> New channel policy for channel %s", channel_id)
             logger.info(
-                "    ub: %0.2f flow: %0.2f, fees: %d sat, rb: %d sat. ",
-                ub, flow, fees_sat, remote_balance)
+                "    ub: %0.2f flow: %0.2f, fees: %1.3f sat, cap: %d sat.",
+                ub, flow, fees_sat, capacity)
 
-            factor_demand = self.factor_demand(fees_sat, remote_balance)
+            factor_demand = self.factor_demand(fees_sat, capacity, fee_rate)
             factor_unbalancedness = self.factor_unbalancedness(ub)
             factor_flow = self.factor_unbalancedness(flow)
 
-            # define weights
+            # we want to give the demand the highest weight of the three
+            # indicators
+            # TODO: optimize those parameters
             wgt_demand = 1.2
-            wgt_ub = 0.7
-            wgt_flow = 0.5
+            wgt_ub = 1.0
+            wgt_flow = 0.6
 
             # calculate weighted change
             weighted_change = (
@@ -119,6 +120,11 @@ class FeeSetter(object):
                 "unbalancedness %1.3f, flow: %1.3f. Weighted change: %1.3f",
                 factor_demand, factor_unbalancedness, factor_flow,
                 weighted_change)
+
+            # for small fee rates we need to exagerate the change in order
+            # to get a change
+            if fee_rate <= 2E-6:
+                weighted_change = 1 + (weighted_change - 1) * 3
 
             fee_rate_new = fee_rate * weighted_change
             fee_rate_new = max(min_fee_rate, fee_rate_new)
@@ -147,7 +153,7 @@ class FeeSetter(object):
 
         """
         # maximal change
-        c_max = 0.25
+        c_max = 0.50
         # give unbalancedness a more refined weight
         rescale = 0.5
 
@@ -169,7 +175,7 @@ class FeeSetter(object):
         :param flow: float, [-1 ... 1]
         :return: float, [1-c_max, 1+c_max]
         """
-        c_max = 0.25
+        c_max = 0.50
         rescale = 0.5
         c = 1 + flow * rescale
 
@@ -179,40 +185,48 @@ class FeeSetter(object):
         else:
             return max(c, 1 - c_max)
 
-    @staticmethod
-    def factor_demand(fees_sat, remote_balance_sat):
+    def factor_demand(self, fees_sat, capacity, fee_rate):
         """
-        Calculates a change factor by taking into account the fees collected
-        and the remote balance left.
+        Calculates a change factor by taking into account the amount transacted
+        in a time interval compared to the channel's capcacity.
 
-        The higher the fees collected, the larger the fee rate should be. Also
-        if there is only a small amount of remote balance left, we also want to
-        increase the fee rate.
+        The higher the amount forwarded, the larger the fee rate should be. The
+        amount forwarded is estimated dividing the fees_sat with the current
+        fee_rate.
+
+        max_x is an empirical parameter that could be tuned in the future
 
         The model for the change rate is determined by a linear function:
-        change = m * fee / remote_balance + t
+        change = m * fee / fee_rate / capacity / time_interval_days + t
 
-        :param fees_sat:
-        :param remote_balance_sat:
+        :param fees_sat: float, fees collected
+        :param capacity: int, capacity of channel
+        :param fee_rate: float
         :return: float, [1-c_max, 1+c_max]
         """
+        approximate_amt_transacted = fees_sat / fee_rate
+        logger.info("    Approximate forwarded amount: %6.0f",
+                    approximate_amt_transacted)
+        x = approximate_amt_transacted / capacity / self.time_interval_days
 
         # remote balance should have an influence also in the case when
         # the fees were zero
-        fees_sat = max(fees_sat, 0.1)
+        # fees_sat = max(fees_sat, 0.1)
         # maximal change in percent: 1-c_max ... 1+c_max
-        c_max = 0.25
+        c_max = 0.50
         # model:
-        # change = m * fee / remote_balance + t
+        # change = m * fee / fee_rate_old / time_interval / remote_balance + t
 
-        # empirical parameter (determined by channel with most demand)
-        fee_per_remote_max = 1E-5
-
-        m = 2 * c_max / fee_per_remote_max
-        # chosen such, that at zero fees, we get c = 1 - c_max
         t = 1 - c_max
 
-        c = m * (fees_sat / remote_balance_sat) + t
+        # max_x defines what demand means to us:
+        # if 10% of a channel's balance was transacted in a week,
+        # this means maximal demand
+        # TODO: optimize this parameter
+        max_x = 0.1 / 7
+
+        m = 2 * c_max / max_x
+        c = m * x + t
 
         if c > 1:
             return min(c, 1 + c_max)
