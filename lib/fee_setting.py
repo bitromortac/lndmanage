@@ -212,12 +212,13 @@ class FeeSetter(object):
         # remote balance should have an influence also in the case when
         # the fees were zero
         # fees_sat = max(fees_sat, 0.1)
-        # maximal change in percent: 1-c_max ... 1+c_max
+        # maximal change in percent: 1-c_min ... 1+c_max
+        c_min = 0.25
         c_max = 0.50
         # model:
         # change = m * fee / fee_rate_old / time_interval / remote_balance + t
 
-        t = 1 - c_max
+        t = 1 - c_min
 
         # max_x defines what demand means to us:
         # if 10% of a channel's balance was transacted in a week,
@@ -225,7 +226,7 @@ class FeeSetter(object):
         # TODO: optimize this parameter
         max_x = 0.1 / 7
 
-        m = 2 * c_max / max_x
+        m = 2 * (c_max + c_min) / max_x
         c = m * x + t
 
         if c > 1:
