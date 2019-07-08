@@ -159,14 +159,16 @@ class LndNode(Node):
         logger.debug(result)
         return result
 
-    def get_invoice(self, amt_msat):
+    def get_invoice(self, amt_msat, memo):
         """
-        Fetches an already created invoice from lnd.
+        Creates a new invoice with amt_msat and memo.
 
-        :param amt_msat:
+        :param amt_msat: int
+        :param memo: str
         :return: Hash of invoice preimage.
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=amt_msat // 1000))
+        invoice = self._stub.AddInvoice(
+            ln.Invoice(value=amt_msat // 1000, memo=memo))
         return invoice.r_hash
 
     def get_rebalance_invoice(self, memo):
@@ -418,7 +420,8 @@ class LndNode(Node):
             channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
             return channel_id
 
-    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat, ignored_nodes=(), ignored_channels={}):
+    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat,
+                            ignored_nodes=(), ignored_channels={}):
         """
         Queries the lnd node for a route. Channels and nodes can be ignored if they failed before.
 
@@ -444,12 +447,15 @@ class LndNode(Node):
         if ignored_channels:
             ignored_channels_api = []
             for c, cv in ignored_channels.items():
-                direction_reverse = True if cv['source'] > cv['target'] else False
-                ignored_channels_api.append(ln.EdgeLocator(channel_id=c, direction_reverse=direction_reverse))
+                direction_reverse = cv['source'] > cv['target']
+                ignored_channels_api.append(
+                    ln.EdgeLocator(channel_id=c,
+                                   direction_reverse=direction_reverse))
         else:
             ignored_channels_api = []
 
-        logger.debug(f"Ignored for queryroutes: channels: {ignored_channels_api}, nodes: {ignored_nodes_api}")
+        logger.debug(f"Ignored for queryroutes: channels: "
+                     f"{ignored_channels_api}, nodes: {ignored_nodes_api}")
 
         request = ln.QueryRoutesRequest(
             pub_key=target_pubkey,

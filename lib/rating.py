@@ -61,6 +61,15 @@ class ChannelRater(object):
         }
         logger.debug(f"bad channels so far: {self.get_bad_channels()}")
 
+    def add_bad_node(self, node_pub_key):
+        """
+        Adds a node public key to the blacklist.
+
+        :param node_pub_key: str
+        """
+        self.bad_nodes.append(node_pub_key)
+        logger.debug(f"bad nodes so far: {self.bad_nodes}")
+
     def get_bad_channels(self):
         return self.bad_channels.keys()
 

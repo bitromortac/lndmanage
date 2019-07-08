@@ -26,14 +26,18 @@ class Rebalancer(object):
         self.node = node
         self.channel_list = node.get_unbalanced_channels()
         self.router = Router(self.node)
+        self.router.channel_rater.add_bad_node(self.node.pub_key)
         self.max_effective_fee_rate = max_effective_fee_rate
         self.budget_sat = budget_sat
 
-    def rebalance_two_channels(self, channel_id_from, channel_id_to, amt_sat, invoice_r_hash, budget_sat,
-                               dry=False):
+    def rebalance_two_channels(self, channel_id_from, channel_id_to, amt_sat,
+                               invoice_r_hash, budget_sat, dry=False):
         """
-        Rebalances from channel_id_from to channel_id_to with an amount of amt_sat. A prior created invoice hash
-        has to be given. The budget_sat sets the maxmimum fees in sat that will be paid. A dry run can be done.
+        Rebalances from channel_id_from to channel_id_to with an amount of
+        amt_sat.
+
+        A prior created invoice hash has to be given. The budget_sat sets
+        the maxmimum fees in sat that will be paid. A dry run can be done.
 
         :param channel_id_from: int
         :param channel_id_to: int
@@ -439,10 +443,6 @@ class Rebalancer(object):
                     f"    You may also specify a rebalancing strategy by the --strategy flag.")
         logger.info(f">>> Rebalancing can take some time. Please be patient!\n")
 
-        # create an invoice with a zero amount for all rebalance attempts (reduces number of invoices)
-        invoice_r_hash = self.node.get_rebalance_invoice(
-            memo=f"lndmanage: Rebalance of channel {channel_id}.")
-
         total_fees_msat = 0
 
         # loop over the rebalancing candidates
@@ -463,6 +463,11 @@ class Rebalancer(object):
             logger.info(f"Need to still rebalance {local_balance_change_left} sat to reach the goal"
                         f" of {initial_local_balance_change} sat."
                         f" Fees paid up to now: {total_fees_msat} msat.")
+
+            # for each rebalance, get a new invoice
+            invoice_r_hash = self.node.get_invoice(
+                amt_msat=amt*1000,
+                memo=f"lndmanage: Rebalance of channel {channel_id}.")
 
             # attempt the rebalance
             try:
