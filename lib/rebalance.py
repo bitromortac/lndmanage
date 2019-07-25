@@ -466,7 +466,7 @@ class Rebalancer(object):
 
             # for each rebalance, get a new invoice
             invoice_r_hash = self.node.get_invoice(
-                amt_msat=amt*1000,
+                amt_msat=abs(amt)*1000,
                 memo=f"lndmanage: Rebalance of channel {channel_id}.")
 
             # attempt the rebalance
