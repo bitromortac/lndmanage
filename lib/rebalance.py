@@ -397,7 +397,7 @@ class Rebalancer(object):
             logger.info(f"Channel already balanced.")
             return None
 
-        local_balance_change_left = initial_local_balance_change  # copy the original target
+        local_balance_change_left = abs(initial_local_balance_change)  # copy the original target
         rebalance_direction = math.copysign(1, initial_local_balance_change)  # 1: receive, -1: send
 
         logger.info(f">>> The channel status before rebalancing is lb:{unbalanced_channel_info['local_balance']} sat "
@@ -461,7 +461,7 @@ class Rebalancer(object):
 
             logger.info(f"-------- Rebalance from {source_channel} to {target_channel} with {amt} sat --------")
             logger.info(f"Need to still rebalance {local_balance_change_left} sat to reach the goal"
-                        f" of {initial_local_balance_change} sat."
+                        f" of {abs(initial_local_balance_change)} sat."
                         f" Fees paid up to now: {total_fees_msat} msat.")
 
             # for each rebalance, get a new invoice
@@ -475,7 +475,7 @@ class Rebalancer(object):
                 self.node.update_blockheight()
                 total_fees_msat += self.rebalance_two_channels(
                     source_channel, target_channel, abs(amt), invoice_r_hash, self.budget_sat, dry=dry)
-                local_balance_change_left -= amt
+                local_balance_change_left -= abs(amt)
 
                 if 1.0 * local_balance_change_left / initial_local_balance_change <= 0.1:
                     logger.info(f"Goal is reached. Rebalancing done. Total fees were {total_fees_msat} msat.")
