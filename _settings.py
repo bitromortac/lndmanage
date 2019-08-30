@@ -1,11 +1,4 @@
-import os
 import configparser
-
-config = configparser.ConfigParser()
-dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, 'config.ini')
-
-config.read(filename)
 
 # -------- graph settings --------
 # accepted age of the network graph
@@ -35,10 +28,7 @@ UNBALANCED_CHANNEL = 0.2
 CHUNK_SIZE = 1.0
 REBALANCING_TRIALS = 30
 
-# -------- logging --------
-# debug level can be INFO or DEBUG
-DEBUG_LEVEL = config['logging']['loglevel']
-
+# logger settings
 logger_config = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -74,3 +64,9 @@ logger_config = {
         },
     }
 }
+
+
+def read_config(config_path):
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    return config

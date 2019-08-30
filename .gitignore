@@ -1,11 +1,14 @@
-grpc_compile/googleapis/*
-nodes/*
+# development
 .idea/*
 .vscode/*
 venv/*
-lndmanage.log
-tests/graph_pickles/
+grpc_compile/googleapis/*
+
+# runtime data
+*.log
 __pycache__/*
 config.ini
 *.pyc
-venv/*
+
+# test data
+test/test_data/*

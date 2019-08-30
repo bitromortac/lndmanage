@@ -192,6 +192,15 @@ $ ./lndmanage.py status
 ```
 If it works, you should see the node status.
 
+Testing
+-------
+Requirements are an installation of [lnregtest](https://github.com/bitromortac/lnregtest)
+and links to bitcoind, bitcoin-cli, lnd, and lncli in the `test/bin` folder.
+
+Tests can be run with
+`python3 -m unittest discover test`
+from the root folder.
+
 Docker
 ------
 
