@@ -51,16 +51,20 @@ class LndNode(Node):
     """
     Implements an interface to an lnd node.
     """
-    def __init__(self):
+    def __init__(self, config_file=None, lnd_home=None, lnd_host=None,
+                 regtest=False):
         super().__init__()
+        self.config_file = config_file
+        self.lnd_home = lnd_home
+        self.lnd_host = lnd_host
+        self.regtest = regtest
         self._stub = self.connect()
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
         self.public_active_channels = self.get_open_channels(public_only=True, active_only=True)
 
-    @staticmethod
-    def connect():
+    def connect(self):
         """
         Establishes a connection to lnd using the hostname, tls certificate,
         and admin macaroon defined in settings.
@@ -76,10 +80,28 @@ class LndNode(Node):
                                                'ECDHE-ECDSA-AES256-SHA384:' + \
                                                'ECDHE-ECDSA-AES256-GCM-SHA384'
 
-        cert = open(os.path.expanduser(_settings.config['network']['tls_cert_file']), 'rb').read()
+        # if no lnd_home is given, then use the paths from the config,
+        # else override them with default file paths in lnd_home
+        if self.lnd_home is not None:
+            cert_file = os.path.join(self.lnd_home, 'tls.cert')
+            bitcoin_network = 'regtest' if self.regtest else 'mainnet'
+            macaroon_file = os.path.join(
+                self.lnd_home, 'data/chain/bitcoin/',
+                bitcoin_network, 'admin.macaroon')
+            if self.lnd_host is None:
+                raise ValueError('if lnd_home is given, lnd_host must be given also')
+            lnd_host = self.lnd_host
+        else:
+            config = _settings.read_config(self.config_file)
+            cert_file = os.path.expanduser(config['network']['tls_cert_file'])
+            macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
+            lnd_host = config['network']['lnd_grpc_host']
+
+        with open(cert_file, 'rb') as f:
+            cert = f.read()
 
         if macaroons:
-            with open(os.path.expanduser(_settings.config['network']['admin_macaroon_file']), 'rb') as f:
+            with open(macaroon_file, 'rb') as f:
                 macaroon_bytes = f.read()
                 macaroon = codecs.encode(macaroon_bytes, 'hex')
 
@@ -94,7 +116,7 @@ class LndNode(Node):
         else:
             creds = grpc.ssl_channel_credentials(cert)
 
-        channel = grpc.secure_channel(_settings.config['network']['lnd_grpc_host'], creds, options=[
+        channel = grpc.secure_channel(lnd_host, creds, options=[
             ('grpc.max_receive_message_length', 50 * 1024 * 1024)  # necessary to circumvent standard size limitation
         ])
 
