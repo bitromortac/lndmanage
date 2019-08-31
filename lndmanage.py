@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import time
+import os
 
 from lib.node import LndNode
 from lib.listchannels import ListChannels
@@ -271,7 +272,10 @@ def main():
         # update the loglevel of the stdout handler to the user choice
         logger.handlers[0].setLevel(args.loglevel)
 
-    node = LndNode()
+    # config.ini is expected to be in root directory
+    root_dir = os.path.dirname(os.path.realpath(__file__))
+    config_file = os.path.join(root_dir, 'config.ini')
+    node = LndNode(config_file=config_file)
 
     if args.cmd == 'status':
         node.print_status()
