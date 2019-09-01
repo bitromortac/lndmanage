@@ -54,6 +54,7 @@ logger_config = {
             'formatter': 'file',
             'class': 'logging.FileHandler',
             'filename': 'lndmanage.log',
+            'encoding': 'utf-8',
         },
     },
     'loggers': {
