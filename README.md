@@ -85,7 +85,7 @@ The workflow for rebalancing a channel goes as follows:
   to rebalance (target is a 50:50 balance)
 * do a dry run to see what's waiting for you
 
-  ```$ ./lndmange.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
+  ```$ ./lndmanage.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
 
 * read the output and if everything looks well, 
   then run with the ```--reckless``` flag
@@ -171,24 +171,40 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 Requirements: python3.6, lnd v0.7.0-beta
+
+**Linux:**
 ```
-$ virtualenv -p python3 ~/.venvs/lndmanage
-$ source ~/.venvs/lndmanage/bin/activate
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
-$ pip install -r requirements.txt
-$ cp config_sample.ini config.ini
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ python3 -m pip install -r requirements.txt
 ```
 
-Edit configuration (config.ini):
-* lnd_grpc_host: ip and port of the grpc API
-* tls_cert_file: location of the tls certificate
-* admin_macaroon_file: location of the admin macaroon
+**Windows (powershell):**
+Install [python3](https://www.python.org/downloads/release/python-374/),
+[git](https://git-scm.com/download/win), and
+ [visual studio build tools](https://visualstudio.microsoft.com/de/downloads/?q=build+tools).
+```
+$ git clone https://github.com/bitromortac/lndmanage
+$ cd lndmanage
+$ py -m venv venv
+$ .\venv\Scripts\activate
+$ py -m pip install -r requirements.txt
+```
+Additionally set the environment variable `PYTHONIOENCODING`:
+`$env:PYTHONIOENCODING="UTF-8"`
+
+**Edit configuration (config.ini):**
+`$ cp config_sample.ini config.ini`
+* `lnd_grpc_host`: ip and port of the grpc API
+* `tls_cert_file`: location of the tls certificate (can be found in .lnd folder)
+* `admin_macaroon_file`: location of the admin macaroon (can be found in .lnd folder)
 
 Before running, make sure the python environment is active:
 ```
-$ source ~/.venvs/lndmanage/bin/activate
-$ ./lndmanage.py status 
+$ source venv/bin/activate
+$ (venv) python3 lndmanage.py status
 ```
 If it works, you should see the node status.
 
