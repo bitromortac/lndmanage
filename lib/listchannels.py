@@ -2,11 +2,11 @@
 Module for printing lightning channels.
 """
 
-import os
 import math
 import logging
 from collections import OrderedDict
 
+import _settings
 from lib.forwardings import get_forwarding_statistics_channels
 
 logger = logging.getLogger(__name__)
@@ -379,53 +379,38 @@ class ListChannels(object):
                     'cap,bf,fr,annotation,alias',
             sort_dict=sort_dict)
 
-    @staticmethod
-    def _add_channel_annotations(channels):
+    def _add_channel_annotations(self, channels):
         """
-        Appends metadata to existing channel dicts.
+        Appends metadata to existing channel dicts from the configuration file.
 
         :param channels: dict
         :return: dict
         """
+        logger.debug("Adding annotations from file %s.", self.node.config_file)
         # mapping between the channel point and channel id
-        logger.debug("Adding annotations from file 'channel_annotations'.")
         channel_point_mapping = {k: v['channel_point'].split(':')[0]
                                  for k, v in channels.items()}
-        directory = os.path.dirname(__file__)
-        channel_annotations_file = os.path.join(
-            directory, '..', 'channel_annotations')
+        config = _settings.read_config(self.node.config_file)
         channel_annotations_funding_id = {}
         channel_annotations_channel_id = {}
 
-        with open(channel_annotations_file, 'r') as file:
-            for line in file.readlines():
-                # ignore commenting lines
-                if line[0] == '#':
-                    continue
-                annotation = [a.strip() for a in line.split('|')]
-                if len(annotation) != 2:
-                    raise ValueError(
-                        'Wrong format in channel annotations:\n'
-                        'Use format (per each line):\n'
-                        'funding txn | channel description'
-                    )
-                # check if
-                if len(annotation[0]) == 18 and annotation[0].isnumeric():
-                    # valid channel id
-                    channel_annotations_channel_id[int(annotation[0])] = \
-                        annotation[1]
-                elif len(annotation[0]) == 64 and annotation[0].isalnum():
-                    # valid funding transaction id
-                    channel_annotations_funding_id[annotation[0]] = \
-                        annotation[1]
-                else:
-                    raise ValueError(
-                        'First part needs to be either a channel id or the '
-                        'funding transaction id. \n'
-                        'The funding transaction id can be found with '
-                        '`lncli listchannels` under the channel point (the '
-                        'characters before the colon).'
-                    )
+        for id, annotation in config['annotations'].items():
+            if len(id) == 18 and id.isnumeric():
+                # valid channel id
+                channel_annotations_channel_id[int(id)] = \
+                    annotation
+            elif len(id) == 64 and id.isalnum():
+                # valid funding transaction id
+                channel_annotations_funding_id[id] = \
+                    annotation
+            else:
+                raise ValueError(
+                    'First part needs to be either a channel id or the '
+                    'funding transaction id. \n'
+                    'The funding transaction id can be found with '
+                    '`lncli listchannels` under the channel point (the '
+                    'characters before the colon).'
+                )
 
         for channel_id, channel_values in channels.items():
             # get the annotation by channel id first
