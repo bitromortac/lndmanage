@@ -390,11 +390,16 @@ class ListChannels(object):
         # mapping between the channel point and channel id
         channel_point_mapping = {k: v['channel_point'].split(':')[0]
                                  for k, v in channels.items()}
-        config = _settings.read_config(self.node.config_file)
+        # only read annotations if config file is given
+        if self.node.config_file:
+            config = _settings.read_config(self.node.config_file)
+            annotations = config['annotations']
+        else:
+            annotations = {}
         channel_annotations_funding_id = {}
         channel_annotations_channel_id = {}
 
-        for id, annotation in config['annotations'].items():
+        for id, annotation in annotations.items():
             if len(id) == 18 and id.isnumeric():
                 # valid channel id
                 channel_annotations_channel_id[int(id)] = \
