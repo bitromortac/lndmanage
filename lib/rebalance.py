@@ -164,14 +164,18 @@ class Rebalancer(object):
         """
         rebalance_candidates = []
 
-        # select the proper lower bound (allows for unbalancing a channel)
+        # select the proper lower bound of unbalancedness we allow for
+        # the rebalance candidate channel (allows for unbalancing a channel)
         if allow_unbalancing:
-            lower_bound = -_settings.UNBALANCED_CHANNEL  # target is a bit into the non-ideal direction
+            # target is a bit into the non-ideal direction
+            lower_bound = -_settings.UNBALANCED_CHANNEL
         else:
-            lower_bound = 0  # target is complete balancedness
+            # target is perfect balance
+            lower_bound = 0
         # TODO: allow for complete depletion
 
-        # determine the direction, -1: channel is sending, 1: channel is receiving
+        # determine the direction we use the rebalance candidate for:
+        # -1: rebalance channel is sending, 1: rebalance channel is receiving
         direction = -math.copysign(1, local_balance_change)
 
         # logic to shift the bounds accordingly into the different rebalancing directions
@@ -397,7 +401,8 @@ class Rebalancer(object):
             logger.info(f"Channel already balanced.")
             return None
 
-        local_balance_change_left = abs(initial_local_balance_change)  # copy the original target
+        # copy the original target
+        local_balance_change_left = initial_local_balance_change
         rebalance_direction = math.copysign(1, initial_local_balance_change)  # 1: receive, -1: send
 
         logger.info(f">>> The channel status before rebalancing is lb:{unbalanced_channel_info['local_balance']} sat "
@@ -416,7 +421,7 @@ class Rebalancer(object):
         expected_target = - 2 * ((unbalanced_channel_info['local_balance'] + initial_local_balance_change + commit_fee)
                                  / float(unbalanced_channel_info['capacity']) - 0.5)
         logger.info(f">>> Trying to change the local balance by {initial_local_balance_change} sat.\n"
-                    f"    The expected target is {expected_target:3.2f} (respecting channel reserve),"
+                    f"    The expected unbalancedness target is {expected_target:3.2f} (respecting channel reserve),"
                     f" requested target is {0 if not target else target:3.2f}.")
 
         if (initial_local_balance_change > 0
@@ -454,19 +459,21 @@ class Rebalancer(object):
             source_channel, target_channel = self.get_source_and_target_channels(
                 channel_id, c['chan_id'], rebalance_direction)
 
+            # amt is always positive
             if abs(local_balance_change_left) > abs(c['amt_affordable']):
-                amt = int(abs(c['amt_affordable']) * chunksize)
+                amt = int(-(rebalance_direction * c['amt_affordable']) * chunksize)
             else:
-                amt = int(local_balance_change_left * chunksize)
+                amt = int(rebalance_direction * local_balance_change_left * chunksize)
+            assert amt > 0
 
             logger.info(f"-------- Rebalance from {source_channel} to {target_channel} with {amt} sat --------")
-            logger.info(f"Need to still rebalance {local_balance_change_left} sat to reach the goal"
+            logger.info(f"Need to still change the local balance by {local_balance_change_left} sat to reach the goal"
                         f" of {abs(initial_local_balance_change)} sat."
                         f" Fees paid up to now: {total_fees_msat} msat.")
 
             # for each rebalance, get a new invoice
             invoice_r_hash = self.node.get_invoice(
-                amt_msat=abs(amt)*1000,
+                amt_msat=amt*1000,
                 memo=f"lndmanage: Rebalance of channel {channel_id}.")
 
             # attempt the rebalance
@@ -474,8 +481,8 @@ class Rebalancer(object):
                 # be up to date with the blockheight, otherwise could lead to cltv errors
                 self.node.update_blockheight()
                 total_fees_msat += self.rebalance_two_channels(
-                    source_channel, target_channel, abs(amt), invoice_r_hash, self.budget_sat, dry=dry)
-                local_balance_change_left -= abs(amt)
+                    source_channel, target_channel, amt, invoice_r_hash, self.budget_sat, dry=dry)
+                local_balance_change_left -= int(rebalance_direction * amt)
 
                 if 1.0 * local_balance_change_left / initial_local_balance_change <= 0.1:
                     logger.info(f"Goal is reached. Rebalancing done. Total fees were {total_fees_msat} msat.")
