@@ -1,26 +1,37 @@
-import os, time
+"""
+Tests for rebalancing of channels.
+"""
+import os
+import time
 from unittest import TestCase
 
-from lib.node import LndNode
-from lib.listchannels import ListChannels
-from lib.rebalance import Rebalancer
 from lnregtest.lib.network import RegtestNetwork
 from lnregtest.lib.utils import format_dict, dict_comparison
 
 import _settings
+from lib.node import LndNode
+from lib.listchannels import ListChannels
+from lib.rebalance import Rebalancer
+from lib.ln_utilities import channel_unbalancedness_and_commit_fee
+
 import logging.config
 logging.config.dictConfig(_settings.logger_config)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.handlers[0].setLevel(logging.DEBUG)
 
+# set up folder directories
 test_dir = os.path.dirname(os.path.realpath(__file__))
 bin_dir = os.path.join(test_dir, 'bin')
 graph_definitions = os.path.join(test_dir, 'graph_definitions')
-small_star_ring_location = os.path.join(graph_definitions, 'small_star_ring.py')
+small_star_ring_location = os.path.join(
+    graph_definitions, 'small_star_ring.py')
 test_data_dir = os.path.join(test_dir, 'test_data')
 
 # important to set the cache time to zero, otherwise one will
 # have unexpected behavior of the tests
 _settings.CACHING_RETENTION_MINUTES = 0
+SLEEP_SEC_AFTER_REBALANCING = 2
 
 
 class TestRebalance(TestCase):
@@ -32,65 +43,138 @@ class TestRebalance(TestCase):
             node_limit='H',
             from_scratch=True
         )
-        # run network and print information
         self.testnet.run_nocleanup()
         # to run the lightning network in the background and do some testing
         # here, run:
         # $ lnregtest --nodedata_folder /path/to/lndmanage/test/test_data/
         # self.testnet.run_from_background()
 
-        logger.info("Generated network information:")
-        logger.info(format_dict(self.testnet.node_mapping))
-        logger.info(format_dict(self.testnet.channel_mapping))
-        logger.info(format_dict(self.testnet.assemble_graph()))
+        # logger.info("Generated network information:")
+        # logger.info(format_dict(self.testnet.node_mapping))
+        # logger.info(format_dict(self.testnet.channel_mapping))
+        # logger.info(format_dict(self.testnet.assemble_graph()))
 
         master_node_data_dir = self.testnet.master_node.lnd_data_dir
         master_node_port = self.testnet.master_node.grpc_port
+        master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
 
-        # initialize lndnode
+        self.assertEqual(4, master_node_networkinfo['num_nodes'])
+        self.assertEqual(6, master_node_networkinfo['num_channels'])
+
         self.lndnode = LndNode(
             lnd_home=master_node_data_dir,
             lnd_host='localhost:' + str(master_node_port),
             regtest=True
         )
-        self.lndnode.print_status()
+
+        # self.lndnode.print_status()
         logger.info('Initializing done.')
 
-    def test_rebalance_channel_6(self):
-        listchannels = ListChannels(self.lndnode)
-        listchannels.print_all_channels('rev_alias')
+        # channels:
+        # A -> B (channel #1)
+        # A -> C (channel #2)
+        # A -> D (channel #6)
+        # B -> C (channel #3)
+        # B -> D (channel #4)
+        # C -> D (channel #5)
 
+    def test_rebalance_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.0, False)
+
+    def test_small_positive_target_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.2, False)
+
+    def test_large_positive_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.8, False)
+
+    def test_small_negative_target_channel_6_fail(self):
+        # this test should fail when unbalancing is not allowed, as it would
+        # unbalance another channel if the full target would be accounted for
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, -0.2, False,
+                                 should_fail=True)
+
+    def test_small_negative_target_channel_6_succeed(self):
+        # this test should fail when unbalancing is not allowed, as it would
+        # unbalance another channel if the full target would be accounted for
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, -0.2, True)
+
+    def test_rebalance_channel_1(self):
+        test_channel_number = 1
+        self.rebalance_and_check(test_channel_number, 0.0, False)
+
+    def test_rebalance_channel_2(self):
+        test_channel_number = 2
+        self.rebalance_and_check(test_channel_number, 0.0, False, places=1)
+
+    def test_shuffle_arround(self):
+        """
+        Shuffles sat around in channel 6.
+        """
+        first_target_amount = -0.1
+        second_target_amount = 0.1
+        test_channel_number = 6
+
+        self.rebalance_and_check(
+            test_channel_number, first_target_amount, True)
+        self.rebalance_and_check(
+            test_channel_number, second_target_amount, True)
+
+    def rebalance_and_check(self, test_channel_number, target,
+                            allow_unbalancing, places=5, should_fail=False):
+        """
+        Test function for rebalancing to a specific target and assert after-
+        wards that is was reached.
+
+        :param test_channel_number: int
+        :param target: float:
+            unbalancedness target
+        :param allow_unbalancing: bool:
+            unbalancing should be allowed
+        :param places: int
+            number of digits the result should match to the requested
+        :param should_fail: bool:
+            indicates whether the rebalancing should fail as requested due to
+            maybe unbalancing of other channels
+        """
         rebalancer = Rebalancer(
             self.lndnode,
             max_effective_fee_rate=50,
             budget_sat=20
         )
-        # graph state before
-        graph_should = self.testnet.assemble_graph()
 
-        # channel A-B, defined as channel 1
-        # channel A-C, defined as channel 2
-        # channel A-D, defined as channel 6
-        # TODO: test channel 1 and 2, which are currently failing to rebalance
-        test_channel_number = 6
         channel_id = self.testnet.channel_mapping[
             test_channel_number]['channel_id']
-        logger.info('Testing rebalancing of channel: {}'.format(channel_id))
-
-        # rebalance channel
         rebalancer.rebalance(
             channel_id,
             dry=False,
             chunksize=1.0,
-            target=0.0,
-            allow_unbalancing=False
+            target=target,
+            allow_unbalancing=allow_unbalancing
         )
-        graph_is = self.testnet.assemble_graph()
-
-        dict_comparison(graph_should, graph_is, show_diff=True)
-
+        time.sleep(SLEEP_SEC_AFTER_REBALANCING)
+        graph = self.testnet.assemble_graph()
+        channel_data = graph['A'][test_channel_number]
         listchannels = ListChannels(self.lndnode)
         listchannels.print_all_channels('rev_alias')
+
+        channel_unbalancedness, _ = channel_unbalancedness_and_commit_fee(
+            channel_data['local_balance'],
+            channel_data['capacity'],
+            channel_data['commit_fee'],
+            channel_data['initiator']
+        )
+
+        if not should_fail:
+            self.assertAlmostEqual(target, channel_unbalancedness,
+                                   places=places)
+        else:
+            self.assertNotAlmostEqual(target, channel_unbalancedness,
+                                      places=places)
 
     def tearDown(self):
         self.testnet.cleanup()
