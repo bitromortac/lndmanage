@@ -17,7 +17,8 @@ from lib.network import Network
 from lib.utilities import convert_dictionary_number_strings_to_ints
 from lib.ln_utilities import (extract_short_channel_id_from_string,
                               convert_short_channel_id_to_channel_id,
-                              convert_channel_id_to_short_channel_id)
+                              convert_channel_id_to_short_channel_id,
+                              channel_unbalancedness_and_commit_fee)
 from lib.exceptions import PaymentTimeOut, NoRouteError
 
 import logging
@@ -62,7 +63,6 @@ class LndNode(Node):
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
-        self.public_active_channels = self.get_open_channels(public_only=True, active_only=True)
 
     def connect(self):
         """
@@ -301,16 +301,15 @@ class LndNode(Node):
                           'fee_rate_milli_msat': float(999)}
 
             # define unbalancedness |ub| large means very unbalanced
-            commit_fee = 0 if not c.initiator else c.commit_fee
-            unbalancedness = -(float(c.local_balance + commit_fee) / c.capacity - 0.5) * 2
-            # inverse of above formula:
-            # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
+            channel_unbalancedness, our_commit_fee = channel_unbalancedness_and_commit_fee(
+                c.local_balance, c.capacity, c.commit_fee, c.initiator)
 
             channels[c.chan_id] = {
                 'active': c.active,
                 'age': age_days,
                 'alias': self.network.node_alias(c.remote_pubkey),
-                'amt_to_balanced': int(unbalancedness * c.capacity / 2 - commit_fee),
+                'amt_to_balanced': int(
+                    channel_unbalancedness * c.capacity / 2 - our_commit_fee),
                 'capacity': c.capacity,
                 'chan_id': c.chan_id,
                 'channel_point': c.channel_point,
@@ -328,7 +327,7 @@ class LndNode(Node):
                 'sent_received_per_week': sent_received_per_week,
                 'total_satoshis_sent': c.total_satoshis_sent,
                 'total_satoshis_received': c.total_satoshis_received,
-                'unbalancedness': unbalancedness,
+                'unbalancedness': channel_unbalancedness,
             }
         sorted_dict = OrderedDict(sorted(channels.items(), key=lambda x: x[1]['alias']))
         return sorted_dict
@@ -359,6 +358,8 @@ class LndNode(Node):
         :param unbalancedness_greater_than: unbalancedness interval, default returns all channels
         :return: all channels which are more unbalanced than the specified interval
         """
+        self.public_active_channels = \
+            self.get_open_channels(public_only=True, active_only=True)
         unbalanced_channels = {
             k: c for k, c in self.public_active_channels.items()
             if abs(c['unbalancedness']) >= unbalancedness_greater_than

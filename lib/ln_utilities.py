@@ -35,3 +35,22 @@ def extract_short_channel_id_from_string(string):
     groups = list(map(int, group.split(':')))
     assert len(groups) == 3
     return groups
+
+
+def channel_unbalancedness_and_commit_fee(local_balance, capacity, commit_fee,
+                                          initiator):
+    """
+    Calculates the unbalancedness.
+
+    :param local_balance: int
+    :param capacity: int
+    :param commit_fee: int
+    :param initiator: bool
+    :return: float:
+        in [-1.0, 1.0]
+    """
+    # inverse of the formula:
+    # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
+    commit_fee = 0 if not initiator else commit_fee
+    return -(2 * float(local_balance + commit_fee) / capacity - 1), commit_fee
+
