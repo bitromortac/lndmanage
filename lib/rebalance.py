@@ -24,7 +24,7 @@ class Rebalancer(object):
 
     def __init__(self, node, max_effective_fee_rate, budget_sat):
         self.node = node
-        self.channel_list = node.get_unbalanced_channels()
+        self.channel_list = {}
         self.router = Router(self.node)
         self.router.channel_rater.add_bad_node(self.node.pub_key)
         self.max_effective_fee_rate = max_effective_fee_rate
@@ -392,6 +392,8 @@ class Rebalancer(object):
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
 
+        # get a fresh channel list
+        self.channel_list = self.node.get_unbalanced_channels()
         unbalanced_channel_info = self.channel_list[channel_id]
 
         # if a target is given and it is set close to -1 or 1, then we need to think about the channel reserve
@@ -468,7 +470,7 @@ class Rebalancer(object):
 
             logger.info(f"-------- Rebalance from {source_channel} to {target_channel} with {amt} sat --------")
             logger.info(f"Need to still change the local balance by {local_balance_change_left} sat to reach the goal"
-                        f" of {abs(initial_local_balance_change)} sat."
+                        f" of {initial_local_balance_change} sat."
                         f" Fees paid up to now: {total_fees_msat} msat.")
 
             # for each rebalance, get a new invoice
