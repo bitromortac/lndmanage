@@ -1,12 +1,10 @@
 """
 Tests for rebalancing of channels.
 """
-import os
 import time
 from unittest import TestCase
 
 from lnregtest.lib.network import RegtestNetwork
-from lnregtest.lib.utils import format_dict, dict_comparison
 
 import _settings
 from lib.node import LndNode
@@ -14,31 +12,24 @@ from lib.listchannels import ListChannels
 from lib.rebalance import Rebalancer
 from lib.ln_utilities import channel_unbalancedness_and_commit_fee
 
+from test.testing_common import (
+    bin_dir,
+    test_data_dir,
+    test_graphs_paths,
+    SLEEP_SEC_AFTER_REBALANCING)
+
 import logging.config
 logging.config.dictConfig(_settings.logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.handlers[0].setLevel(logging.DEBUG)
 
-# set up folder directories
-test_dir = os.path.dirname(os.path.realpath(__file__))
-bin_dir = os.path.join(test_dir, 'bin')
-graph_definitions = os.path.join(test_dir, 'graph_definitions')
-small_star_ring_location = os.path.join(
-    graph_definitions, 'small_star_ring.py')
-test_data_dir = os.path.join(test_dir, 'test_data')
-
-# important to set the cache time to zero, otherwise one will
-# have unexpected behavior of the tests
-_settings.CACHING_RETENTION_MINUTES = 0
-SLEEP_SEC_AFTER_REBALANCING = 2
-
 
 class TestRebalance(TestCase):
     def setUp(self):
         self.testnet = RegtestNetwork(
             binary_folder=bin_dir,
-            network_definition_location=small_star_ring_location,
+            network_definition_location=test_graphs_paths['small_star_ring'],
             nodedata_folder=test_data_dir,
             node_limit='H',
             from_scratch=True
@@ -78,51 +69,8 @@ class TestRebalance(TestCase):
         # B -> D (channel #4)
         # C -> D (channel #5)
 
-    def test_rebalance_channel_6(self):
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.0, False)
-
-    def test_small_positive_target_channel_6(self):
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.2, False)
-
-    def test_large_positive_channel_6(self):
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.8, False)
-
-    def test_small_negative_target_channel_6_fail(self):
-        # this test should fail when unbalancing is not allowed, as it would
-        # unbalance another channel if the full target would be accounted for
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, -0.2, False,
-                                 should_fail=True)
-
-    def test_small_negative_target_channel_6_succeed(self):
-        # this test should fail when unbalancing is not allowed, as it would
-        # unbalance another channel if the full target would be accounted for
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, -0.2, True)
-
-    def test_rebalance_channel_1(self):
-        test_channel_number = 1
-        self.rebalance_and_check(test_channel_number, 0.0, False)
-
-    def test_rebalance_channel_2(self):
-        test_channel_number = 2
-        self.rebalance_and_check(test_channel_number, 0.0, False, places=1)
-
-    def test_shuffle_arround(self):
-        """
-        Shuffles sat around in channel 6.
-        """
-        first_target_amount = -0.1
-        second_target_amount = 0.1
-        test_channel_number = 6
-
-        self.rebalance_and_check(
-            test_channel_number, first_target_amount, True)
-        self.rebalance_and_check(
-            test_channel_number, second_target_amount, True)
+    def tearDown(self):
+        self.testnet.cleanup()
 
     def rebalance_and_check(self, test_channel_number, target,
                             allow_unbalancing, places=5, should_fail=False):
@@ -176,5 +124,48 @@ class TestRebalance(TestCase):
             self.assertNotAlmostEqual(target, channel_unbalancedness,
                                       places=places)
 
-    def tearDown(self):
-        self.testnet.cleanup()
+    def test_rebalance_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.0, False)
+
+    def test_small_positive_target_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.2, False)
+
+    def test_large_positive_channel_6(self):
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, 0.8, False)
+
+    def test_small_negative_target_channel_6_fail(self):
+        # this test should fail when unbalancing is not allowed, as it would
+        # unbalance another channel if the full target would be accounted for
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, -0.2, False,
+                                 should_fail=True)
+
+    def test_small_negative_target_channel_6_succeed(self):
+        # this test should fail when unbalancing is not allowed, as it would
+        # unbalance another channel if the full target would be accounted for
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, -0.2, True)
+
+    def test_rebalance_channel_1(self):
+        test_channel_number = 1
+        self.rebalance_and_check(test_channel_number, 0.0, False)
+
+    def test_rebalance_channel_2(self):
+        test_channel_number = 2
+        self.rebalance_and_check(test_channel_number, 0.0, False, places=1)
+
+    def test_shuffle_arround(self):
+        """
+        Shuffles sat around in channel 6.
+        """
+        first_target_amount = -0.1
+        second_target_amount = 0.1
+        test_channel_number = 6
+
+        self.rebalance_and_check(
+            test_channel_number, first_target_amount, True)
+        self.rebalance_and_check(
+            test_channel_number, second_target_amount, True)
