@@ -1,4 +1,4 @@
-import grpc_compiled.rpc_pb2 as ln
+import lndmanage.grpc_compiled.rpc_pb2 as ln
 
 import logging
 logger = logging.getLogger(__name__)
@@ -56,10 +56,11 @@ def set_fees_by_balancedness(
 
 
 if __name__ == '__main__':
-    from lib.node import LndNode
+    from lndmanage.lib.node import LndNode
     import logging.config
-    import _settings
-    logging.config.dictConfig(_settings.logger_config)
+    from lndmanage import settings
+
+    logging.config.dictConfig(settings.logger_config)
 
     nd = LndNode()
 

@@ -6,8 +6,7 @@ import math
 import logging
 from collections import OrderedDict
 
-import _settings
-from lib.forwardings import get_forwarding_statistics_channels
+from lndmanage.lib.forwardings import get_forwarding_statistics_channels
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -392,7 +391,7 @@ class ListChannels(object):
                                  for k, v in channels.items()}
         # only read annotations if config file is given
         if self.node.config_file:
-            config = _settings.read_config(self.node.config_file)
+            config = settings.read_config(self.node.config_file)
             annotations = config['annotations']
         else:
             annotations = {}
@@ -517,9 +516,10 @@ class ListChannels(object):
 if __name__ == '__main__':
     import logging.config
 
-    from lib.node import LndNode
-    import _settings
-    logging.config.dictConfig(_settings.logger_config)
+    from lndmanage.lib.node import LndNode
+    from lndmanage import settings
+
+    logging.config.dictConfig(settings.logger_config)
 
     node_instance = LndNode()
     listchannels = ListChannels(node_instance)

@@ -6,11 +6,11 @@ from unittest import TestCase
 
 from lnregtest.lib.network import RegtestNetwork
 
-import _settings
-from lib.node import LndNode
-from lib.listchannels import ListChannels
-from lib.rebalance import Rebalancer
-from lib.exceptions import RebalanceFailure, TooExpensive
+from lndmanage import settings
+from lndmanage.lib.node import LndNode
+from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.exceptions import RebalanceFailure, TooExpensive
 
 from test.testing_common import (
     bin_dir,
@@ -20,7 +20,7 @@ from test.testing_common import (
 )
 
 import logging.config
-logging.config.dictConfig(_settings.logger_config)
+logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.handlers[0].setLevel(logging.DEBUG)

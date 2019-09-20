@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.node import LndNode
+from lndmanage.lib.node import LndNode
 
 
 def extract_fee_settings(node):

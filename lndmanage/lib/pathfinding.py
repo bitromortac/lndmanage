@@ -1,6 +1,8 @@
-import networkx as nx
 import queue
-import _settings
+
+import networkx as nx
+
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ def ksp_discard_high_cost_paths(graph, source, target, num_k, weight):
     routes, route_costs = ksp(graph, source, target, num_k, weight)
     logger.debug("Approximate costs [msat] of routes:")
     for r, rc in zip(routes, route_costs):
-        if rc < _settings.PENALTY:
+        if rc < settings.PENALTY:
             logger.debug(f"  {rc} msat: {r}")
             final_routes.append(r)
     return final_routes

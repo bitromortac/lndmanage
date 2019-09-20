@@ -1,11 +1,11 @@
-import _settings
 import os
 import time
 import pickle
 
 import networkx as nx
 
-from lib.ln_utilities import convert_channel_id_to_short_channel_id
+from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -34,16 +34,18 @@ class Network(object):
         Checks if networkx and edges dictionary pickles are present. If they are older than
         CACHING_RETENTION_MINUTES, make fresh pickles, else read them from the files.
         """
-        directory = os.path.dirname(__file__)
-        cache_edges_filename = os.path.join(directory, '..', 'cache', 'graph.gpickle')
-        cache_graph_filename = os.path.join(directory, '..', 'cache', 'edges.gpickle')
+
+        cache_edges_filename = os.path.join(
+            settings.home_dir, 'cache', 'graph.gpickle')
+        cache_graph_filename = os.path.join(
+            settings.home_dir, 'cache', 'edges.gpickle')
 
         try:
             timestamp_graph = os.path.getmtime(cache_graph_filename)
         except FileNotFoundError:
             timestamp_graph = 0  # set very old timestamp
 
-        if timestamp_graph < time.time() - _settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
+        if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
             logger.info(f"Saved graph is too old. Fetching new one.")
             self.set_graph_and_edges()
             nx.write_gpickle(self.graph, cache_graph_filename)
@@ -247,9 +249,9 @@ class Network(object):
 
 if __name__ == '__main__':
     import logging.config
-    logging.config.dictConfig(_settings.logger_config)
+    logging.config.dictConfig(settings.logger_config)
 
-    from lib.node import LndNode
+    from lndmanage.lib.node import LndNode
     nd = LndNode()
     print(f"Graph size: {nd.network.graph.size()}")
     print(f"Number of channels: {len(nd.network.edges.keys())}")

@@ -1,9 +1,9 @@
-import _settings
-from lib.network_info import NetworkAnalysis
-from lib.node import LndNode
+from lndmanage.lib.network_info import NetworkAnalysis
+from lndmanage.lib.node import LndNode
+from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(_settings.logger_config)
+logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':

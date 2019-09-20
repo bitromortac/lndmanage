@@ -5,13 +5,12 @@ from collections import OrderedDict
 import urllib.request
 from urllib.error import HTTPError
 
-import _settings
-
-from lib.forwardings import ForwardingAnalyzer
-from lib.network_info import NetworkAnalysis
+from lndmanage.lib.forwardings import ForwardingAnalyzer
+from lndmanage.lib.network_info import NetworkAnalysis
+from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(_settings.logger_config)
+logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger(__name__)
 
 # define printing shortcuts, alignments, and cutoffs
@@ -309,7 +308,7 @@ class RecommendNodes(object):
             if exclude_hubs:  # we exclude hubs in the neighbor analysis
                 nodes_list = [
                     n for n in nodes.keys()
-                    if self.node.network.number_channels(n) < _settings.NUMBER_CHANNELS_DEFINING_HUB
+                    if self.node.network.number_channels(n) < settings.NUMBER_CHANNELS_DEFINING_HUB
                 ]
             else:
                 nodes_list = nodes.keys()
@@ -405,7 +404,7 @@ class RecommendNodes(object):
                     node_new['distance'] = \
                         self.network_analysis.distance(self.node.pub_key, k)
                     if exclude_hubs:
-                        if node_new['number_channels'] < _settings.NUMBER_CHANNELS_DEFINING_HUB:
+                        if node_new['number_channels'] < settings.NUMBER_CHANNELS_DEFINING_HUB:
                             nodes_new[k] = node_new
                     else:
                         nodes_new[k] = node_new
@@ -416,7 +415,7 @@ class RecommendNodes(object):
 
         if exclude_hubs:
             logger.info(f"Excluding hubs (defined by number of channels > "
-                        f"{_settings.NUMBER_CHANNELS_DEFINING_HUB}).")
+                        f"{settings.NUMBER_CHANNELS_DEFINING_HUB}).")
         if not self.show_connected:
             nodes_new = self.exclude_connected_nodes(nodes_new)
 
@@ -519,6 +518,6 @@ class RecommendNodes(object):
 
 
 if __name__ == '__main__':
-    from lib.node import LndNode
+    from lndmanage.lib.node import LndNode
     nd = LndNode()
     rn = RecommendNodes(nd)

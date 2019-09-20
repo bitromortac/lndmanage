@@ -1,15 +1,15 @@
 import logging
 import math
 
-import _settings
-from lib.exceptions import (
+from lndmanage.lib.routing import Router
+from lndmanage.lib.exceptions import (
     NoRouteError,
     RebalanceFailure,
     DryRunException,
     PaymentTimeOut,
     TooExpensive
 )
-from lib.routing import Router
+from lndmanage import settings
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -79,7 +79,7 @@ class Rebalancer(object):
         while True:
             # only attempt a fixed number of times
             count += 1
-            if count > _settings.REBALANCING_TRIALS:
+            if count > settings.REBALANCING_TRIALS:
                 raise RebalanceFailure
 
             routes = self.router.get_routes_for_rebalancing(
@@ -229,7 +229,7 @@ class Rebalancer(object):
         # the rebalance candidate channel (allows for unbalancing a channel)
         if allow_unbalancing:
             # target is a bit into the non-ideal direction
-            lower_bound = -_settings.UNBALANCED_CHANNEL
+            lower_bound = -settings.UNBALANCED_CHANNEL
         else:
             # target is perfect balance
             lower_bound = 0
@@ -246,7 +246,7 @@ class Rebalancer(object):
                 if allow_unbalancing:
                     c['amt_affordable'] = int(
                         c['amt_to_balanced'] +
-                        direction * _settings.UNBALANCED_CHANNEL
+                        direction * settings.UNBALANCED_CHANNEL
                         * c['capacity'] / 2)
                 else:
                     c['amt_affordable'] = c['amt_to_balanced']

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
 
 
 class LnUtilityTest(TestCase):

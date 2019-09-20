@@ -1,4 +1,19 @@
+import os
 import configparser
+
+# determine directories
+settings_dir = os.path.dirname(os.path.realpath(__file__))
+
+# determine home folder, prioritized by environment variable LNDMANAGE_HOME
+environ_home = os.environ.get('LNDMANAGE_HOME', None)
+if environ_home:
+    if not os.path.exists(environ_home):
+        raise EnvironmentError(
+            'LNDMANAGE_HOME is not set to a path that exists')
+    home_dir = environ_home
+else:
+    home_dir = os.path.join(settings_dir, '../')
+
 
 # -------- graph settings --------
 # accepted age of the network graph

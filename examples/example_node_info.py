@@ -1,11 +1,13 @@
-import _settings
-from lib.listchannels import print_channels_rebalance
-from lib.node import LndNode
+from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.node import LndNode
+from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(_settings.logger_config)
+logging.config.dictConfig(settings.logger_config)
 
 if __name__ == '__main__':
     node = LndNode()
+    listchannels = ListChannels(node)
     node.print_status()
-    print_channels_rebalance(node, unbalancedness_greater_than=_settings.UNBALANCED_CHANNEL)
+    listchannels.print_channels_unbalanced(
+        unbalancedness=settings.UNBALANCED_CHANNEL, sort_string='alias')

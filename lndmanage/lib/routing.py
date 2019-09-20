@@ -1,8 +1,7 @@
-import _settings
-
-from lib.pathfinding import ksp_discard_high_cost_paths
-from lib.exceptions import RouteWithTooSmallCapacity, NoRouteError
-from lib.rating import ChannelRater
+from lndmanage.lib.rating import ChannelRater
+from lndmanage.lib.exceptions import RouteWithTooSmallCapacity, NoRouteError
+from lndmanage.lib.pathfinding import ksp_discard_high_cost_paths
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -287,6 +286,6 @@ class Router(object):
 
 if __name__ == '__main__':
     import logging.config
-    logging.config.dictConfig(_settings.logger_config)
-    from lib.node import LndNode
+    logging.config.dictConfig(settings.logger_config)
+    from lndmanage.lib.node import LndNode
     nd = LndNode()

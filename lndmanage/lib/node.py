@@ -6,20 +6,20 @@ from collections import OrderedDict
 
 import grpc
 from grpc._channel import _Rendezvous
-
-import grpc_compiled.rpc_pb2 as ln
-import grpc_compiled.rpc_pb2_grpc as lnrpc
 from google.protobuf.json_format import MessageToDict
 
-import _settings
-
-from lib.network import Network
-from lib.utilities import convert_dictionary_number_strings_to_ints
-from lib.ln_utilities import (extract_short_channel_id_from_string,
-                              convert_short_channel_id_to_channel_id,
-                              convert_channel_id_to_short_channel_id,
-                              channel_unbalancedness_and_commit_fee)
-from lib.exceptions import PaymentTimeOut, NoRouteError
+import lndmanage.grpc_compiled.rpc_pb2 as ln
+import lndmanage.grpc_compiled.rpc_pb2_grpc as lnrpc
+from lndmanage.lib.network import Network
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRouteError
+from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
+from lndmanage.lib.ln_utilities import (
+    extract_short_channel_id_from_string,
+    convert_short_channel_id_to_channel_id,
+    convert_channel_id_to_short_channel_id,
+    channel_unbalancedness_and_commit_fee
+)
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class LndNode(Node):
                 raise ValueError('if lnd_home is given, lnd_host must be given also')
             lnd_host = self.lnd_host
         else:
-            config = _settings.read_config(self.config_file)
+            config = settings.read_config(self.config_file)
             cert_file = os.path.expanduser(config['network']['tls_cert_file'])
             macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
             lnd_host = config['network']['lnd_grpc_host']
