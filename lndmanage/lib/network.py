@@ -34,11 +34,11 @@ class Network(object):
         Checks if networkx and edges dictionary pickles are present. If they are older than
         CACHING_RETENTION_MINUTES, make fresh pickles, else read them from the files.
         """
-
-        cache_edges_filename = os.path.join(
-            settings.home_dir, 'cache', 'graph.gpickle')
-        cache_graph_filename = os.path.join(
-            settings.home_dir, 'cache', 'edges.gpickle')
+        cache_dir = os.path.join(settings.home_dir, 'cache')
+        if not os.path.exists(cache_dir):
+            os.mkdir(cache_dir)
+        cache_edges_filename = os.path.join(cache_dir, 'graph.gpickle')
+        cache_graph_filename = os.path.join(cache_dir, 'edges.gpickle')
 
         try:
             timestamp_graph = os.path.getmtime(cache_graph_filename)

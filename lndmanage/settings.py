@@ -1,18 +1,25 @@
 import os
 import configparser
+from lndmanage.lib.configure import check_home
+from pathlib import Path
 
 # determine directories
 settings_dir = os.path.dirname(os.path.realpath(__file__))
 
 # determine home folder, prioritized by environment variable LNDMANAGE_HOME
 environ_home = os.environ.get('LNDMANAGE_HOME', None)
+
 if environ_home:
-    if not os.path.exists(environ_home):
-        raise EnvironmentError(
-            'LNDMANAGE_HOME is not set to a path that exists')
+    if not os.path.isabs(environ_home):
+        raise ValueError(f'Environment variable LNDMANAGE_HOME must be '
+                         f'an absolute path. Current: "{environ_home}"')
     home_dir = environ_home
 else:
-    home_dir = os.path.join(settings_dir, '../')
+    user_home_dir = str(Path.home())
+    home_dir = os.path.join(user_home_dir, '.lndmanage')
+
+# if lndmanage is ran for the first time, we need to create the configuration
+check_home(home_dir)
 
 
 # -------- graph settings --------
