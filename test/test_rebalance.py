@@ -15,13 +15,15 @@ from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
 from test.testing_common import (
     bin_dir,
     test_data_dir,
+    lndmanage_home,
     test_graphs_paths,
     SLEEP_SEC_AFTER_REBALANCING)
 
 import logging.config
+settings.set_lndmanage_home_dir(lndmanage_home)
 logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 
