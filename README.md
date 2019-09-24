@@ -6,26 +6,26 @@ lndmanage is a command line tool for advanced channel management of an
 
 Current feature list (use the ```--help``` flag for subcommands):
 
-* __```status``` advanced node summary__
-* __```listchannels``` channel listing commands:__
-  * ```listchannels rebalance``` list channels for rebalancing
-  * ```listchannels inactive``` list inactive channels for channel hygiene 
-  * ```listchannels forwardings``` list forwarding statistics for each channel 
-* __```rebalance``` rebalancing of channels:__
-  * different strategies can be chosen
+* __Display the node summary ```status```__
+* __Advanced channel listings ```listchannels```__
+  * ```listchannels rebalance```: list channels for rebalancing
+  * ```listchannels inactive```: list inactive channels for channel hygiene 
+  * ```listchannels forwardings```: list forwarding statistics for each channel 
+* __Rebalancing command ```rebalance```__
+  * different rebalancing strategies can be chosen
   * a target 'balancedness' can be specified (e.g. to empty the channel)
-* __```circle``` doing circular self-payments__
-* __```recommend-nodes``` recommendation of nodes:__
-  * ```recommend-nodes good-old``` based on 
+* __Circular self-payments ```circle```__
+* __Recommendation of good nodes ```recommend-nodes```__
+  * ```recommend-nodes good-old```: based on 
   historic forwardings of closed channels:
   find nodes already interacted with
-  * ```recommend-nodes flow-analysis``` based on forwarding flow analysis:
+  * ```recommend-nodes flow-analysis```: based on forwarding flow analysis:
   find nodes payments are likely forwarded to
-  * ```recommend-nodes external-source``` based on an external source:
-  parses a url/file for node public keys and suggests nodes to connect to for 
-  a good connection (defaults to the list of 
+  * ```recommend-nodes external-source```: based on an external source:
+  parses a url/file for node public keys and suggests nodes to connect to
+  (defaults to the list of 
   [lightning networkstores](http://lightningnetworkstores.com))
-  * ```recommend-nodes channel-openings``` based on recent channel 
+  * ```recommend-nodes channel-openings```: based on recent channel 
   openings in the network: find nodes which show increased recent channel 
   opening activity 
    
@@ -57,7 +57,7 @@ The workflow for rebalancing a channel goes as follows:
 
 * take a look at all your unbalanced channels with:
 
-  ```$ ./lndmanage.py listchannels rebalance```
+  ```$ lndmanage listchannels rebalance```
   
     The output will look like:
   ```
@@ -85,7 +85,7 @@ The workflow for rebalancing a channel goes as follows:
   to rebalance (target is a 50:50 balance)
 * do a dry run to see what's waiting for you
 
-  ```$ ./lndmanage.py rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
+  ```$ lndmanage rebalance --max-fee-sat 20 --max-fee-rate 0.00001 channel_id```
 
 * read the output and if everything looks well, 
   then run with the ```--reckless``` flag
@@ -97,7 +97,7 @@ Channel hygiene
 ---------------------
 Inactive channels lock up capital, which can be used elsewhere. 
 In order to close those channels it is useful to take a look
-at the inactive channels with ```$ ./lndmanage.py listchannels inactive```.
+at the inactive channels with ```$ lndmanage listchannels inactive```.
 
 You will get an output like:
 
@@ -125,7 +125,7 @@ inactive in the future and may be closed.
 
 Another way to see if funds have to be reallocated is to have a look at
 the forwarding statistics of, e.g., the last two months of the individual 
-channels with ```$./lndmanage.py listchannels forwardings --from-days-ago 60 --sort-by='fees'```
+channels with ```$lndmanage listchannels forwardings --from-days-ago 60 --sort-by='fees'```
  (here sorted by total fees, but it can be sorted by any column field).
 
 The output will look like:
@@ -159,10 +159,12 @@ xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591
 
 Channel opening strategies
 --------------------------
-Lndmanage supports a channel annotation functionality. By adding the funding
-transaction id or channel id to the file `channel_annotations` specified by the
-format in the file, a comment on why one has opened a specific channel can be
-remembered. These annotations will then appear in the `listchannels` views.
+Lndmanage supports a channel annotation functionality. This serves for
+ remembering why a certain channel was opened. By adding the funding
+transaction id or channel id to the config file `~/.lndmanage/config.ini`
+under the `annotations` section (as specified in 
+[`config_sample.ini`](lndmanage/templates/config_sample.ini)), annotations
+can be saved. These annotations will then appear in the `listchannels` views.
 
 Setup
 -----
@@ -173,6 +175,18 @@ If you are running an older version of lnd checkout the according
 Requirements: python3.6, lnd v0.7.0-beta
 
 **Linux:**
+
+You can install lndmanage via two methods:
+
+1\. Install with pip:
+```
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ python3 -m pip install lndmanage
+```
+and afterwards you will have an executable `lndmanage` in your path.
+
+2\. From source:
 ```
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
@@ -185,6 +199,19 @@ $ python3 -m pip install -r requirements.txt
 Install [python3](https://www.python.org/downloads/release/python-374/),
 [git](https://git-scm.com/download/win), and
  [visual studio build tools](https://visualstudio.microsoft.com/de/downloads/?q=build+tools).
+
+You need to set the environment variable `PYTHONIOENCODING` for proper encoding to:
+`$env:PYTHONIOENCODING="UTF-8"`
+
+1\. Install with pip:
+```
+$ py -m venv venv
+$ .\venv\Scripts\activate
+$ py -m pip install lndmanage
+```
+or
+
+2\. From source:
 ```
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
@@ -192,19 +219,21 @@ $ py -m venv venv
 $ .\venv\Scripts\activate
 $ py -m pip install -r requirements.txt
 ```
-Additionally set the environment variable `PYTHONIOENCODING`:
-`$env:PYTHONIOENCODING="UTF-8"`
+**Configuration:**
 
-**Edit configuration (config.ini):**
-`$ cp config_sample.ini config.ini`
-* `lnd_grpc_host`: ip and port of the grpc API
-* `tls_cert_file`: location of the tls certificate (can be found in .lnd folder)
-* `admin_macaroon_file`: location of the admin macaroon (can be found in .lnd folder)
+When starting lndmanage for the first time, it asks you about how
+you want to use it, whether you want to access a remote lnd node, or if the
+node is ran locally. It will then create a runtime folder in your home folder
+`/home/user/.lndmanage`, where also `config.ini` and log files reside. This
+folder location can be overwritten by setting an environment variable
+ `LNDMANAGE_HOME`.
 
-Before running, make sure the python environment is active:
+**Test if it works:**
+
+Before running lndmanage, make sure the python environment is active:
 ```
 $ source venv/bin/activate
-$ (venv) python3 lndmanage.py status
+$ (venv) lndmanage status
 ```
 If it works, you should see the node status.
 
@@ -219,6 +248,7 @@ from the root folder.
 
 Docker
 ------
+**Due to restructuring of the project, this option is currently defunct.**
 
 If you prefer to run `lndmanage` from a docker container, `cd docker` 
 and follow [`README`](docker/README.md) there.
