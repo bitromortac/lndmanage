@@ -278,7 +278,6 @@ def main():
 
     # config.ini is expected to be in home/.lndmanage directory
     config_file = os.path.join(settings.home_dir, 'config.ini')
-    print(config_file)
     node = LndNode(config_file=config_file)
 
     if args.cmd == 'status':

@@ -37,6 +37,7 @@ setuptools.setup(
         'python-dateutil==2.8.0',
         'six==1.12.0',
     ],
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

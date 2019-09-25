@@ -1,0 +1,2 @@
+global-exclude *.py[cod] __pycache__
+include lndmanage/templates/config_sample.ini
