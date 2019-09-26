@@ -36,37 +36,25 @@ def check_or_create_configuration(home_dir):
     :type home_dir: str
     """
     if not os.path.exists(home_dir):  # user runs for the first time
-        print(f"Lndmanage is not yet configured it seems.")
-        print(f"Will set up a configuration folder at {home_dir}.")
+        print(f"Running lndmanage for the first time.")
+        print(f"Creating configuration folder at {home_dir}.")
         print("The default path can be overridden by setting the "
               "LNDMANAGE_HOME environment variable.")
-        print("Do you run your lnd node on this host [Y/n]?")
-        lnd_on_this_host = yes_no_question(default='y')
 
-        if lnd_on_this_host:
-            potential_lnd_home = os.path.expanduser('~/.lnd')
-            lnd_grpc_host = 'localhost:10009'
-            print(f'Using {lnd_grpc_host} as hostname.')
-            if os.path.exists(potential_lnd_home):
-                print(f'Detected lnd home directory: {potential_lnd_home}')
-                lnd_home = potential_lnd_home
-            else:
-                print('Enter path to the .lnd folder:')
-                lnd_home = get_user_input(valid_path)
-            admin_macaroon_path = os.path.join(
-                lnd_home, 'data/chain/bitcoin/mainnet/admin.macaroon')
-            tls_cert_path = os.path.join(
-                lnd_home, 'tls.cert')
+        lnd_home = os.path.expanduser('~/.lnd')
+        lnd_grpc_host = 'localhost:10009'
 
-        else:  # lnd runs on different host
-            print('Enter remote host information (format: 127.0.0.1:10009)')
-            lnd_grpc_host = get_user_input(valid_host)
-            print('Enter admin macaroon location (can be found '
-                  'in remote:.lnd/data/chain/bitcoin/mainnet/admin.macaroon)')
-            admin_macaroon_path = get_user_input(valid_path)
-            print('Enter TLS certificate path (can be found in '
-                  'remote:.lnd/tls.cert)')
-            tls_cert_path = get_user_input(valid_path)
+        admin_macaroon_path = os.path.join(
+            lnd_home, 'data/chain/bitcoin/mainnet/admin.macaroon')
+        tls_cert_path = os.path.join(
+            lnd_home, 'tls.cert')
+        if os.path.exists(lnd_home):
+            remote = False
+            print(f"Detected a local lnd configuration folder {lnd_home}.", )
+            print("Will use admin.macaroon and tls.cert from this directory.")
+        else:
+            remote = True
+            print(f"IF LND RUNS ON A REMOTE HOST, CONFIGURE {home_dir}/config.ini.")
 
         # build config file
         config = configparser.ConfigParser()
@@ -83,7 +71,9 @@ def check_or_create_configuration(home_dir):
 
         with open(config_path, 'w') as configfile:
             config.write(configfile)
-        print(f'Config file was written to {config_path}')
+        print(f'Config file was written to {config_path}.')
+        if remote:
+            exit(0)
 
     else:
         config_path = os.path.join(home_dir, 'config.ini')

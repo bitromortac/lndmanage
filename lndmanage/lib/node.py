@@ -97,13 +97,24 @@ class LndNode(Node):
             macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
             lnd_host = config['network']['lnd_grpc_host']
 
-        with open(cert_file, 'rb') as f:
-            cert = f.read()
+            try:
+                with open(cert_file, 'rb') as f:
+                    cert = f.read()
+            except FileNotFoundError as e:
+                logger.error("tls.cert not found, please configure %s.",
+                             self.config_file)
+                exit(1)
+
 
         if macaroons:
-            with open(macaroon_file, 'rb') as f:
-                macaroon_bytes = f.read()
-                macaroon = codecs.encode(macaroon_bytes, 'hex')
+            try:
+                with open(macaroon_file, 'rb') as f:
+                    macaroon_bytes = f.read()
+                    macaroon = codecs.encode(macaroon_bytes, 'hex')
+            except FileNotFoundError as e:
+                logger.error("admin.macaroon not found, please configure %s.",
+                             self.config_file)
+                exit(1)
 
             def metadata_callback(context, callback):
                 # for more info see grpc docs
@@ -223,7 +234,14 @@ class LndNode(Node):
             raise PaymentTimeOut
 
     def get_raw_network_graph(self):
-        graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+        try:
+            graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+        except _Rendezvous:
+            logger.error(
+                "Problem connecting to lnd. "
+                "Either %s is not configured correctly or lnd is not running.",
+                self.config_file)
+            exit(1)
         return graph
 
     def get_raw_info(self):

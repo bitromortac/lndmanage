@@ -174,25 +174,28 @@ If you are running an older version of lnd checkout the according
 
 Requirements: python3.6, lnd v0.7.0-beta
 
+If you run this tool from a different host than the lnd host, 
+make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
+ and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
+ configuration.
+
 **Linux:**
 
 You can install lndmanage via two methods:
 
-1\. Install with pip:
+1\. Install with pip (recommended):
 ```
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ python3 -m pip install lndmanage
 ```
-and afterwards you will have an executable `lndmanage` in your path.
-
-2\. From source:
+2\. Install from source:
 ```
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
 $ python3 -m venv venv
 $ source venv/bin/activate
-$ python3 -m pip install -r requirements.txt
+$ python3 setup.py install
 ```
 
 **Windows (powershell):**
@@ -203,37 +206,40 @@ Install [python3](https://www.python.org/downloads/release/python-374/),
 You need to set the environment variable `PYTHONIOENCODING` for proper encoding to:
 `$env:PYTHONIOENCODING="UTF-8"`
 
-1\. Install with pip:
+1\. Install with pip (recommended):
 ```
 $ py -m venv venv
 $ .\venv\Scripts\activate
-$ py -m pip install lndmanage
+$ python -m pip install lndmanage
 ```
-or
 
-2\. From source:
+2\. Install from source:
 ```
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
 $ py -m venv venv
 $ .\venv\Scripts\activate
-$ py -m pip install -r requirements.txt
+$ python setup.py install
 ```
 **Configuration:**
 
-When starting lndmanage for the first time, it asks you about how
-you want to use it, whether you want to access a remote lnd node, or if the
-node is ran locally. It will then create a runtime folder in your home folder
-`/home/user/.lndmanage`, where also `config.ini` and log files reside. This
-folder location can be overwritten by setting an environment variable
- `LNDMANAGE_HOME`.
+When starting lndmanage for the first time, it will create a runtime folder 
+`/home/user/.lndmanage`, where the configuration `config.ini` and log files
+ reside. This folder location can be overwritten by setting an environment 
+ variable `LNDMANAGE_HOME`. If you run this tool from a remote host to the lnd
+ host, you need to configure `config.ini`.
 
-**Test if it works:**
+**Running lndmanage**
 
-Before running lndmanage, make sure the python environment is active:
+The installation process created an executable `lndmanage`, which will
+only be available if the created python environment is active (your prompt 
+should have an `(venv)` in front):
 ```
 $ source venv/bin/activate
-$ (venv) lndmanage status
+```
+then run
+```
+(venv) $ lndmanage status
 ```
 If it works, you should see the node status.
 
