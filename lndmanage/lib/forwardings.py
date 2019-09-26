@@ -3,9 +3,8 @@ from collections import OrderedDict, defaultdict
 
 import numpy as np
 
-from lib.node import LndNode
-
-import _settings
+from lndmanage.lib.node import LndNode
+from lndmanage import settings
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -575,7 +574,7 @@ def get_forwarding_statistics_channels(node, time_interval_start,
 
             # TODO: refine 'action_required' by better metric
             if c['unbalancedness'] * c['flow_direction'] > 0 and abs(
-                    c['unbalancedness']) > _settings.UNBALANCED_CHANNEL:
+                    c['unbalancedness']) > settings.UNBALANCED_CHANNEL:
                 c['action_required'] = True
             else:
                 c['action_required'] = False
@@ -596,7 +595,7 @@ def get_forwarding_statistics_channels(node, time_interval_start,
             c['largest_forwarding_amount_out'] = float('nan')
             c['total_forwarding_in'] = float('nan')
             c['total_forwarding_out'] = float('nan')
-            if abs(c['unbalancedness']) > _settings.UNBALANCED_CHANNEL:
+            if abs(c['unbalancedness']) > settings.UNBALANCED_CHANNEL:
                 c['action_required'] = True
             else:
                 c['action_required'] = False
@@ -608,7 +607,7 @@ def get_forwarding_statistics_channels(node, time_interval_start,
 if __name__ == '__main__':
     import time
     import logging.config
-    logging.config.dictConfig(_settings.logger_config)
+    logging.config.dictConfig(settings.logger_config)
     logger = logging.getLogger()
 
     nd = LndNode()

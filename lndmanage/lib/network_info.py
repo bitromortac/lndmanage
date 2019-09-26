@@ -3,9 +3,8 @@ from collections import defaultdict
 import numpy as np
 import networkx as nx
 
-import _settings
-
-from lib.ln_utilities import convert_channel_id_to_short_channel_id
+from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -140,7 +139,7 @@ class NetworkAnalysis(object):
         edges = self.node.network.graph.edges(node_pub_key)
         for e in edges:
             degree_neighbor = self.node.network.graph.degree(e[1]) // 2
-            if degree_neighbor <= _settings.NUMBER_CHANNELS_DEFINING_USER_NODE:
+            if degree_neighbor <= settings.NUMBER_CHANNELS_DEFINING_USER_NODE:
                 connected_end_nodes += 1
         return connected_end_nodes
 
@@ -305,10 +304,10 @@ class NetworkAnalysis(object):
 
 
 if __name__ == '__main__':
-    from lib.node import LndNode
+    from lndmanage.lib.node import LndNode
 
     import logging.config
-    logging.config.dictConfig(_settings.logger_config)
+    logging.config.dictConfig(settings.logger_config)
 
     nd = LndNode()
     network_analysis = NetworkAnalysis(nd)

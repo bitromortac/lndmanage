@@ -1,4 +1,4 @@
-import _settings
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -29,15 +29,15 @@ class ChannelRater(object):
         """
         node_penalty = 0
         if u in self.bad_nodes or v in self.bad_nodes:
-            node_penalty = _settings.PENALTY
+            node_penalty = settings.PENALTY
 
         costs = [node_penalty + self.channel_weight(eattr, amt_msat) for eattr in e.values()]
         return min(costs)
 
     def channel_weight(self, e, amt_msat):
         long_path_penalty = 0
-        if _settings.PREFER_SHORT_PATHS:
-            long_path_penalty = _settings.LONG_PATH_PENALTY_MSAT
+        if settings.PREFER_SHORT_PATHS:
+            long_path_penalty = settings.LONG_PATH_PENALTY_MSAT
 
         cost = (long_path_penalty
                 + e.get('fees')['fee_base_msat']
@@ -81,7 +81,7 @@ class ChannelRater(object):
         """
         # TODO: consider also direction
         if channel_id in self.get_bad_channels():
-            return _settings.PENALTY
+            return settings.PENALTY
         else:
             return 0
 
@@ -95,7 +95,7 @@ class ChannelRater(object):
         :return: penalty
         """
         if capacity_sat < 0.50 * amt_msat // 1000 :
-            return _settings.PENALTY
+            return settings.PENALTY
         else:
             return 0
 
@@ -108,6 +108,6 @@ class ChannelRater(object):
         :return: high penalty
         """
         if policy['disabled']:
-            return _settings.PENALTY
+            return settings.PENALTY
         else:
             return 0

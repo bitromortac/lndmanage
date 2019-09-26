@@ -6,22 +6,24 @@ from unittest import TestCase
 
 from lnregtest.lib.network import RegtestNetwork
 
-import _settings
-from lib.node import LndNode
-from lib.listchannels import ListChannels
-from lib.rebalance import Rebalancer
-from lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage import settings
+from lndmanage.lib.node import LndNode
+from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
 
 from test.testing_common import (
     bin_dir,
     test_data_dir,
+    lndmanage_home,
     test_graphs_paths,
     SLEEP_SEC_AFTER_REBALANCING)
 
 import logging.config
-logging.config.dictConfig(_settings.logger_config)
+settings.set_lndmanage_home_dir(lndmanage_home)
+logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 

@@ -6,20 +6,20 @@ from collections import OrderedDict
 
 import grpc
 from grpc._channel import _Rendezvous
-
-import grpc_compiled.rpc_pb2 as ln
-import grpc_compiled.rpc_pb2_grpc as lnrpc
 from google.protobuf.json_format import MessageToDict
 
-import _settings
-
-from lib.network import Network
-from lib.utilities import convert_dictionary_number_strings_to_ints
-from lib.ln_utilities import (extract_short_channel_id_from_string,
-                              convert_short_channel_id_to_channel_id,
-                              convert_channel_id_to_short_channel_id,
-                              channel_unbalancedness_and_commit_fee)
-from lib.exceptions import PaymentTimeOut, NoRouteError
+import lndmanage.grpc_compiled.rpc_pb2 as ln
+import lndmanage.grpc_compiled.rpc_pb2_grpc as lnrpc
+from lndmanage.lib.network import Network
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRouteError
+from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
+from lndmanage.lib.ln_utilities import (
+    extract_short_channel_id_from_string,
+    convert_short_channel_id_to_channel_id,
+    convert_channel_id_to_short_channel_id,
+    channel_unbalancedness_and_commit_fee
+)
+from lndmanage import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -92,18 +92,29 @@ class LndNode(Node):
                 raise ValueError('if lnd_home is given, lnd_host must be given also')
             lnd_host = self.lnd_host
         else:
-            config = _settings.read_config(self.config_file)
+            config = settings.read_config(self.config_file)
             cert_file = os.path.expanduser(config['network']['tls_cert_file'])
             macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
             lnd_host = config['network']['lnd_grpc_host']
 
-        with open(cert_file, 'rb') as f:
-            cert = f.read()
+            try:
+                with open(cert_file, 'rb') as f:
+                    cert = f.read()
+            except FileNotFoundError as e:
+                logger.error("tls.cert not found, please configure %s.",
+                             self.config_file)
+                exit(1)
+
 
         if macaroons:
-            with open(macaroon_file, 'rb') as f:
-                macaroon_bytes = f.read()
-                macaroon = codecs.encode(macaroon_bytes, 'hex')
+            try:
+                with open(macaroon_file, 'rb') as f:
+                    macaroon_bytes = f.read()
+                    macaroon = codecs.encode(macaroon_bytes, 'hex')
+            except FileNotFoundError as e:
+                logger.error("admin.macaroon not found, please configure %s.",
+                             self.config_file)
+                exit(1)
 
             def metadata_callback(context, callback):
                 # for more info see grpc docs
@@ -223,7 +234,14 @@ class LndNode(Node):
             raise PaymentTimeOut
 
     def get_raw_network_graph(self):
-        graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+        try:
+            graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+        except _Rendezvous:
+            logger.error(
+                "Problem connecting to lnd. "
+                "Either %s is not configured correctly or lnd is not running.",
+                self.config_file)
+            exit(1)
         return graph
 
     def get_raw_info(self):

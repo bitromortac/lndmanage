@@ -1,8 +1,9 @@
 import datetime
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
-from lib.node import LndNode
+from lndmanage.lib.node import LndNode
 
 
 def plot_forwardings(forwarding_events):
