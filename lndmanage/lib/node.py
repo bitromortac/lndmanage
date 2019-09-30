@@ -97,14 +97,13 @@ class LndNode(Node):
             macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
             lnd_host = config['network']['lnd_grpc_host']
 
-            try:
-                with open(cert_file, 'rb') as f:
-                    cert = f.read()
-            except FileNotFoundError as e:
-                logger.error("tls.cert not found, please configure %s.",
-                             self.config_file)
-                exit(1)
-
+        try:
+            with open(cert_file, 'rb') as f:
+                cert = f.read()
+        except FileNotFoundError as e:
+            logger.error("tls.cert not found, please configure %s.",
+                         self.config_file)
+            exit(1)
 
         if macaroons:
             try:
