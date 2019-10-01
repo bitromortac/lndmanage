@@ -12,3 +12,8 @@ config.ini
 
 # test data
 test/test_data/*
+
+# build data
+build/*
+dist/*
+lndmanage.egg-info/*
