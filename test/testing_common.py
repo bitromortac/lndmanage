@@ -18,7 +18,9 @@ lndmanage_home = os.path.join(test_data_dir, 'lndmanage')
 os.makedirs(lndmanage_home, exist_ok=True)
 
 test_graphs_paths = {
-    'small_star_ring': os.path.join(
-    graph_definitions_dir, 'small_star_ring.py'),
+    'star_ring_3_liquid': os.path.join(
+        graph_definitions_dir, 'star_ring_3_liquid.py'),
+    'star_ring_4_unbalanced': os.path.join(
+        graph_definitions_dir, 'star_ring_4_unbalanced.py'),
 }
 
