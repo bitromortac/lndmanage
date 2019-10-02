@@ -32,7 +32,7 @@ class TestCircle(TestCase):
     def setUp(self):
         self.testnet = RegtestNetwork(
             binary_folder=bin_dir,
-            network_definition_location=test_graphs_paths['small_star_ring'],
+            network_definition_location=test_graphs_paths['star_ring_3_liquid'],
             nodedata_folder=test_data_dir,
             node_limit='H',
             from_scratch=True
