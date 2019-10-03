@@ -11,6 +11,7 @@ from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage.lib.exceptions import RebalanceCandidatesExhausted
 
 from test.testing_common import (
     bin_dir,
@@ -66,11 +67,12 @@ class RebalanceTest(TestCase):
             lnd_host='localhost:' + str(master_node_port),
             regtest=True
         )
+        self.graph_test()
 
     def tearDown(self):
         self.testnet.cleanup()
 
-    def test_graph(self):
+    def graph_test(self):
         raise NotImplementedError
 
     def rebalance_and_check(self, test_channel_number, target,
@@ -139,7 +141,7 @@ class TestLiquidRebalance(RebalanceTest):
     # B -> D (channel #4)
     # C -> D (channel #5)
 
-    def test_graph(self):
+    def graph_test(self):
         self.assertEqual(4, self.master_node_networkinfo['num_nodes'])
         self.assertEqual(6, self.master_node_networkinfo['num_channels'])
 
@@ -199,7 +201,7 @@ class TestUnbalancedRebalance(RebalanceTest):
     # A -> D (channel #3)
     # A -> E (channel #4)
 
-    def test_graph(self):
+    def graph_test(self):
         self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
         self.assertEqual(10, self.master_node_networkinfo['num_channels'])
 
@@ -209,3 +211,34 @@ class TestUnbalancedRebalance(RebalanceTest):
         # TODO: find out why not exact rebalancing target is reached
         print(self.rebalance_and_check(
             test_channel_number, -0.05, False, places=1))
+
+
+class TestIlliquidRebalance(RebalanceTest):
+    network_definition = test_graphs_paths['star_ring_4_illiquid']
+
+    # channels:
+    # A -> B (channel #1)
+    # A -> C (channel #2)
+    # A -> D (channel #3)
+    # A -> E (channel #4)
+
+    def graph_test(self):
+        self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
+        self.assertEqual(10, self.master_node_networkinfo['num_channels'])
+
+    def test_rebalance_channel_1(self):
+        """tests multiple rebalance of one channel"""
+        test_channel_number = 1
+        # TODO: find out why not exact rebalancing target is reached
+        fees_msat = self.rebalance_and_check(
+            test_channel_number, -0.05, False, places=1)
+        self.assertEqual(2575, fees_msat)
+
+    def test_rebalance_channel_1_fail(self):
+        test_channel_number = 1
+        self.assertRaises(
+            RebalanceCandidatesExhausted, self.rebalance_and_check,
+            test_channel_number, 0.3, False, places=1
+        )
+
+
