@@ -35,9 +35,8 @@ class RebalanceTest(TestCase):
     network_definition = None
 
     def setUp(self):
-        if self.__class__.__name__ == 'RebalanceTest':
-            self.skipTest("This class doesn't represent a real test case.")
         if self.network_definition is None:
+            self.skipTest("This class doesn't represent a real test case.")
             raise NotImplementedError("A network definition needs to be given.")
 
         self.testnet = RegtestNetwork(

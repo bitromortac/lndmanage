@@ -9,7 +9,14 @@ from lnregtest.lib.network import RegtestNetwork
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.exceptions import RebalanceFailure, TooExpensive
+from lndmanage.lib.exceptions import (
+    RebalanceFailure,
+    TooExpensive,
+    DryRun,
+    RebalancingTrialsExhausted,
+    NoRoute,
+    DuplicateRoute,
+)
 from lndmanage import settings
 
 from test.testing_common import (
@@ -28,11 +35,18 @@ logger.setLevel(logging.INFO)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 
-class TestCircle(TestCase):
+class CircleTest(TestCase):
+
+    network_definition = None
+
     def setUp(self):
+        if self.network_definition is None:
+            self.skipTest("This class doesn't represent a real test case.")
+            raise NotImplementedError("A network definition needs to be given.")
+
         self.testnet = RegtestNetwork(
             binary_folder=bin_dir,
-            network_definition_location=test_graphs_paths['star_ring_3_liquid'],
+            network_definition_location=self.network_definition,
             nodedata_folder=test_data_dir,
             node_limit='H',
             from_scratch=True
@@ -41,11 +55,7 @@ class TestCircle(TestCase):
 
         master_node_data_dir = self.testnet.master_node.lnd_data_dir
         master_node_port = self.testnet.master_node.grpc_port
-        master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
-
-        # assert some basic properties of the graph
-        self.assertEqual(4, master_node_networkinfo['num_nodes'])
-        self.assertEqual(6, master_node_networkinfo['num_channels'])
+        self.master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
 
         self.lndnode = LndNode(
             lnd_home=master_node_data_dir,
@@ -58,13 +68,17 @@ class TestCircle(TestCase):
             max_effective_fee_rate=50,
             budget_sat=20
         )
+        self.graph_test()
 
     def tearDown(self):
         self.testnet.cleanup()
 
+    def graph_test(self):
+        raise NotImplementedError
+
     def circle_and_check(self, rebalancer, channel_number_send,
                          channel_number_receive, amount_sat,
-                         expected_fees_msat):
+                         expected_fees_msat, dry=False):
         """
         Helper function for testing a circular payment.
 
@@ -83,6 +97,9 @@ class TestCircle(TestCase):
         :param expected_fees_msat: expected fees in millisatoshi for
             the rebalance
         :type expected_fees_msat: int
+
+        :param dry: if it should be a dry run
+        :type dry: bool
         """
         # setup
         graph_before = self.testnet.assemble_graph()
@@ -99,7 +116,8 @@ class TestCircle(TestCase):
                 channel_id_receive,
                 amount_sat,
                 invoice_r_hash,
-                rebalancer.budget_sat
+                rebalancer.budget_sat,
+                dry=dry
             )
             time.sleep(SLEEP_SEC_AFTER_REBALANCING)
         except Exception as e:
@@ -132,7 +150,16 @@ class TestCircle(TestCase):
             "Receiving local balance is wrong"
         )
 
-    def test_circle_1_2(self):
+
+class TestCircleLiquid(CircleTest):
+    network_definition = test_graphs_paths['star_ring_3_liquid']
+
+    def graph_test(self):
+        # assert some basic properties of the graph
+        self.assertEqual(4, self.master_node_networkinfo['num_nodes'])
+        self.assertEqual(6, self.master_node_networkinfo['num_channels'])
+
+    def test_circle_success_1_2(self):
         """
         Test successful rebalance from channel 1 to channel 2.
         """
@@ -149,7 +176,7 @@ class TestCircle(TestCase):
             expected_fees_msat
         )
 
-    def test_circle_1_6(self):
+    def test_circle_success_1_6(self):
         """
         Test successful rebalance from channel 1 to channel 6.
         """
@@ -166,7 +193,7 @@ class TestCircle(TestCase):
             expected_fees_msat
         )
 
-    def test_circle_6_1_rebalance_failure_no_funds(self):
+    def test_circle_6_1_fail_rebalance_failure_no_funds(self):
         """
         Test expected failure for channel 6 to channel 1, where channel 6
         doesn't have funds.
@@ -186,7 +213,7 @@ class TestCircle(TestCase):
             expected_fees_msat,
         )
 
-    def test_circle_1_6_budget_too_expensive(self):
+    def test_circle_1_6_fail_budget_too_expensive(self):
         """
         Test expected failure where rebalance uses more than the fee budget.
         """
@@ -206,7 +233,7 @@ class TestCircle(TestCase):
             expected_fees_msat,
         )
 
-    def test_circle_1_6_max_fee_rate_too_expensive(self):
+    def test_circle_1_6_fail_max_fee_rate_too_expensive(self):
         """
         Test expected failure where rebalance is more expensive than
         the desired maximal fee rate.
@@ -247,7 +274,7 @@ class TestCircle(TestCase):
             expected_fees_msat,
         )
 
-    def test_circle_1_6_channel_reserve(self):
+    def test_circle_1_6_success_channel_reserve(self):
         """
         Test for a maximal amount circular payment.
         """
@@ -272,3 +299,110 @@ class TestCircle(TestCase):
             amount_sat,
             expected_fees_msat,
         )
+
+    def test_circle_1_6_fail_rebalance_dry(self):
+        """
+        Test if dry run exception is raised.
+        """
+        channel_number_from = 1
+        channel_number_to = 6
+        amount_sat = 10000
+        expected_fees_msat = 33
+
+        self.assertRaises(
+            DryRun,
+            self.circle_and_check,
+            self.rebalancer,
+            channel_number_from,
+            channel_number_to,
+            amount_sat,
+            expected_fees_msat,
+            dry=True
+        )
+
+
+class TestCircleIlliquid(CircleTest):
+
+    network_definition = test_graphs_paths['star_ring_4_illiquid']
+
+    def graph_test(self):
+        self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
+        self.assertEqual(10, self.master_node_networkinfo['num_channels'])
+
+    def test_circle_fail_2_3_no_route(self):
+        """
+        Test if NoRoute is raised.
+        """
+        channel_number_from = 2
+        channel_number_to = 3
+        amount_sat = 500000
+        expected_fees_msat = None
+
+        self.assertRaises(
+            NoRoute,
+            self.circle_and_check,
+            self.rebalancer,
+            channel_number_from,
+            channel_number_to,
+            amount_sat,
+            expected_fees_msat
+        )
+
+    def test_circle_1_2_fail_max_trials_exhausted(self):
+        """
+        Test if RebalancingTrialsExhausted is raised.
+        """
+        channel_number_from = 1
+        channel_number_to = 2
+        amount_sat = 190950
+        expected_fees_msat = None
+        settings.REBALANCING_TRIALS = 1
+
+        self.assertRaises(
+            RebalancingTrialsExhausted,
+            self.circle_and_check,
+            self.rebalancer,
+            channel_number_from,
+            channel_number_to,
+            amount_sat,
+            expected_fees_msat
+        )
+
+    def test_circle_1_2_success_multi_trial(self):
+        """
+        Test if RebalancingTrialsExhausted is raised.
+        """
+        channel_number_from = 1
+        channel_number_to = 2
+        amount_sat = 200000
+        expected_fees_msat = 1207
+
+        self.assertRaises(
+            ValueError,
+            self.circle_and_check,
+            self.rebalancer,
+            channel_number_from,
+            channel_number_to,
+            amount_sat,
+            expected_fees_msat
+        )
+
+    def test_circle_1_2_fail_no_route_multi_trials(self):
+        """
+        Test if RebalancingTrialsExhausted is raised.
+        """
+        channel_number_from = 1
+        channel_number_to = 2
+        amount_sat = 450000
+        expected_fees_msat = None
+
+        self.assertRaises(
+            NoRoute,
+            self.circle_and_check,
+            self.rebalancer,
+            channel_number_from,
+            channel_number_to,
+            amount_sat,
+            expected_fees_msat
+        )
+
