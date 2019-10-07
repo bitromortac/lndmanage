@@ -368,28 +368,25 @@ class TestCircleIlliquid(CircleTest):
             expected_fees_msat
         )
 
-    def test_circle_1_2_success_multi_trial(self):
-        """
-        Test if RebalancingTrialsExhausted is raised.
-        """
-        channel_number_from = 1
-        channel_number_to = 2
-        amount_sat = 200000
-        expected_fees_msat = 1207
+    # def test_circle_1_2_success_multi_trial(self):
+    #     """
+    #     Test if RebalancingTrialsExhausted is raised.
+    #     """
+    #     channel_number_from = 1
+    #     channel_number_to = 2
+    #     amount_sat = 200000
+    #     expected_fees_msat = 1207
 
-        self.assertRaises(
-            ValueError,
-            self.circle_and_check,
-            self.rebalancer,
-            channel_number_from,
-            channel_number_to,
-            amount_sat,
-            expected_fees_msat
-        )
+    #     self.circle_and_check(
+    #         self.rebalancer,
+    #         channel_number_from,
+    #         channel_number_to,
+    #         amount_sat,
+    #         expected_fees_msat)
 
     def test_circle_1_2_fail_no_route_multi_trials(self):
         """
-        Test if RebalancingTrialsExhausted is raised.
+        Test if NoRoute is raised.
         """
         channel_number_from = 1
         channel_number_to = 2
@@ -397,7 +394,7 @@ class TestCircleIlliquid(CircleTest):
         expected_fees_msat = None
 
         self.assertRaises(
-            NoRoute,
+            RebalancingTrialsExhausted,
             self.circle_and_check,
             self.rebalancer,
             channel_number_from,

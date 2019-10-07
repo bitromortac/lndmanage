@@ -1,5 +1,5 @@
 from lndmanage.lib.rating import ChannelRater
-from lndmanage.lib.exceptions import RouteWithTooSmallCapacity, NoRouteError
+from lndmanage.lib.exceptions import RouteWithTooSmallCapacity, NoRoute
 from lndmanage.lib.pathfinding import ksp_discard_high_cost_paths
 from lndmanage import settings
 
@@ -150,7 +150,7 @@ class Router(object):
             num_k=number_of_routes, weight=weight_function)
 
         if not routes:
-            raise NoRouteError
+            raise NoRoute
 
         return routes
 
@@ -238,7 +238,7 @@ class Router(object):
             logger.exception(
                 "Channel was not found in network graph, but is present in "
                 "listchannels. Channel needs 6 confirmations to be usable.")
-            raise NoRouteError
+            raise NoRoute
 
         this_node = self.node.pub_key
 

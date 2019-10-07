@@ -38,6 +38,10 @@ class RebalancingTrialsExhausted(RebalanceFailure):
     pass
 
 
+class MultichannelInboundRebalanceFailure(RebalanceFailure):
+    pass
+
+
 class NoRoute(Exception):
     pass
 
