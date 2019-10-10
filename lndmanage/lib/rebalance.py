@@ -3,11 +3,16 @@ import math
 
 from lndmanage.lib.routing import Router
 from lndmanage.lib.exceptions import (
-    NoRouteError,
     RebalanceFailure,
-    DryRunException,
+    NoRoute,
+    NoRebalanceCandidates,
+    RebalanceCandidatesExhausted,
+    RebalancingTrialsExhausted,
+    DryRun,
     PaymentTimeOut,
-    TooExpensive
+    TooExpensive,
+    DuplicateRoute,
+    MultichannelInboundRebalanceFailure,
 )
 from lndmanage import settings
 
@@ -27,7 +32,7 @@ class Rebalancer(object):
     def __init__(self, node, max_effective_fee_rate, budget_sat):
         """
         :param node: node instance
-        :type node: lndmanage.lib.node.Node
+        :type node: lndmanage.lib.node.LndNode
 
         :param max_effective_fee_rate: maximum effective fee rate paid
         :type max_effective_fee_rate: float
@@ -71,6 +76,14 @@ class Rebalancer(object):
 
         :return: total fees for the whole rebalance in msat
         :rtype: int
+
+        :raises RebalancingTrialsExhausted:
+            too many attempts to rebalance channels
+        :raises DuplicateRoute: the same route was already tried
+        :raises NoRoute: no route was found from source to destination
+        :raises TooExpensive: the circular payment would exceed the fee limits
+        :raises PaymentTimeOut: the payment timed out
+        :raises DryRun: attempt was just a dry run
         """
         amt_msat = amt_sat * 1000
         previous_route_channel_hops = []
@@ -80,18 +93,18 @@ class Rebalancer(object):
             # only attempt a fixed number of times
             count += 1
             if count > settings.REBALANCING_TRIALS:
-                raise RebalanceFailure
+                raise RebalancingTrialsExhausted
 
             routes = self.router.get_routes_for_rebalancing(
                 channel_id_from, channel_id_to, amt_msat)
 
             if len(routes) == 0:
-                raise NoRouteError
+                raise NoRoute
             else:
                 r = routes[0]
 
             if previous_route_channel_hops == r.channel_hops:
-                raise NoRouteError("Have tried this route already.")
+                raise DuplicateRoute("Have tried this route already.")
 
             logger.info(
                 f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat,"
@@ -185,7 +198,7 @@ class Rebalancer(object):
                     logger.info("Success!\n")
                     return r.total_fee_msat
             else:  # dry
-                raise DryRunException
+                raise DryRun
 
     def _get_rebalance_candidates(self, channel_id, local_balance_change,
                                   allow_unbalancing=False, strategy=None):
@@ -535,9 +548,19 @@ class Rebalancer(object):
 
         :return: fees in msat paid for rebalancing
         :rtype: int
+
+        :raises MultichannelInboundRebalanceFailure: can't rebalance channels
+            with a node we are mutiply connected
+        :raises NoRebalanceCandidates: there are no counterparty rebalance
+            candidates
+        :raises RebalanceCandidatesExhausted: no more conterparty rebalance
+            candidates
+        :raises TooExpensive: the rebalance became too expensive
         """
         if not (0.0 <= chunksize <= 1.0):
-            raise ValueError("Chunk size must be between 0.0 and 1.0")
+            raise ValueError("Chunk size must be between 0.0 and 1.0.")
+        if not (-1.0 <= target <= 1.0):
+            raise ValueError("Target must be between -1.0 and 1.0.")
 
         logger.info(f">>> Trying to rebalance channel {channel_id} "
                     f"with a max rate of {self.max_effective_fee_rate} "
@@ -558,11 +581,11 @@ class Rebalancer(object):
 
         if initial_local_balance_change == 0:
             logger.info(f"Channel already balanced.")
-            return None
+            return 0
 
         # copy the original target
         local_balance_change_left = initial_local_balance_change
-        # determine rebalance direction 1: receive, -1: send (target channel)
+        # determine rebalance direction 1: receive, -1: send (of channel_id)
         rebalance_direction = math.copysign(1, initial_local_balance_change)
 
         logger.info(
@@ -601,8 +624,9 @@ class Rebalancer(object):
             unbalanced_channel_info['remote_pubkey'])
 
         if initial_local_balance_change > 0 and node_is_multiple_connected:
-            raise RebalanceFailure(
-                "Receiving rebalancing of multiply "
+            # TODO: this might be too strict, figure out exact behavior
+            raise MultichannelInboundRebalanceFailure(
+                "Receiving-rebalancing of multiple "
                 "connected node channel not supported.\n"
                 "The reason is that the last hop "
                 "(channel) can't be controlled by us.\n"
@@ -617,6 +641,9 @@ class Rebalancer(object):
         rebalance_candidates = self._get_rebalance_candidates(
             channel_id, local_balance_change_left,
             allow_unbalancing=allow_unbalancing, strategy=strategy)
+        if len(rebalance_candidates) == 0:
+            raise NoRebalanceCandidates(
+                "Didn't find counterparty rebalance candidates.")
 
         logger.info(
             f">>> There are {len(rebalance_candidates)} channels with which "
@@ -625,7 +652,7 @@ class Rebalancer(object):
         self._print_rebalance_candidates(rebalance_candidates)
 
         logger.info(
-            f">>> We will try to rebalance with them one after the other.")
+            f">>> We will try to rebalance with them one after another.")
         logger.info(
             f">>> NOTE: only individual rebalance requests "
             f"are optimized for fees:\n"
@@ -645,7 +672,9 @@ class Rebalancer(object):
         for c in rebalance_candidates:
 
             if total_fees_msat >= self.budget_sat * 1000:
-                raise RebalanceFailure("Fee budget exhausted")
+                raise TooExpensive(
+                    f"Fee budget exhausted. "
+                    f"Total fees {total_fees_msat} msat.")
 
             source_channel, target_channel = \
                 self._get_source_and_target_channels(
@@ -653,16 +682,16 @@ class Rebalancer(object):
 
             # amt must be always positive
             if abs(local_balance_change_left) > abs(c['amt_affordable']):
-                amt = -int(
-                    rebalance_direction *
-                    c['amt_affordable'] *
-                    chunksize)
+                amt = -int(rebalance_direction *
+                           c['amt_affordable'] *
+                           chunksize)
             else:
-                amt = int(
-                    rebalance_direction *
-                    local_balance_change_left *
-                    chunksize)
-            assert amt > 0, f"amount should not be negative! amt:{amt} sat"
+                amt = int(rebalance_direction *
+                          local_balance_change_left *
+                          chunksize)
+            if amt < 0:
+                raise RebalanceCandidatesExhausted(
+                    f"Amount should not be negative! amt:{amt} sat")
 
             logger.info(
                 f"-------- Rebalance from {source_channel} to {target_channel}"
@@ -680,7 +709,7 @@ class Rebalancer(object):
 
             # attempt the rebalance
             try:
-                # be up to date with the blockheight,otherwise could lead
+                # be up to date with the blockheight, otherwise could lead
                 # to cltv errors
                 self.node.update_blockheight()
                 total_fees_msat += self.rebalance_two_channels(
@@ -698,17 +727,19 @@ class Rebalancer(object):
                         f"Goal is reached. Rebalancing done. "
                         f"Total fees were {total_fees_msat} msat.")
                     return total_fees_msat
-            # TODO: document exceptions
-            # TODO: be more explicit with exceptions
-            except NoRouteError:
+            except NoRoute:
                 logger.error(
-                    "There was no route cheap enough or with "
-                    "enough capacity.\n")
-            except DryRunException:
+                    "There was no reliable route with enough capacity.\n")
+            except DryRun:
                 logger.info(
                     "Would have tried this route now, but it was a dry run.\n")
+            except TooExpensive:
+                logger.error(
+                    "Too expensive, check --max-fee-rate and --max-fee-sat.\n")
             except RebalanceFailure:
                 logger.error(
                     "Failed to rebalance with this channel.\n")
-            except TooExpensive:
-                logger.error("Too expensive.\n")
+
+        raise RebalanceCandidatesExhausted(
+            "There are no further counterparty rebalance channel candidates "
+            "for this channel.\n")

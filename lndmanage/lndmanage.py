@@ -8,10 +8,11 @@ from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.exceptions import (
-    DryRunException,
+    DryRun,
     PaymentTimeOut,
     TooExpensive,
-    RebalanceFailure
+    RebalanceFailure,
+    RebalancingTrialsExhausted,
 )
 from lndmanage import settings
 
@@ -138,7 +139,7 @@ class Parser(object):
             f'A target of -1 leads to a maximal local balance, a target of 0 '
             f'to a 50:50 balanced channel and a target of 1 to a maximal '
             f'remote balance. Default is a target of 0.',
-            type=unbalanced_float, default=None)
+            type=unbalanced_float, default=0.0)
         rebalancing_strategies = ['most-affordable-first',
                                   'lowest-feerate-first', 'match-unbalanced']
         self.parser_rebalance.add_argument(
@@ -223,7 +224,8 @@ class Parser(object):
         # subcmd: recommend-nodes external_source
         parser_recommend_nodes_external_source = \
             parser_recommend_nodes_subparsers.add_parser(
-                'external-source', help='recommends nodes from a given file/url',
+                'external-source',
+                help='recommends nodes from a given file/url',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_external_source.add_argument(
             '--nnodes', default=20, type=int,
@@ -311,8 +313,10 @@ def main():
                 args.channel, dry=not args.reckless, chunksize=args.chunksize,
                 target=args.target, allow_unbalancing=args.allow_unbalancing,
                 strategy=args.strategy)
+        except TooExpensive as e:
+            logger.error(f"Too expensive: {e}")
         except RebalanceFailure as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"Rebalance failure: {e}")
 
     elif args.cmd == 'circle':
         rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
@@ -322,14 +326,18 @@ def main():
                 args.channel_from, args.channel_to,
                 args.amt_sat, invoice_r_hash, args.max_fee_sat,
                 dry=not args.reckless)
-        except DryRunException:
+        except DryRun:
             logger.info("This was just a dry run.")
         except TooExpensive:
-            logger.error("Payment failed. This is likely due to a too low "
-                         "default --max-fee-rate.")
+            logger.error(
+                "Too expensive: consider to raise --max-fee-sat or "
+                "--max-fee-rate.")
+        except RebalancingTrialsExhausted:
+            logger.error(
+                f"Rebalancing trials exhausted (number of trials: "
+                f"{settings.REBALANCING_TRIALS}).")
         except PaymentTimeOut:
-            logger.error("Payment failed because the payment timed out. "
-                         "This is an unresolved issue.")
+            logger.error("Payment failed because the payment timed out.")
 
     elif args.cmd == 'recommend-nodes':
         if not args.subcmd:

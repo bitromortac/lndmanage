@@ -35,9 +35,8 @@ class RebalanceTest(TestCase):
     network_definition = None
 
     def setUp(self):
-        if self.__class__.__name__ == 'RebalanceTest':
-            self.skipTest("This class doesn't represent a real test case.")
         if self.network_definition is None:
+            self.skipTest("This class doesn't represent a real test case.")
             raise NotImplementedError("A network definition needs to be given.")
 
         self.testnet = RegtestNetwork(
@@ -76,7 +75,7 @@ class RebalanceTest(TestCase):
         raise NotImplementedError
 
     def rebalance_and_check(self, test_channel_number, target,
-                            allow_unbalancing, places=5, should_fail=False):
+                            allow_unbalancing, places=5):
         """
         Test function for rebalancing to a specific target and assert after-
         wards that is was reached.
@@ -100,13 +99,16 @@ class RebalanceTest(TestCase):
 
         channel_id = self.testnet.channel_mapping[
             test_channel_number]['channel_id']
-        fees_msat = rebalancer.rebalance(
-            channel_id,
-            dry=False,
-            chunksize=1.0,
-            target=target,
-            allow_unbalancing=allow_unbalancing
-        )
+        try:
+            fees_msat = rebalancer.rebalance(
+                channel_id,
+                dry=False,
+                chunksize=1.0,
+                target=target,
+                allow_unbalancing=allow_unbalancing
+            )
+        except Exception as e:
+            raise e
 
         time.sleep(SLEEP_SEC_AFTER_REBALANCING)
         graph = self.testnet.assemble_graph()
@@ -121,12 +123,9 @@ class RebalanceTest(TestCase):
             channel_data['initiator']
         )
 
-        if not should_fail:
-            self.assertAlmostEqual(target, channel_unbalancedness,
-                                   places=places)
-        else:
-            self.assertNotAlmostEqual(target, channel_unbalancedness,
-                                      places=places)
+        self.assertAlmostEqual(
+            target, channel_unbalancedness, places=places)
+
         return fees_msat
 
 
@@ -161,8 +160,9 @@ class TestLiquidRebalance(RebalanceTest):
         # this test should fail when unbalancing is not allowed, as it would
         # unbalance another channel if the full target would be accounted for
         test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, -0.2, False,
-                                 should_fail=True)
+        self.assertRaises(
+            RebalanceCandidatesExhausted,
+            self.rebalance_and_check, test_channel_number, -0.2, False)
 
     def test_small_negative_target_channel_6_succeed(self):
         # this test should fail when unbalancing is not allowed, as it would
@@ -227,7 +227,9 @@ class TestIlliquidRebalance(RebalanceTest):
         self.assertEqual(10, self.master_node_networkinfo['num_channels'])
 
     def test_rebalance_channel_1(self):
-        """tests multiple rebalance of one channel"""
+        """
+        Tests multiple payment attempt rebalancing.
+        """
         test_channel_number = 1
         # TODO: find out why not exact rebalancing target is reached
         fees_msat = self.rebalance_and_check(
@@ -235,10 +237,12 @@ class TestIlliquidRebalance(RebalanceTest):
         self.assertEqual(2575, fees_msat)
 
     def test_rebalance_channel_1_fail(self):
+        """
+        Tests if there are no rebalance candidates, because the target
+        requested doesn't match with the other channels.
+        """
         test_channel_number = 1
         self.assertRaises(
             RebalanceCandidatesExhausted, self.rebalance_and_check,
             test_channel_number, 0.3, False, places=1
         )
-
-

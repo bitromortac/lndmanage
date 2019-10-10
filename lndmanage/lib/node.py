@@ -11,7 +11,7 @@ from google.protobuf.json_format import MessageToDict
 import lndmanage.grpc_compiled.rpc_pb2 as ln
 import lndmanage.grpc_compiled.rpc_pb2_grpc as lnrpc
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRouteError
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
@@ -228,7 +228,8 @@ class LndNode(Node):
             payment_hash_string=r_hash_bytes.hex(),
         )
         try:
-            return self._stub.SendToRouteSync(request, timeout=5*60)  # timeout after 5 minutes
+            # timeout after 5 minutes
+            return self._stub.SendToRouteSync(request, timeout=5*60)
         except _Rendezvous:
             raise PaymentTimeOut
 
@@ -509,7 +510,7 @@ class LndNode(Node):
         try:
             response = self._stub.QueryRoutes(request)
         except _Rendezvous:
-            raise NoRouteError
+            raise NoRoute
         # print(response)
         # We give back only one route, as multiple routes will be deprecated
         channel_route = [h.chan_id for h in response.routes[0].hops]
