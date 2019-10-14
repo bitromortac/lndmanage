@@ -6,6 +6,7 @@ lndmanage is a command line tool for advanced channel management of an
 
 Current feature list (use the ```--help``` flag for subcommands):
 
+* __Activity reports ```report```__
 * __Display the node summary ```status```__
 * __Advanced channel listings ```listchannels```__
   * ```listchannels rebalance```: list channels for rebalancing
@@ -43,12 +44,46 @@ Lightning network daemon channel management tool.
 
 positional arguments:
   {status,listchannels,rebalance,circle}
-    status              display node status
+    circle              circular self-payment
     listchannels        lists channels with extended information [see also
                         subcommands with -h]
     rebalance           rebalance a channel
-    circle              circular self-payment
     recommend-nodes     recommends nodes [see also subcommands with -h]
+    report              displays reports of activity on the node
+    status              display node status
+```
+
+Activity Report
+---------------
+With lndmanage you can get a compact overview of what happened during the last
+day(s). It will show you forwarding activity (total forwardings, forwarding fees,
+and forwarding amounts) as well as channel opening and closing events by invoking
+
+`$ lndmanage report`
+
+Different time intervals can be specified with the `--from-days-ago` and 
+`--to-days-ago` flags.
+
+Here is a sample report for one of the subreports. The activity histogram for 
+the time interval is displayed as a one-line histogram, which consists of 
+Braille-like characters.
+```
+Report from yyyy-mm-dd hh:mm to yyyy-mm-dd hh:mm
+
+Forwardings:
+   activity (⣿ represents 8 forwardings):
+
+   |⠀⠀⡀⡀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⣄⠀⣀⠀⣦⣀⠀⡀⡀⠀⡀⡀⠀⡀⠀⠀⠀⠀⠀⠀⣀⣀⡀⣀⡀⡀⣀⠀⣀⡀⣄|
+
+   total forwardings: 37
+   forwardings per day: 37
+
+   channels with most outgoing forwardings:
+   cidxxxxxxxxxxxxxxx: 10
+   cidxxxxxxxxxxxxxxx: 6
+   cidxxxxxxxxxxxxxxx: 4
+   cidxxxxxxxxxxxxxxx: 3
+   cidxxxxxxxxxxxxxxx: 3
 ```
 
 Rebalancing a channel
