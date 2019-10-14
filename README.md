@@ -17,18 +17,6 @@ Current feature list (use the ```--help``` flag for subcommands):
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * __Circular self-payments ```circle```__
 * __Recommendation of good nodes ```recommend-nodes```__
-  * ```recommend-nodes good-old```: based on 
-  historic forwardings of closed channels:
-  find nodes already interacted with
-  * ```recommend-nodes flow-analysis```: based on forwarding flow analysis:
-  find nodes payments are likely forwarded to
-  * ```recommend-nodes external-source```: based on an external source:
-  parses a url/file for node public keys and suggests nodes to connect to
-  (defaults to the list of 
-  [lightning networkstores](http://lightningnetworkstores.com))
-  * ```recommend-nodes channel-openings```: based on recent channel 
-  openings in the network: find nodes which show increased recent channel 
-  opening activity 
    
 **DISCLAIMER: This is BETA software, so please be careful (All actions are 
   executed as a dry run unless you call lndmanage with the ```--reckless``` 
@@ -194,7 +182,37 @@ xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.38  0.42 0.17 X  6000000   993591
 
 Channel opening strategies
 --------------------------
-Lndmanage supports a channel annotation functionality. This serves for
+Which nodes best to connect to in the Lightning Network is ongoing research. 
+This also depends on your personal use case, whether you are a paying user, 
+a routing node operator or a service provider (or subsets of those). Therefore
+we need to empirically test, what _good nodes_ mean to us. lndmanage gives you a
+few options to chose nodes from the network based on several heuristics:
+
+* ```recommend-nodes good-old```: Based on historic forwardings of closed
+channels, a list of nodes is compiled with which your node has already
+had a good relationship. Due to that relationship, good interaction with that
+node in the future is likely.
+* ```recommend-nodes flow-analysis```: If your node has already routed
+payments, you can use this information to your favor. If you want to improve
+your position in the Lightning Network for routing, you may want to look for
+ need of inbound liquidity. This can be achieved by estimating the 
+ probability where the payments you routed were ending up. If you connect to
+ those nodes directly you bypass outher routing nodes.
+* ```recommend-nodes external-source```: This command lets you access text-based
+lists of nodes, which are associated with economic activity. You can provide a
+URL, which is parsed for node public keys and suggests nodes to connect to
+(defaults to the list of [lightning networkstores](http://lightningnetworkstores.com)).
+Another example of the command using 'bos-scores' is 
+`$ lndmanage recommend-nodes external-source --source https://nodes.lightning.computer/availability/v1/btc.json`.
+* ```recommend-nodes channel-openings```: When lightning nodes of new services
+ are bootstrapped by opening a bunch of channels at the same time,
+ we can detect this. Typically, a node with a large number of channel
+  fluctuation signals economic activity. As the newly opened channels will 
+  predominantly be of outbound type, the node will have a large
+ demand for inbound liquidity, which is something you want to exploit as a
+ routing node.
+
+lndmanage supports a __channel annotation functionality__. This serves for
  remembering why a certain channel was opened. By adding the funding
 transaction id or channel id to the config file `~/.lndmanage/config.ini`
 under the `annotations` section (as specified in 
@@ -203,7 +221,7 @@ can be saved. These annotations will then appear in the `listchannels` views.
 
 Setup
 -----
-Lndmanage will be developed in lockstep with lnd and tagged accordingly. 
+lndmanage will be developed in lockstep with lnd and tagged accordingly. 
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
