@@ -1,6 +1,7 @@
 """Contains Lightning network specific conversion utilities."""
 
 import re
+import time
 
 
 def convert_short_channel_id_to_channel_id(blockheight, transaction, output):
@@ -54,3 +55,10 @@ def channel_unbalancedness_and_commit_fee(local_balance, capacity, commit_fee,
     commit_fee = 0 if not initiator else commit_fee
     return -(2 * float(local_balance + commit_fee) / capacity - 1), commit_fee
 
+
+def height_to_timestamp(node, close_height):
+    now = time.time()
+    blocks_ago = node.blockheight - close_height
+    time_ago = blocks_ago * 10 * 60
+    timestamp_sec = int(now - time_ago)
+    return timestamp_sec

@@ -7,6 +7,7 @@ from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.recommend_nodes import RecommendNodes
+from lndmanage.lib.report import Report
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -57,7 +58,7 @@ class Parser(object):
             '--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
         subparsers = self.parser.add_subparsers(dest='cmd')
 
-        # cmd: status
+
         self.parser_status = subparsers.add_parser(
             'status', help='display node status',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -93,16 +94,16 @@ class Parser(object):
             help='sort by column (look at description)')
 
         # subcmd: listchannels forwardings
-        parser_listchannels_forwardings = listchannels_subparsers.add_parser(
+        parser_report = listchannels_subparsers.add_parser(
             'forwardings',
             help="displays channels with forwarding information")
-        parser_listchannels_forwardings.add_argument(
+        parser_report.add_argument(
             '--from-days-ago', default=365, type=int,
             help='time interval start (days ago)')
-        parser_listchannels_forwardings.add_argument(
+        parser_report.add_argument(
             '--to-days-ago', default=0, type=int,
             help='time interval end (days ago)')
-        parser_listchannels_forwardings.add_argument(
+        parser_report.add_argument(
             '--sort-by', default='f/w', type=str,
             help='sort by column (look at description)')
 
@@ -260,6 +261,18 @@ class Parser(object):
             '--sort-by', default='msteady', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
 
+        # cmd: report
+        parser_report = subparsers.add_parser(
+            'report',
+            help="displays reports of activity on the node")
+        parser_report.add_argument(
+            '--from-days-ago', default=1, type=int,
+            help='time interval start (days ago)')
+        parser_report.add_argument(
+            '--to-days-ago', default=0, type=int,
+            help='time interval end (days ago)')
+
+
     def parse_arguments(self):
         return self.parser.parse_args()
 
@@ -365,6 +378,12 @@ def main():
             recommend_nodes.print_channel_openings(
                 from_days_ago=args.from_days_ago,
                 number_of_nodes=args.nnodes, sort_by=args.sort_by)
+
+    elif args.cmd == 'report':
+        time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+        time_to = time.time() - args.to_days_ago * 24 * 60 * 60
+        report = Report(node, time_from, time_to)
+        report.report()
 
 
 if __name__ == '__main__':

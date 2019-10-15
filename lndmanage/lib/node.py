@@ -54,6 +54,16 @@ class LndNode(Node):
     """
     def __init__(self, config_file=None, lnd_home=None, lnd_host=None,
                  regtest=False):
+        """
+        :param config_file: path to the config file
+        :type config_file: str
+        :param lnd_home: path to lnd home folder
+        :type lnd_home: str
+        :param lnd_host: lnd host of format "127.0.0.1:9735"
+        :type lnd_host: str
+        :param regtest: if the node is representing a regtest node
+        :type regtest: bool
+        """
         super().__init__()
         self.config_file = config_file
         self.lnd_home = lnd_home
