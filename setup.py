@@ -29,7 +29,6 @@ setuptools.setup(
         'grpcio==1.19.0',
         'grpcio-tools==1.13.0',
         'kiwisolver==1.0.1',
-        'matplotlib==3.0.3',
         'networkx==2.2',
         'numpy==1.16.2',
         'protobuf==3.7.1',
