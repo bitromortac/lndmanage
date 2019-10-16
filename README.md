@@ -225,7 +225,7 @@ lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-Requirements: python3.6, lnd v0.7.1-beta
+Requirements: python3.6, lnd v0.8.0-beta
 
 If you run this tool from a different host than the lnd host, 
 make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
