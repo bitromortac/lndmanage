@@ -9,7 +9,7 @@ class WalletUnlockerStub(object):
   Comments in this file will be directly parsed into the API
   Documentation as descriptions of the associated method, message, or field.
   These descriptions should go right above the definition of the object, and
-  can be in either block or /// comment format.
+  can be in either block or /// comment format. 
 
   One edge case exists where a // comment followed by a /// comment in the
   next line will cause the description not to show up in the documentation. In
@@ -63,7 +63,7 @@ class WalletUnlockerServicer(object):
   Comments in this file will be directly parsed into the API
   Documentation as descriptions of the associated method, message, or field.
   These descriptions should go right above the definition of the object, and
-  can be in either block or /// comment format.
+  can be in either block or /// comment format. 
 
   One edge case exists where a // comment followed by a /// comment in the
   next line will cause the description not to show up in the documentation. In
@@ -100,7 +100,7 @@ class WalletUnlockerServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def InitWallet(self, request, context):
-    """*
+    """* 
     InitWallet is used when lnd is starting up for the first time to fully
     initialize the daemon and its internal wallet. At the very least a wallet
     password must be provided. This will be used to encrypt sensitive material
@@ -279,6 +279,11 @@ class LightningStub(object):
         '/lnrpc.Lightning/OpenChannel',
         request_serializer=rpc__pb2.OpenChannelRequest.SerializeToString,
         response_deserializer=rpc__pb2.OpenStatusUpdate.FromString,
+        )
+    self.ChannelAcceptor = channel.stream_stream(
+        '/lnrpc.Lightning/ChannelAcceptor',
+        request_serializer=rpc__pb2.ChannelAcceptResponse.SerializeToString,
+        response_deserializer=rpc__pb2.ChannelAcceptRequest.FromString,
         )
     self.CloseChannel = channel.unary_stream(
         '/lnrpc.Lightning/CloseChannel',
@@ -600,7 +605,7 @@ class LightningServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def SubscribeChannelEvents(self, request, context):
-    """* lncli: `subscribechannelevents`
+    """*
     SubscribeChannelEvents creates a uni-directional stream from the server to
     the client in which any updates relevant to the state of the channels are
     sent over. Events include new active channels, inactive channels, and closed
@@ -637,6 +642,18 @@ class LightningServicer(object):
     blocks that the funding transaction should be confirmed in, or a manual fee
     rate to us for the funding transaction. If neither are specified, then a
     lax block confirmation target is used.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ChannelAcceptor(self, request_iterator, context):
+    """*
+    ChannelAcceptor dispatches a bi-directional streaming RPC in which
+    OpenChannel requests are sent to the client and the client responds with
+    a boolean that tells LND whether or not to accept the channel. This allows
+    node operators to specify their own criteria for accepting inbound channels
+    through a single persistent connection.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -1074,6 +1091,11 @@ def add_LightningServicer_to_server(servicer, server):
           servicer.OpenChannel,
           request_deserializer=rpc__pb2.OpenChannelRequest.FromString,
           response_serializer=rpc__pb2.OpenStatusUpdate.SerializeToString,
+      ),
+      'ChannelAcceptor': grpc.stream_stream_rpc_method_handler(
+          servicer.ChannelAcceptor,
+          request_deserializer=rpc__pb2.ChannelAcceptResponse.FromString,
+          response_serializer=rpc__pb2.ChannelAcceptRequest.SerializeToString,
       ),
       'CloseChannel': grpc.unary_stream_rpc_method_handler(
           servicer.CloseChannel,
