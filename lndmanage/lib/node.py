@@ -393,6 +393,44 @@ class LndNode(Node):
             if abs(c['unbalancedness']) >= unbalancedness_greater_than
         }
         return unbalanced_channels
+    
+    def get_channel_fee_policies(self):
+        """
+        Gets the node's channel fee policies for every open channel.
+        :return: dict
+        """
+        feereport = self._stub.FeeReport(ln.FeeReportRequest())
+        channels = {}
+        for fee in feereport.channel_fees:
+            channels[fee.chan_point] = {
+                'base_fee_msat': fee.base_fee_msat,
+                'fee_per_mil': fee.fee_per_mil,
+                'fee_rate': fee.fee_rate,
+            }
+        return channels
+
+    def set_channel_fee_policies(self, channels):
+        """
+        Sets the node's channel fee policy for every channel.
+        :param channels: dict
+        """
+
+        for channel_point, channel_fee_policy in channels.items():
+
+            funding_txid, output_index = channel_point.split(':')
+            output_index = int(output_index)
+
+            channel_point = ln.ChannelPoint(
+                funding_txid_str=funding_txid, output_index=output_index)
+
+            update_request = ln.PolicyUpdateRequest(
+                chan_point=channel_point,
+                base_fee_msat=channel_fee_policy['base_fee_msat'],
+                fee_rate=channel_fee_policy['fee_rate'],
+                time_lock_delta=channel_fee_policy['cltv'],
+            )
+            self._stub.UpdateChannelPolicy(request=update_request)
+
 
     @staticmethod
     def timestamp_from_now(offset_days=0):
