@@ -60,13 +60,6 @@ PRINT_CHANNELS_FORMAT = {
         'format': '5.0f',
         'align': '>',
     },
-    'bf': {
-        'dict_key': 'peer_base_fee',
-        'description': 'peer base fee [msat]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
-    },
     'bwd': {
         'dict_key': 'bandwidth_demand',
         'description': 'bandwidth demand: capacity / max(mean_in, mean_out)',
@@ -113,9 +106,31 @@ PRINT_CHANNELS_FORMAT = {
         # 'convert': lambda x: '>'*int(nan_to_zero(x)*10/3.0) if x > 0 else
         # '<'*(-int(nan_to_zero(x)*10/3.0))
     },
-    'fr': {
+    'pbf': {
+        'dict_key': 'peer_base_fee',
+        'description': 'peer base fee [msat]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'pfr': {
         'dict_key': 'peer_fee_rate',
         'description': 'peer fee rate',
+        'width': 8,
+        'format': '1.6f',
+        'align': '>',
+        'convert': lambda x: x / 1E6
+    },
+    'lbf': {
+        'dict_key': 'local_base_fee',
+        'description': 'local base fee [msat]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'lfr': {
+        'dict_key': 'local_fee_rate',
+        'description': 'local fee rate',
         'width': 8,
         'format': '1.6f',
         'align': '>',
@@ -296,8 +311,8 @@ class ListChannels(object):
         }
 
         self._print_channels(
-            channels, columns='cid,priv,act,ub,cap,lb,rb,bf,'
-                              'fr,annotation,alias',
+            channels, columns='cid,priv,act,ub,cap,lb,rb,lbf,'
+                              'lfr,annotation,alias',
             sort_dict=sort_dict)
 
     def print_channels_unbalanced(self, unbalancedness, sort_string='rev_ub'):
@@ -320,7 +335,7 @@ class ListChannels(object):
         }
 
         self._print_channels(
-            channels, columns='cid,ub,cap,lb,rb,bf,fr,annotation,alias',
+            channels, columns='cid,ub,cap,lb,rb,pbf,pfr,annotation,alias',
             sort_dict=sort_dict)
 
     def print_channels_inactive(self, sort_string='lup'):
@@ -376,7 +391,7 @@ class ListChannels(object):
         self._print_channels(
             channels,
             columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,'
-                    'cap,bf,fr,annotation,alias',
+                    'cap,pbf,pfr,annotation,alias',
             sort_dict=sort_dict)
 
     def _add_channel_annotations(self, channels):

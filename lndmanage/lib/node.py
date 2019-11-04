@@ -320,13 +320,17 @@ class LndNode(Node):
             try:
                 edge_info = self.network.edges[c.chan_id]
                 if edge_info['node1_pub'] == self.pub_key:  # interested in node2
-                    policy = edge_info['node2_policy']
+                    policy_peer = edge_info['node2_policy']
+                    policy_local = edge_info['node1_policy']
                 else:  # interested in node1
-                    policy = edge_info['node1_policy']
+                    policy_peer = edge_info['node1_policy']
+                    policy_local = edge_info['node2_policy']
             except KeyError:
                 # TODO: if channel is unknown in describegraph we need to set the fees to some error value
-                policy = {'fee_base_msat': float(-999),
+                policy_peer = {'fee_base_msat': float(-999),
                           'fee_rate_milli_msat': float(999)}
+                policy_local = {'fee_base_msat': float(-999),
+                               'fee_rate_milli_msat': float(999)}
 
             # define unbalancedness |ub| large means very unbalanced
             channel_unbalancedness, our_commit_fee = channel_unbalancedness_and_commit_fee(
@@ -343,8 +347,10 @@ class LndNode(Node):
                 'channel_point': c.channel_point,
                 'commit_fee': c.commit_fee,
                 'fee_per_kw': c.fee_per_kw,
-                'peer_base_fee': policy['fee_base_msat'],
-                'peer_fee_rate': policy['fee_rate_milli_msat'],
+                'peer_base_fee': policy_peer['fee_base_msat'],
+                'peer_fee_rate': policy_peer['fee_rate_milli_msat'],
+                'local_base_fee': policy_local['fee_base_msat'],
+                'local_fee_rate': policy_local['fee_rate_milli_msat'],
                 'initiator': c.initiator,
                 'last_update': last_update,
                 'local_balance': c.local_balance,
