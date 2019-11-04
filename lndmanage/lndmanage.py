@@ -2,6 +2,7 @@
 import argparse
 import time
 import os
+import sys
 
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
@@ -272,118 +273,154 @@ class Parser(object):
             '--to-days-ago', default=0, type=int,
             help='time interval end (days ago)')
 
-
     def parse_arguments(self):
         return self.parser.parse_args()
+
+    def run_commands(self, node, args):
+        # program execution
+        if args.loglevel:
+            # update the loglevel of the stdout handler to the user choice
+            logger.handlers[0].setLevel(args.loglevel)
+
+        if args.cmd == 'status':
+            node.print_status()
+
+        elif args.cmd == 'listchannels':
+            listchannels = ListChannels(node)
+            if not args.subcmd:
+                listchannels.print_all_channels('rev_alias')
+            if args.subcmd == 'rebalance':
+                listchannels.print_channels_unbalanced(
+                    args.unbalancedness, sort_string=args.sort_by)
+            elif args.subcmd == 'inactive':
+                listchannels.print_channels_inactive(
+                    sort_string=args.sort_by)
+            elif args.subcmd == 'forwardings':
+                # convert time interval into unix timestamp
+                time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+                time_to = time.time() - args.to_days_ago * 24 * 60 * 60
+                listchannels.print_channels_forwardings(
+                    time_interval_start=time_from, time_interval_end=time_to,
+                    sort_string=args.sort_by)
+
+        elif args.cmd == 'rebalance':
+            if args.target:
+                logger.warning("Warning: Target is set, this is still an "
+                               "experimental feature.")
+            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
+            try:
+                rebalancer.rebalance(
+                    args.channel, dry=not args.reckless, chunksize=args.chunksize,
+                    target=args.target, allow_unbalancing=args.allow_unbalancing,
+                    strategy=args.strategy)
+            except TooExpensive as e:
+                logger.error(f"Too expensive: {e}")
+            except RebalanceFailure as e:
+                logger.error(f"Rebalance failure: {e}")
+
+        elif args.cmd == 'circle':
+            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
+            invoice_r_hash = node.get_rebalance_invoice(memo='circular payment')
+            try:
+                rebalancer.rebalance_two_channels(
+                    args.channel_from, args.channel_to,
+                    args.amt_sat, invoice_r_hash, args.max_fee_sat,
+                    dry=not args.reckless)
+            except DryRun:
+                logger.info("This was just a dry run.")
+            except TooExpensive:
+                logger.error(
+                    "Too expensive: consider to raise --max-fee-sat or "
+                    "--max-fee-rate.")
+            except RebalancingTrialsExhausted:
+                logger.error(
+                    f"Rebalancing trials exhausted (number of trials: "
+                    f"{settings.REBALANCING_TRIALS}).")
+            except PaymentTimeOut:
+                logger.error("Payment failed because the payment timed out.")
+
+        elif args.cmd == 'recommend-nodes':
+            if not args.subcmd:
+                self.parser_recommend_nodes.print_help()
+                return 0
+
+            recommend_nodes = RecommendNodes(
+                node, show_connected=args.show_connected,
+                show_addresses=args.show_addresses)
+
+            if args.subcmd == 'good-old':
+                recommend_nodes.print_good_old(number_of_nodes=args.nnodes,
+                                               sort_by=args.sort_by)
+            elif args.subcmd == 'flow-analysis':
+                recommend_nodes.print_flow_analysis(
+                    out_direction=(not args.inwards),
+                    number_of_nodes=args.nnodes,
+                    forwarding_events=args.forwarding_events,
+                    sort_by=args.sort_by)
+            elif args.subcmd == 'external-source':
+                recommend_nodes.print_external_source(
+                    args.source, distributing_nodes=args.distributing_nodes,
+                    number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            elif args.subcmd == 'channel-openings':
+                recommend_nodes.print_channel_openings(
+                    from_days_ago=args.from_days_ago,
+                    number_of_nodes=args.nnodes, sort_by=args.sort_by)
+
+        elif args.cmd == 'report':
+            time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+            time_to = time.time() - args.to_days_ago * 24 * 60 * 60
+            report = Report(node, time_from, time_to)
+            report.report()
 
 
 def main():
     parser = Parser()
-    args = parser.parse_arguments()
-    # print(args)
-
-    if args.cmd is None:
-        parser.parser.print_help()
-        return 0
-
-    # program execution
-    if args.loglevel:
-        # update the loglevel of the stdout handler to the user choice
-        logger.handlers[0].setLevel(args.loglevel)
 
     # config.ini is expected to be in home/.lndmanage directory
     config_file = os.path.join(settings.home_dir, 'config.ini')
-    node = LndNode(config_file=config_file)
 
-    if args.cmd == 'status':
-        node.print_status()
+    # if lndmanage is run with arguments, run once
+    if len(sys.argv) > 1:
+        # take arguments from sys.argv
+        args = parser.parse_arguments()
+        node = LndNode(config_file=config_file)
+        parser.run_commands(node, args)
 
-    elif args.cmd == 'listchannels':
-        listchannels = ListChannels(node)
-        if not args.subcmd:
-            listchannels.print_all_channels('rev_alias')
-        if args.subcmd == 'rebalance':
-            listchannels.print_channels_unbalanced(
-                args.unbalancedness, sort_string=args.sort_by)
-        elif args.subcmd == 'inactive':
-            listchannels.print_channels_inactive(
-                sort_string=args.sort_by)
-        elif args.subcmd == 'forwardings':
-            # convert time interval into unix timestamp
-            time_from = time.time() - args.from_days_ago * 24 * 60 * 60
-            time_to = time.time() - args.to_days_ago * 24 * 60 * 60
-            listchannels.print_channels_forwardings(
-                time_interval_start=time_from, time_interval_end=time_to,
-                sort_string=args.sort_by)
-
-    elif args.cmd == 'rebalance':
-        if args.target:
-            logger.warning("Warning: Target is set, this is still an "
-                           "experimental feature.")
-        rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
+    # otherwise enter an interactive mode
+    else:
+        # import readline if available,
+        # has a desired side effect on keyword input of enabling history
         try:
-            rebalancer.rebalance(
-                args.channel, dry=not args.reckless, chunksize=args.chunksize,
-                target=args.target, allow_unbalancing=args.allow_unbalancing,
-                strategy=args.strategy)
-        except TooExpensive as e:
-            logger.error(f"Too expensive: {e}")
-        except RebalanceFailure as e:
-            logger.error(f"Rebalance failure: {e}")
+            import readline
+        except:
+            pass
+        logger.info("Running in interactive mode. "
+                    "You can type 'help' or 'exit'.")
+        node = LndNode(config_file=config_file)
 
-    elif args.cmd == 'circle':
-        rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-        invoice_r_hash = node.get_rebalance_invoice(memo='circular payment')
-        try:
-            rebalancer.rebalance_two_channels(
-                args.channel_from, args.channel_to,
-                args.amt_sat, invoice_r_hash, args.max_fee_sat,
-                dry=not args.reckless)
-        except DryRun:
-            logger.info("This was just a dry run.")
-        except TooExpensive:
-            logger.error(
-                "Too expensive: consider to raise --max-fee-sat or "
-                "--max-fee-rate.")
-        except RebalancingTrialsExhausted:
-            logger.error(
-                f"Rebalancing trials exhausted (number of trials: "
-                f"{settings.REBALANCING_TRIALS}).")
-        except PaymentTimeOut:
-            logger.error("Payment failed because the payment timed out.")
+        while True:
+            try:
+                user_input = input("$ lndmanage ")
+            except EOFError:
+                logger.info("exit")
+                return 0
+            except KeyboardInterrupt:
+                logger.info("exit")
+                return 0
 
-    elif args.cmd == 'recommend-nodes':
-        if not args.subcmd:
-            parser.parser_recommend_nodes.print_help()
-            return 0
+            if user_input == 'help':
+                parser.parser.print_help()
+                continue
+            elif user_input == 'exit':
+                return 0
 
-        recommend_nodes = RecommendNodes(
-            node, show_connected=args.show_connected,
-            show_addresses=args.show_addresses)
-
-        if args.subcmd == 'good-old':
-            recommend_nodes.print_good_old(number_of_nodes=args.nnodes,
-                                           sort_by=args.sort_by)
-        elif args.subcmd == 'flow-analysis':
-            recommend_nodes.print_flow_analysis(
-                out_direction=(not args.inwards),
-                number_of_nodes=args.nnodes,
-                forwarding_events=args.forwarding_events,
-                sort_by=args.sort_by)
-        elif args.subcmd == 'external-source':
-            recommend_nodes.print_external_source(
-                args.source, distributing_nodes=args.distributing_nodes,
-                number_of_nodes=args.nnodes, sort_by=args.sort_by)
-        elif args.subcmd == 'channel-openings':
-            recommend_nodes.print_channel_openings(
-                from_days_ago=args.from_days_ago,
-                number_of_nodes=args.nnodes, sort_by=args.sort_by)
-
-    elif args.cmd == 'report':
-        time_from = time.time() - args.from_days_ago * 24 * 60 * 60
-        time_to = time.time() - args.to_days_ago * 24 * 60 * 60
-        report = Report(node, time_from, time_to)
-        report.report()
+            args_list = user_input.split(" ")
+            try:
+                # need to run with parse_known_args to get an exception
+                args = parser.parser.parse_args(args_list)
+                parser.run_commands(node, args)
+            except SystemExit:
+                continue
 
 
 if __name__ == '__main__':
