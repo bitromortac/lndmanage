@@ -430,6 +430,11 @@ class LightningStub(object):
         request_serializer=rpc__pb2.ChannelBackupSubscription.SerializeToString,
         response_deserializer=rpc__pb2.ChanBackupSnapshot.FromString,
         )
+    self.BakeMacaroon = channel.unary_unary(
+        '/lnrpc.Lightning/BakeMacaroon',
+        request_serializer=rpc__pb2.BakeMacaroonRequest.SerializeToString,
+        response_deserializer=rpc__pb2.BakeMacaroonResponse.FromString,
+        )
 
 
 class LightningServicer(object):
@@ -984,6 +989,16 @@ class LightningServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def BakeMacaroon(self, request, context):
+    """* lncli: `bakemacaroon`
+    BakeMacaroon allows the creation of a new macaroon with custom read and
+    write permissions. No first-party caveats are added since this can be done
+    offline.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_LightningServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -1241,6 +1256,11 @@ def add_LightningServicer_to_server(servicer, server):
           servicer.SubscribeChannelBackups,
           request_deserializer=rpc__pb2.ChannelBackupSubscription.FromString,
           response_serializer=rpc__pb2.ChanBackupSnapshot.SerializeToString,
+      ),
+      'BakeMacaroon': grpc.unary_unary_rpc_method_handler(
+          servicer.BakeMacaroon,
+          request_deserializer=rpc__pb2.BakeMacaroonRequest.FromString,
+          response_serializer=rpc__pb2.BakeMacaroonResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
