@@ -373,8 +373,12 @@ class LndNode(Node):
                 'total_satoshis_sent': c.total_satoshis_sent,
                 'total_satoshis_received': c.total_satoshis_received,
                 'unbalancedness': channel_unbalancedness,
+                'uptime': c.uptime,
+                'lifetime': c.lifetime,
+                'uptime_lifetime_ratio': c.uptime / c.lifetime,
             }
-        sorted_dict = OrderedDict(sorted(channels.items(), key=lambda x: x[1]['alias']))
+        sorted_dict = OrderedDict(
+            sorted(channels.items(), key=lambda x: x[1]['alias']))
         return sorted_dict
 
     def get_inactive_channels(self):
