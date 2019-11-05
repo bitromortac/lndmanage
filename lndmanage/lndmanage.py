@@ -93,7 +93,7 @@ class Parser(object):
         parser_listchannels_inactive = listchannels_subparsers.add_parser(
             'inactive', help="displays inactive channels")
         parser_listchannels_inactive.add_argument(
-            '--sort-by', default='lup', type=str,
+            '--sort-by', default='lupp', type=str,
             help='sort by column (look at description)')
 
         # subcmd: listchannels forwardings

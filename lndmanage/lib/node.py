@@ -298,7 +298,8 @@ class LndNode(Node):
         :param public_only: bool, only take public channels into account (off by default)
         :return: list of channels sorted by remote pubkey
         """
-        raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(active_only=active_only, public_only=public_only))
+        raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(
+            active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
         channels = OrderedDict()
 
@@ -306,17 +307,9 @@ class LndNode(Node):
             # calculate age from blockheight
             blockheight, _, _ = convert_channel_id_to_short_channel_id(c.chan_id)
             age_days = (self.blockheight - blockheight) * 10 / (60 * 24)
-            # calculate last update (days ago)
-            try:
-                last_update = (time.time() - self.network.edges[c.chan_id]['last_update']) / (60 * 60 * 24)
-            except TypeError:
-                last_update = float('nan')
-            except KeyError:
-                last_update = float('nan')
-
             sent_received_per_week = int((c.total_satoshis_sent + c.total_satoshis_received) / (age_days / 7))
-            # determine policy
 
+            # determine policy
             try:
                 edge_info = self.network.edges[c.chan_id]
                 if edge_info['node1_pub'] == self.pub_key:  # interested in node2
@@ -326,11 +319,27 @@ class LndNode(Node):
                     policy_peer = edge_info['node1_policy']
                     policy_local = edge_info['node2_policy']
             except KeyError:
-                # TODO: if channel is unknown in describegraph we need to set the fees to some error value
+                # if channel is unknown in describegraph
+                # we need to set the fees to some error value
                 policy_peer = {'fee_base_msat': float(-999),
                           'fee_rate_milli_msat': float(999)}
                 policy_local = {'fee_base_msat': float(-999),
                                'fee_rate_milli_msat': float(999)}
+
+            # calculate last update (days ago)
+            def convert_to_days_ago(timestamp):
+                return (time.time() - timestamp) / (60 * 60 * 24)
+            try:
+                last_update = convert_to_days_ago(
+                    self.network.edges[c.chan_id]['last_update'])
+                last_update_local = convert_to_days_ago(
+                    policy_local['last_update'])
+                last_update_peer = convert_to_days_ago(
+                    policy_peer['last_update'])
+            except (TypeError, KeyError):
+                last_update = float('nan')
+                last_update_peer = float('nan')
+                last_update_local = float('nan')
 
             # define unbalancedness |ub| large means very unbalanced
             channel_unbalancedness, our_commit_fee = channel_unbalancedness_and_commit_fee(
@@ -353,6 +362,8 @@ class LndNode(Node):
                 'local_fee_rate': policy_local['fee_rate_milli_msat'],
                 'initiator': c.initiator,
                 'last_update': last_update,
+                'last_update_local': last_update_local,
+                'last_update_peer': last_update_peer,
                 'local_balance': c.local_balance,
                 'num_updates': c.num_updates,
                 'private': c.private,

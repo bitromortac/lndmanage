@@ -143,6 +143,20 @@ PRINT_CHANNELS_FORMAT = {
         'format': '5.0f',
         'align': '>',
     },
+    'lupp': {
+        'dict_key': 'last_update_peer',
+        'description': 'last update time by peer [days ago]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
+    'lupl': {
+        'dict_key': 'last_update_local',
+        'description': 'last update time by local [days ago]',
+        'width': 5,
+        'format': '5.0f',
+        'align': '>',
+    },
     'lb': {
         'dict_key': 'local_balance',
         'description': 'local balance [sat]',
@@ -338,7 +352,7 @@ class ListChannels(object):
             channels, columns='cid,ub,cap,lb,rb,pbf,pfr,annotation,alias',
             sort_dict=sort_dict)
 
-    def print_channels_inactive(self, sort_string='lup'):
+    def print_channels_inactive(self, sort_string='lupp'):
         """
         Prints all inactive channels.
 
@@ -356,7 +370,7 @@ class ListChannels(object):
         }
 
         self._print_channels(
-            channels, columns='cid,lup,priv,ini,age,ub,cap,lb,rb,'
+            channels, columns='cid,lupp,priv,ini,age,ub,cap,lb,rb,'
                               'sr/w,annotation,alias',
             sort_dict=sort_dict)
 

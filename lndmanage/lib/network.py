@@ -94,12 +94,14 @@ class Network(object):
                     'time_lock_delta': e.node1_policy.time_lock_delta,
                     'fee_base_msat': e.node1_policy.fee_base_msat,
                     'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
+                    'last_update': e.node1_policy.last_update,
                     'disabled': e.node1_policy.disabled
                 },
                 'node2_policy': {
                     'time_lock_delta': e.node2_policy.time_lock_delta,
                     'fee_base_msat': e.node2_policy.fee_base_msat,
                     'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
+                    'last_update': e.node2_policy.last_update,
                     'disabled': e.node2_policy.disabled
                 }}
 
