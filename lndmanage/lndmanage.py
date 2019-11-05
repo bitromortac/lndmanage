@@ -3,6 +3,8 @@ import argparse
 import time
 import os
 import sys
+# readline has a desired side effect on keyword input of enabling history
+import readline
 
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
@@ -388,12 +390,13 @@ def main():
 
     # otherwise enter an interactive mode
     else:
-        # import readline if available,
-        # has a desired side effect on keyword input of enabling history
+        history_file = os.path.join(settings.home_dir, "command_history")
         try:
-            import readline
-        except:
+            readline.read_history_file(history_file)
+        except FileNotFoundError:
+            # history will be written later
             pass
+
         logger.info("Running in interactive mode. "
                     "You can type 'help' or 'exit'.")
         node = LndNode(config_file=config_file)
@@ -401,10 +404,8 @@ def main():
         while True:
             try:
                 user_input = input("$ lndmanage ")
-            except EOFError:
-                logger.info("exit")
-                return 0
-            except KeyboardInterrupt:
+            except (EOFError, KeyboardInterrupt):
+                readline.write_history_file(history_file)
                 logger.info("exit")
                 return 0
 
@@ -412,6 +413,7 @@ def main():
                 parser.parser.print_help()
                 continue
             elif user_input == 'exit':
+                readline.write_history_file(history_file)
                 return 0
 
             args_list = user_input.split(" ")
@@ -419,7 +421,8 @@ def main():
                 # need to run with parse_known_args to get an exception
                 args = parser.parser.parse_args(args_list)
                 parser.run_commands(node, args)
-            except SystemExit:
+            except:
+                logger.exception("Exception encountered.")
                 continue
 
 
