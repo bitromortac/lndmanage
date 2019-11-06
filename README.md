@@ -296,6 +296,22 @@ then run
 ```
 If it works, you should see the node status.
 
+**Running lndmanage interactively (recommended)**
+
+lndmanage supports an interactive mode with command history. The interactive
+mode has the advantage that the network graph has to be read into memory only
+once, giving a much faster execution time for subsequent command invocations.
+
+Interacive mode is started by calling lndmanage without arguments:
+```bash
+$ lndmanage
+Running in interactive mode. You can type 'help' or 'exit'.
+$ lndmanage listchannels forwardings
+<output>
+$ lndmanage exit
+```
+Commands that can be entered are the ones you would give as arguments.
+
 Testing
 -------
 Requirements are an installation of [lnregtest](https://github.com/bitromortac/lnregtest)
