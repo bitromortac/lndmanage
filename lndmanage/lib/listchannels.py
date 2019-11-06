@@ -4,6 +4,7 @@ Module for printing lightning channels.
 
 import math
 import logging
+import time
 from collections import OrderedDict
 
 from lndmanage.lib.forwardings import get_forwarding_statistics_channels
@@ -223,6 +224,13 @@ PRINT_CHANNELS_FORMAT = {
         'format': '5.2f',
         'align': '>',
     },
+    'ulr': {
+        'dict_key': 'uptime_lifetime_ratio',
+        'description': 'ratio of uptime to lifetime of channel [0 ... 1]',
+        'width': 5,
+        'format': '5.2f',
+        'align': '>',
+    },
     'imed': {
         'dict_key': 'median_forwarding_in',
         'description': 'median forwarding inwards [sat]',
@@ -406,6 +414,33 @@ class ListChannels(object):
             channels,
             columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,'
                     'cap,pbf,pfr,annotation,alias',
+            sort_dict=sort_dict)
+
+    def print_channels_hygiene(self, time_interval_start, sort_string):
+        """
+        Prints hygiene statistics for each channel.
+
+        :param time_interval_start: int
+        :param time_interval_end: int
+        :param sort_string: str
+        """
+        time_interval_end = time.time()
+        channels = get_forwarding_statistics_channels(
+            self.node, time_interval_start, time_interval_end)
+
+        channels = self._add_channel_annotations(channels)
+
+        sort_string, reverse_sorting = self._sorting_order(sort_string)
+        sort_dict = {
+            'function': lambda x:
+                x[1][sort_string],
+            'string': sort_string,
+            'reverse': reverse_sorting,
+        }
+
+        self._print_channels(
+            channels,
+            columns='cid,age,nfwd,f/w,ulr,lb,cap,pbf,pfr,annotation,alias',
             sort_dict=sort_dict)
 
     def _add_channel_annotations(self, channels):

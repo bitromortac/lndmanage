@@ -61,7 +61,6 @@ class Parser(object):
             '--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
         subparsers = self.parser.add_subparsers(dest='cmd')
 
-
         self.parser_status = subparsers.add_parser(
             'status', help='display node status',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -97,17 +96,28 @@ class Parser(object):
             help='sort by column (look at description)')
 
         # subcmd: listchannels forwardings
-        parser_report = listchannels_subparsers.add_parser(
+        parser_listchannels_forwardings = listchannels_subparsers.add_parser(
             'forwardings',
             help="displays channels with forwarding information")
-        parser_report.add_argument(
+        parser_listchannels_forwardings.add_argument(
             '--from-days-ago', default=365, type=int,
             help='time interval start (days ago)')
-        parser_report.add_argument(
+        parser_listchannels_forwardings.add_argument(
             '--to-days-ago', default=0, type=int,
             help='time interval end (days ago)')
-        parser_report.add_argument(
+        parser_listchannels_forwardings.add_argument(
             '--sort-by', default='f/w', type=str,
+            help='sort by column (look at description)')
+
+        # subcmd: listchannels hygiene
+        parser_listchannels_hygiene = listchannels_subparsers.add_parser(
+            'hygiene',
+            help="displays channels with information for channel closing")
+        parser_listchannels_hygiene.add_argument(
+            '--from-days-ago', default=60, type=int,
+            help='time interval start (days ago)')
+        parser_listchannels_hygiene.add_argument(
+            '--sort-by', default='rev_nfwd', type=str,
             help='sort by column (look at description)')
 
         # cmd: rebalance
@@ -304,6 +314,12 @@ class Parser(object):
                 listchannels.print_channels_forwardings(
                     time_interval_start=time_from, time_interval_end=time_to,
                     sort_string=args.sort_by)
+            elif args.subcmd == 'hygiene':
+                time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+                logger.info(f"Channel hygiene stats is over last "
+                            f"{args.from_days_ago} days.")
+                listchannels.print_channels_hygiene(
+                    time_interval_start=time_from, sort_string=args.sort_by)
 
         elif args.cmd == 'rebalance':
             if args.target:
@@ -312,8 +328,11 @@ class Parser(object):
             rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
             try:
                 rebalancer.rebalance(
-                    args.channel, dry=not args.reckless, chunksize=args.chunksize,
-                    target=args.target, allow_unbalancing=args.allow_unbalancing,
+                    args.channel,
+                    dry=not args.reckless,
+                    chunksize=args.chunksize,
+                    target=args.target,
+                    allow_unbalancing=args.allow_unbalancing,
                     strategy=args.strategy)
             except TooExpensive as e:
                 logger.error(f"Too expensive: {e}")
@@ -322,7 +341,8 @@ class Parser(object):
 
         elif args.cmd == 'circle':
             rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-            invoice_r_hash = node.get_rebalance_invoice(memo='circular payment')
+            invoice_r_hash = node.get_rebalance_invoice(
+                memo='circular payment')
             try:
                 rebalancer.rebalance_two_channels(
                     args.channel_from, args.channel_to,
