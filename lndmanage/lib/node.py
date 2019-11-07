@@ -344,6 +344,10 @@ class LndNode(Node):
             # define unbalancedness |ub| large means very unbalanced
             channel_unbalancedness, our_commit_fee = channel_unbalancedness_and_commit_fee(
                 c.local_balance, c.capacity, c.commit_fee, c.initiator)
+            try:
+                uptime_lifetime_ratio =  c.uptime / c.lifetime
+            except ZeroDivisionError:
+                uptime_lifetime_ratio = 0
 
             channels[c.chan_id] = {
                 'active': c.active,
@@ -375,7 +379,7 @@ class LndNode(Node):
                 'unbalancedness': channel_unbalancedness,
                 'uptime': c.uptime,
                 'lifetime': c.lifetime,
-                'uptime_lifetime_ratio': c.uptime / c.lifetime,
+                'uptime_lifetime_ratio': uptime_lifetime_ratio,
             }
         sorted_dict = OrderedDict(
             sorted(channels.items(), key=lambda x: x[1]['alias']))
