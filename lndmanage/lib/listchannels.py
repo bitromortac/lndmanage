@@ -378,7 +378,7 @@ class ListChannels(object):
         }
 
         self._print_channels(
-            channels, columns='cid,lupp,priv,ini,age,ub,cap,lb,rb,'
+            channels, columns='cid,lupp,ulr,priv,ini,age,ub,cap,lb,rb,'
                               'sr/w,annotation,alias',
             sort_dict=sort_dict)
 
