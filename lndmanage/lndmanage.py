@@ -100,7 +100,7 @@ class Parser(object):
             'forwardings',
             help="displays channels with forwarding information")
         parser_listchannels_forwardings.add_argument(
-            '--from-days-ago', default=365, type=int,
+            '--from-days-ago', default=30, type=int,
             help='time interval start (days ago)')
         parser_listchannels_forwardings.add_argument(
             '--to-days-ago', default=0, type=int,
@@ -311,6 +311,9 @@ class Parser(object):
                 # convert time interval into unix timestamp
                 time_from = time.time() - args.from_days_ago * 24 * 60 * 60
                 time_to = time.time() - args.to_days_ago * 24 * 60 * 60
+                logger.info(
+                    f"Forwardings from {args.from_days_ago} days ago"
+                    f" to {args.to_days_ago} days ago are included.")
                 listchannels.print_channels_forwardings(
                     time_interval_start=time_from, time_interval_end=time_to,
                     sort_string=args.sort_by)
