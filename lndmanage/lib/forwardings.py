@@ -180,7 +180,7 @@ class ForwardingAnalyzer(object):
             tot_in = n['total_forwarding_in']
             tot_out = n['total_forwarding_out']
             node_statistics[k]['flow_direction'] = \
-                -((float(tot_in) / (tot_in + tot_out)) - 0.5) / 0.5
+                (- tot_in + tot_out) / (tot_in + tot_out)
 
         sorted_dict = OrderedDict(
             sorted(node_statistics.items(), key=lambda x: -x[1][sort_by]))
@@ -513,7 +513,7 @@ class ChannelStatistics(object):
     def flow_direction(self):
         total_in = self.total_forwarding_in()
         total_out = self.total_forwarding_out()
-        return -((float(total_in) / (total_in + total_out)) - 0.5) / 0.5
+        return (- total_in + total_out) / (total_in + total_out)
 
     def number_forwardings(self):
         return len(self.inward_forwardings) + len(self.outward_forwardings)
