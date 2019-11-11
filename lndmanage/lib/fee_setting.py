@@ -22,8 +22,8 @@ class FeeSetter(object):
         self.forwarding_analyzer = ForwardingAnalyzer(node)
         self.channel_fee_policies = node.get_channel_fee_policies()
 
-    def set_fees_demand(self, cltv=20, base_fee_msat=30, from_days_ago=7,
-                        min_fee_rate=0.000001, reckless=False):
+    def set_fees_demand(self, cltv=20, base_fee_msat=40, from_days_ago=7,
+                        min_fee_rate=0.000004, reckless=False):
         """
         Sets channel fee rates by estimating an economic demand factor.
         The change factor is based on four quantities, the unbalancedness,
@@ -85,11 +85,15 @@ class FeeSetter(object):
                 fees_sat = 0
                 total_forwarding_in = 0
                 total_forwarding_out = 0
+                total_forwarding = 0
+                number_forwardings = 0
             else:
                 flow = channel_stats['flow_direction']
                 fees_sat = channel_stats['fees_total'] / 1000
                 total_forwarding_in = channel_stats['total_forwarding_in']
                 total_forwarding_out = channel_stats['total_forwarding_out']
+                total_forwarding = total_forwarding_in + total_forwarding_out
+                number_forwardings = channel_stats['number_forwardings']
 
             ub = channel_data['unbalancedness']
             capacity = channel_data['capacity']
@@ -100,12 +104,9 @@ class FeeSetter(object):
 
             logger.info(">>> New channel policy for channel %s", channel_id)
             logger.info(
-                "    ub: %0.2f flow: %0.2f, fees: %1.3f sat, cap: %d sat.",
-                ub, flow, fees_sat, capacity)
-
-            factor_demand = self.factor_demand(fees_sat, capacity, fee_rate)
-            factor_unbalancedness = self.factor_unbalancedness(ub)
-            factor_flow = self.factor_unbalancedness(flow)
+                "    ub: %0.2f flow: %0.2f, fees: %1.3f sat, cap: %d sat, "
+                "nfwd: %d, in: %d sat, out: %d sat.", ub, flow, fees_sat, capacity,
+                 number_forwardings, total_forwarding_in, total_forwarding_out)
 
             # we want to give the demand the highest weight of the three
             # indicators
@@ -113,6 +114,13 @@ class FeeSetter(object):
             wgt_demand = 1.2
             wgt_ub = 1.0
             wgt_flow = 0.6
+
+            factor_demand = self.factor_demand(total_forwarding_out, capacity)
+            factor_unbalancedness = self.factor_unbalancedness(ub)
+            factor_flow = self.factor_flow(flow)
+            # in the case where no forwarding was done, ignore the flow factor
+            if total_forwarding == 0:
+                wgt_flow = 0
 
             # calculate weighted change
             weighted_change = (
@@ -195,7 +203,7 @@ class FeeSetter(object):
         else:
             return max(c, 1 - c_max)
 
-    def factor_demand(self, fees_sat, capacity, fee_rate):
+    def factor_demand(self, amount_out, capacity):
         """
         Calculates a change factor by taking into account the amount transacted
         in a time interval compared to the channel's capcacity.
@@ -205,19 +213,18 @@ class FeeSetter(object):
         max_x is an empirical parameter that could be tuned in the future
         The model for the change rate is determined by a linear function:
         change = m * fee / fee_rate / capacity / time_interval_days + t
-        :param fees_sat: float, fees collected
+        :param amount_out: float
         :param capacity: int, capacity of channel
-        :param fee_rate: float
         :return: float, [1-c_max, 1+c_max]
         """
-        approximate_amt_transacted = fees_sat / fee_rate
-        logger.info("    Approximate forwarded amount: %6.0f",
-                    approximate_amt_transacted)
-        rate = approximate_amt_transacted / self.time_interval_days
+        logger.info("    Outward forwarded amount: %6.0f",
+                    amount_out)
+        rate = amount_out / self.time_interval_days
 
         c_min = 0.25  # change by 25% downwards
         c_max = 1.00  # change by 100% upwards
-        rate_target = 0.10 * capacity / 7  # target rate is 10% of capacity
+        # rate_target = 0.10 * capacity / 7  # target rate is 10% of capacity
+        rate_target = 100000 / 7  # target rate is 200000 sat per week
 
         c = c_min * (rate / rate_target - 1) + 1
 
