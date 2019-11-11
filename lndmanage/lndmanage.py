@@ -292,10 +292,10 @@ class Parser(object):
             '--cltv', type=int, default=20,
             help='CLTV time delta in fee policy')
         self.parser_update_fees.add_argument(
-            '--base-fee-msat', type=int, default=20,
+            '--base-fee-msat', type=int, default=40,
             help='base fee in msat')
         self.parser_update_fees.add_argument(
-            '--min-fee-rate', type=float, default=0.000001,
+            '--min-fee-rate', type=float, default=0.000004,
             help='fees rates are always kept above this amount')
         self.parser_update_fees.add_argument(
             '--from-days-ago', type=int, default=7,

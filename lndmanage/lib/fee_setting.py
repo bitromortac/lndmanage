@@ -115,7 +115,7 @@ class FeeSetter(object):
             wgt_ub = 1.0
             wgt_flow = 0.6
 
-            factor_demand = self.factor_demand(total_forwarding_out, capacity)
+            factor_demand = self.factor_demand(total_forwarding_out)
             factor_unbalancedness = self.factor_unbalancedness(ub)
             factor_flow = self.factor_flow(flow)
             # in the case where no forwarding was done, ignore the flow factor
@@ -203,10 +203,10 @@ class FeeSetter(object):
         else:
             return max(c, 1 - c_max)
 
-    def factor_demand(self, amount_out, capacity):
+    def factor_demand(self, amount_out):
         """
         Calculates a change factor by taking into account the amount transacted
-        in a time interval compared to the channel's capcacity.
+        in a time interval compared to a fixed amount.
         The higher the amount forwarded, the larger the fee rate should be. The
         amount forwarded is estimated dividing the fees_sat with the current
         fee_rate.
@@ -224,7 +224,7 @@ class FeeSetter(object):
         c_min = 0.25  # change by 25% downwards
         c_max = 1.00  # change by 100% upwards
         # rate_target = 0.10 * capacity / 7  # target rate is 10% of capacity
-        rate_target = 100000 / 7  # target rate is 200000 sat per week
+        rate_target = 500000 / 7  # target rate is fixed 500000 sat per week
 
         c = c_min * (rate / rate_target - 1) + 1
 
