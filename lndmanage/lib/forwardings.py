@@ -191,18 +191,20 @@ class ForwardingAnalyzer(object):
         """
         Takes each forwarding event and determines the set of incoming nodes
         (up to second nearest neighbors) and outgoing nodes
-        (up to second nearest neighbors) and does a frequency analyis of both
+        (up to second nearest neighbors) and does a frequency analysis of both
         sets, assigning a probability that a certain node was involved in
         the forwarding process.
 
-        These probability sets are then used to take the difference between
+        These probabilities are then used to take the difference between
         both, excluding effectively the large hubs. The sets can be weighted
         by a quantity of the forwarding process, e.g. the forwarding fee.
 
-        Two lists are returned, the list of demand for sending and a list of
-        nodes with demand of receiving.
-        :param last_forwardings_to_analyze: int, number of last forwardings,
-                                                 which should be analyzed
+        Two lists are returned, the rest of the incoming and the rest of the
+        outgoing node sets.
+
+        :param last_forwardings_to_analyze:
+            number of last forwardings to be analyzed
+        :type last_forwardings_to_analyze: int
 
         :return: sending list, receiving list
         """
@@ -213,6 +215,7 @@ class ForwardingAnalyzer(object):
 
         logger.info("Doing simple forwarding analysis.")
 
+        # initialize node score dictionaries
         total_incoming_neighbors = defaultdict(float)
         total_outgoing_neighbors = defaultdict(float)
 
@@ -222,6 +225,7 @@ class ForwardingAnalyzer(object):
                     f"{last_forwardings_to_analyze} forwarding events.")
         number_progress_report = last_forwardings_to_analyze // 10
 
+        meaningful_outward_forwardings = 0
         for nf, f in enumerate(
                 self.forwarding_events[-last_forwardings_to_analyze:]):
 
@@ -238,21 +242,21 @@ class ForwardingAnalyzer(object):
             edge_data_out = self.node.network.edges.get(chan_id_out, None)
 
             if edge_data_in is not None and edge_data_out is not None:
-                # determine incoming node
+                # determine incoming and outgoing node pub keys
                 incoming_node_pub_key = edge_data_in['node1_pub'] \
                     if edge_data_in['node1_pub'] != self.node.pub_key \
                     else edge_data_in['node2_pub']
-
                 outgoing_node_pub_key = edge_data_out['node1_pub'] \
                     if edge_data_out['node1_pub'] != self.node.pub_key \
                     else edge_data_out['node2_pub']
 
-                # nodes involved in the forwarding process should be removed
+                # nodes involved in the forwarding process should be excluded
                 excluded_nodes = [self.node.pub_key, incoming_node_pub_key,
                     outgoing_node_pub_key]
 
                 # determine all the nearest and second nearest
-                # neighbors (they may appear more than once)
+                # neighbors of the incoming/outgoing nodes,
+                # they may appear more than once
                 incoming_neighbors = self.__determine_joined_neighbors(
                     incoming_node_pub_key, excluded_nodes=excluded_nodes)
                 outgoing_neighbors = self.__determine_joined_neighbors(
@@ -263,7 +267,8 @@ class ForwardingAnalyzer(object):
                     incoming_neighbors, outgoing_neighbors)
 
                 final_outgoing_nodes = self.__filter_nodes(
-                    symmetric_difference_weights, return_positive_weights=True)
+                    symmetric_difference_weights,
+                    return_positive_weights=True)
                 final_incoming_nodes = self.__filter_nodes(
                     symmetric_difference_weights,
                     return_positive_weights=False)
@@ -283,8 +288,22 @@ class ForwardingAnalyzer(object):
                 for n, nv in normalized_incoming.items():
                     total_incoming_neighbors[n] += nv * weight
 
-                for n, nv in normalized_outgoing.items():
-                    total_outgoing_neighbors[n] += nv * weight
+                # If we know, that the outward hop already reached the
+                # target of the payment, we don't want to add the neighbors
+                # of the outgoing node to the total statistics.
+                # We know if the next hop was the final one of the payment by
+                # testing whether the forwarding amount in msat has remainder
+                # zero when divided by 1000 or not, provided the sent amount
+                # was larger than 1E6 msat.
+                if (f['amt_out_msat'] % 1000):
+                    meaningful_outward_forwardings += 1
+                    logger.debug(
+                        f"Forwarding was not last hop: {f['amt_out_msat']}, "
+                        f"chan_id_out: {chan_id_out}")
+                    for n, nv in normalized_outgoing.items():
+                        total_outgoing_neighbors[n] += nv * weight
+        logger.info(f"Could use {meaningful_outward_forwardings} "
+                    f"forwardings to estimate targets of payments.")
 
         # sort according to weights
         total_incoming_node_dict = self.__weighted_neighbors_to_sorted_dict(
@@ -325,21 +344,17 @@ class ForwardingAnalyzer(object):
         second_neighbors = list(
             self.node.network.second_neighbors(node_pub_key))
 
-        # determine node_weights
+        # determine neighbor node_weights
         neighbor_weights = self.__analyze_neighbors(
             neighbors, excluded_nodes=excluded_nodes, weight=NEIGHBOR_WEIGHT)
-
         second_neighbor_weights = self.__analyze_neighbors(
             second_neighbors, excluded_nodes=excluded_nodes,
             weight=NEXT_NEIGHBOR_WEIGHT)
 
-        # print("number of neighboring nodes", len(neighbor_weights.keys()))
-        # print("number of second neighbor nodes",
-        #       len(second_neighbor_weights.keys()))
-
+        # combine nearest and second nearest neighbor node weights
         joined_neighbors = self.__join_neighbors(
             neighbor_weights, second_neighbor_weights)
-        # print("number of joined neighbors", len(joined_neighbors.keys()))
+
         return joined_neighbors
 
     @staticmethod
@@ -401,8 +416,8 @@ class ForwardingAnalyzer(object):
         # add all the nodes from the second dict
         for n, v in second_neighbor_dict.items():
             if n in joined_neighbor_dict:
-                joined_neighbor_dict[n] = max(joined_neighbor_dict[n],
-                                              second_neighbor_dict[n])
+                joined_neighbor_dict[n] = min(
+                    1, joined_neighbor_dict[n] + second_neighbor_dict[n])
             else:
                 joined_neighbor_dict[n] = second_neighbor_dict[n]
 
@@ -422,11 +437,8 @@ class ForwardingAnalyzer(object):
         """
         first_nodes = set(first_neighbors_dict.keys())
         second_nodes = set(second_neighbors_dict.keys())
-        # nodes_union = first_nodes.union(second_nodes)
-        # print("unique nodes", len(nodes_union))
 
         nodes_intersection = first_nodes.intersection(second_nodes)
-        # print("common nodes", len(nodes_intersection))
 
         unique_first_nodes = first_nodes - nodes_intersection
         unique_second_nodes = second_nodes - nodes_intersection

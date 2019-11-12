@@ -452,7 +452,9 @@ class LndNode(Node):
             'chan_id_in': f.chan_id_in,
             'chan_id_out': f.chan_id_out,
             'amt_in': f.amt_in,
+            'amt_in_msat': f.amt_in_msat,
             'amt_out': f.amt_out,
+            'amt_out_msat': f.amt_out_msat,
             'fee_msat': f.fee_msat,
             'effective_fee': f.fee_msat / (f.amt_in * 1000)
         } for f in forwardings.forwarding_events]
