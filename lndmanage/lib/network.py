@@ -139,7 +139,7 @@ class Network(object):
         :return: int
         """
         try:
-            number_of_channels = self.graph.degree[node_pub_key] / 2
+            number_of_channels = self.graph.degree[node_pub_key] // 2
         except KeyError:
             number_of_channels = 0
         return number_of_channels
