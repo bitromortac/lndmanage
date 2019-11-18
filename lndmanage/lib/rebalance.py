@@ -95,21 +95,24 @@ class Rebalancer(object):
             if count > settings.REBALANCING_TRIALS:
                 raise RebalancingTrialsExhausted
 
+            # method is set to external-mc to use mission control based
+            # pathfinding
             routes = self.router.get_routes_for_rebalancing(
-                channel_id_from, channel_id_to, amt_msat)
+                channel_id_from, channel_id_to, amt_msat, method='external-mc')
 
             if len(routes) == 0:
                 raise NoRoute
             else:
+                # take only the first route from routes
                 r = routes[0]
 
             if previous_route_channel_hops == r.channel_hops:
                 raise DuplicateRoute("Have tried this route already.")
 
             logger.info(
-                f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat,"
-                f" fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
-                f" hops: {len(r.channel_hops)}")
+                f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat, "
+                f"fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f}, "
+                f"hops: {len(r.channel_hops)}")
             logger.info(f"   Channel hops: {r.channel_hops}")
 
             rate = r.total_fee_msat / r.total_amt_msat

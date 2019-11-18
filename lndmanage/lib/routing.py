@@ -196,25 +196,40 @@ class Router(object):
         # logger.debug(f"(Intermediate) route as channel hops: {hops}")
         return [hops]
 
-    def get_route_channel_hops_from_to_node_external(self, source_pubkey, target_pubkey, amt_msat):
+    def get_route_channel_hops_from_to_node_external(
+            self, source_pubkey, target_pubkey, amt_msat, use_mc=False):
         """
-        Find routes externally (relying on the node api) to construct a route from a source node to a target node.
+        Find routes externally (relying on the node api) to construct a route
+        from a source node to a target node.
 
-        :param source_pubkey: str
-        :param target_pubkey: str
-        :param amt_msat: int
-        :return:
+        :param source_pubkey: source public key
+        :type source_pubkey: str
+        :param target_pubkey: target public key
+        :type target_pubkey: str
+        :param amt_msat: amount to send in msat
+        :type amt_msat: int
+        :param use_mc: true if mission control based pathfinding is used
+        :type use_mc: bool
+        :return: list of hops
+        :rtype: list[list[int]]
         """
-        logger.debug(f"External route finding:")
+        logger.debug(f"External pathfinding, using mission control: {use_mc}.")
         logger.debug(f"from {source_pubkey}")
         logger.debug(f"  to {target_pubkey}")
-        ignored_channels = self.channel_rater.bad_channels
         ignored_nodes = self.channel_rater.bad_nodes
+
+        # we don't need to give blacklisted channels to the queryroute command
+        # as all of this is done by mission control
+        if use_mc:
+            ignored_channels = {}
+        else:
+            ignored_channels = self.channel_rater.bad_channels
 
         hops = self.node.queryroute_external(
             source_pubkey, target_pubkey, amt_msat,
             ignored_channels=ignored_channels,
             ignored_nodes=ignored_nodes,
+            use_mc=use_mc,
         )
 
         return [hops]
@@ -222,13 +237,20 @@ class Router(object):
     def get_routes_for_rebalancing(
             self, chan_id_from, chan_id_to, amt_msat, method='external'):
         """
-        Calculates several routes for channel_id_from to chan_id_to and optimizes for fees for an amount amt.
+        Calculates several routes for channel_id_from to chan_id_to
+        and optimizes for fees for an amount amt.
 
-        :param chan_id_from:
-        :param chan_id_to:
-        :param amt_msat:
-        :param method: str: specifies if 'internal', or 'external' method of route computation should be used
+        :param chan_id_from: short channel id of the from node
+        :type chan_id_from: int
+        :param chan_id_to: short channel id of the to node
+        :type chan_id_to: int
+        :param amt_msat: payment amount in msat
+        :type amt_msat: int
+        :param method: specifies if 'internal', or 'external'
+               method of route computation should be used
+        :type method: string
         :return: list of :class:`lib.routing.Route` instances
+        :rtype: list[lndmanage.lib.routing.Route]
         """
 
         try:
@@ -242,7 +264,7 @@ class Router(object):
 
         this_node = self.node.pub_key
 
-        # determine nodes on the other side, between which we need to find a suitable path between
+        # find the correct node_pubkeys between which we want to route
         # fist hop:start-end ----- last hop: start-end
         if channel_from['node1_pub'] == this_node:
             first_hop_end = channel_from['node2_pub']
@@ -255,14 +277,26 @@ class Router(object):
             last_hop_start = channel_to['node1_pub']
 
         # determine inner channel hops
-        # internal method uses networkx dijkstra, this is more independent, but slower
+        # internal method uses networkx dijkstra,
+        # this is more independent, but slower
         if method == 'internal':
-            routes_channel_hops = self.get_route_channel_hops_from_to_node_internal(
+            routes_channel_hops = \
+                self.get_route_channel_hops_from_to_node_internal(
                 first_hop_end, last_hop_start, amt_msat)
-        # rely on external path finding
+        # rely on external pathfinding with internal blacklisting
+        elif method == 'external':
+            routes_channel_hops = \
+                self.get_route_channel_hops_from_to_node_external(
+                first_hop_end, last_hop_start, amt_msat, use_mc=False)
+        # rely on external pathfinding using mission control
+        elif method == 'external-mc':
+            routes_channel_hops = \
+                self.get_route_channel_hops_from_to_node_external(
+                first_hop_end, last_hop_start, amt_msat, use_mc=True)
         else:
-            routes_channel_hops = self.get_route_channel_hops_from_to_node_external(
-                first_hop_end, last_hop_start, amt_msat)
+            raise ValueError(
+                f"Method must be either internal, external or external-mc, "
+                f"is {method}.")
 
         # pre- and append the outgoing and incoming channels to the route
         routes_channel_hops_final = []

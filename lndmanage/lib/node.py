@@ -291,7 +291,8 @@ class LndNode(Node):
         self.num_peers = raw_info.num_peers
 
         # TODO: remove the following code and implement an advanced status
-        all_channels = self.get_open_channels(active_only=False, public_only=False)
+        all_channels = self.get_open_channels(
+            active_only=False, public_only=False)
 
         for k, c in all_channels.items():
             self.total_capacity += c['capacity']
@@ -514,20 +515,39 @@ class LndNode(Node):
             return channel_id
 
     def queryroute_external(self, source_pubkey, target_pubkey, amt_msat,
-                            ignored_nodes=(), ignored_channels={}):
+                            ignored_nodes=(), ignored_channels={},
+                            use_mc=False):
         """
-        Queries the lnd node for a route. Channels and nodes can be ignored if they failed before.
+        Queries the lnd node for a route.
 
-        :param source_pubkey: str
-        :param target_pubkey: str
-        :param amt_msat: int
-        :param ignored_nodes: list of node pub keys
-        :param ignored_channels: dict
-        :return: list of channel_ids
+        Channels and nodes can be ignored if they failed before.
+
+        :param source_pubkey: source node public key
+        :type source_pubkey: str
+        :param target_pubkey: target node public key
+        :type target_pubkey: str
+        :param amt_msat: amount to send in msat
+        :type amt_msat: int
+        :param ignored_nodes: ignored node pubilc keys for the route
+        :type ignored_nodes: list[str]
+        :param ignored_channels: ignored channel directions for the route
+        :type ignored_channels: dict
+        :param use_mc: true if mission control should be used to blacklist
+                       channels
+        :type use_mc: bool
+        :return: route expressed in terms of short channel ids
+        :rtype: list[int]
         """
-        amt_sat = amt_msat// 1000
+        amt_sat = amt_msat // 1000
 
-        # we want to see all routes:
+        # put safety margin when using mc based routing
+        # reason is that routes will not be diverse when sending with a larger
+        # amount later on due to fees
+        # the fees for the route are somewhat accounted for by the margin
+        if use_mc:
+            amt_sat = int(amt_sat * 1.02)
+
+        # have a safety max fee in sat
         max_fee = 10000
 
         # convert ignored nodes to api format
@@ -558,6 +578,7 @@ class LndNode(Node):
             ignored_nodes=ignored_nodes_api,
             ignored_edges=ignored_channels_api,
             source_pub_key=source_pubkey,
+            use_mission_control=use_mc,
         )
         try:
             response = self._rpc.QueryRoutes(request)
