@@ -192,6 +192,9 @@ age        channel age [days]
 nfwd       number of forwardings
 f/w        total fees per week [sat / week]
 ulr        ratio of uptime to lifetime of channel [0 ... 1]
+cr         channel reliability score (good routers)
+crc        channel reliability certainty (rated channels / number of channels)
+crt        total rated channels from pair history
 lb         local balance [sat]
 cap        channel capacity [sat]
 pbf        peer base fee [msat]
@@ -199,19 +202,22 @@ pfr        peer fee rate
 annotation channel annotation
 alias      alias
 -------- Channels --------
-       cid           age  nfwd    f/w   ulr        lb       cap   pbf      pfr alias           
-xxxxxxxxxxxxxxxxxx   315     0   0.00  0.20       100     91000  1000 0.000001 abc 
-xxxxxxxxxxxxxxxxxx   221     0   0.00  0.80         0    400000  1000 0.000001 def 
-xxxxxxxxxxxxxxxxxx    36     0   0.00  0.99         0    200000  1000 0.000001 ghi 
-xxxxxxxxxxxxxxxxxx    24     5   0.20  1.00    100000   4000000   500 0.000001 jkl 
-xxxxxxxxxxxxxxxxxx   117    10   1.10  1.00     30000    500000  1000 0.000001 mno
+       cid           age  nfwd    f/w   ulr    cr   crc crt      lb       cap   pbf      pfr alias           
+xxxxxxxxxxxxxxxxxx   315     0   0.00  0.20  0.00  0.00   0     100     91000  1000 0.000001 abc 
+xxxxxxxxxxxxxxxxxx   221     0   0.00  0.80  0.10  0.03  29       0    400000  1000 0.000001 def 
+xxxxxxxxxxxxxxxxxx    36     0   0.00  0.99  0.01  0.02   1       0    200000  1000 0.000001 ghi 
+xxxxxxxxxxxxxxxxxx    24     5   0.20  1.00  0.33  0.20  12  100000   4000000   500 0.000001 jkl 
+xxxxxxxxxxxxxxxxxx   117    10   1.10  1.00  0.06  0.04  15   30000    500000  1000 0.000001 mno
 ```
 You can base your decision on the number of forwardings `nfwd` and the fees
 collected per week `f/w`. If those numbers are low and the local balance `lb`
 is high and the channel already had enough time (`age`) to prove itself, you
 may want to consider closing the channel. Another way to judge the reliability
 of the channel is to look at the proportion the channel stayed active when
-your node was active, given by the `ulr` column.
+your node was active, given by the `ulr` column. An experimental feature is
+the channel reliability score `cr`. It basically tells you how our node rates
+our neighboring nodes by previous payments (rebalancings) we have carried out.
+In order to get reliable values here you need to do a lot rebalancings.
 
 ## Channel opening strategies
 Which nodes best to connect to in the Lightning Network is ongoing research. 
