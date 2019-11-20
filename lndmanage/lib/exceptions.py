@@ -50,3 +50,9 @@ class DuplicateRoute(NoRoute):
     pass
 
 
+class RPCError(Exception):
+    pass
+
+
+class RouterRPCError(RPCError):
+    pass

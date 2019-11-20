@@ -8,8 +8,12 @@ import grpc
 from grpc._channel import _Rendezvous
 from google.protobuf.json_format import MessageToDict
 
-import lndmanage.grpc_compiled.rpc_pb2 as ln
-import lndmanage.grpc_compiled.rpc_pb2_grpc as lnrpc
+import lndmanage.grpc_compiled.rpc_pb2 as lnd
+import lndmanage.grpc_compiled.rpc_pb2_grpc as lndrpc
+
+import lndmanage.grpc_compiled.router_pb2 as lndrouter
+import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
+
 from lndmanage.lib.network import Network
 from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
@@ -69,26 +73,30 @@ class LndNode(Node):
         self.lnd_home = lnd_home
         self.lnd_host = lnd_host
         self.regtest = regtest
-        self._stub = self.connect()
+
+        self._rpc = None
+        self._routerrpc = None
+        self.connect_rpcs()
+
         self.network = Network(self)
         self.update_blockheight()
         self.set_info()
 
-    def connect(self):
+    def connect_rpcs(self):
         """
         Establishes a connection to lnd using the hostname, tls certificate,
         and admin macaroon defined in settings.
         """
         macaroons = True
-        os.environ['GRPC_SSL_CIPHER_SUITES'] = '' + \
-                                               'ECDHE-RSA-AES128-GCM-SHA256:' + \
-                                               'ECDHE-RSA-AES128-SHA256:' + \
-                                               'ECDHE-RSA-AES256-SHA384:' + \
-                                               'ECDHE-RSA-AES256-GCM-SHA384:' + \
-                                               'ECDHE-ECDSA-AES128-GCM-SHA256:' + \
-                                               'ECDHE-ECDSA-AES128-SHA256:' + \
-                                               'ECDHE-ECDSA-AES256-SHA384:' + \
-                                               'ECDHE-ECDSA-AES256-GCM-SHA384'
+        os.environ['GRPC_SSL_CIPHER_SUITES'] = \
+            'ECDHE-RSA-AES128-GCM-SHA256:' \
+            'ECDHE-RSA-AES128-SHA256:' \
+            'ECDHE-RSA-AES256-SHA384:' \
+            'ECDHE-RSA-AES256-GCM-SHA384:' \
+            'ECDHE-ECDSA-AES128-GCM-SHA256:' \
+            'ECDHE-ECDSA-AES128-SHA256:' \
+            'ECDHE-ECDSA-AES256-SHA384:' \
+            'ECDHE-ECDSA-AES256-GCM-SHA384'
 
         # if no lnd_home is given, then use the paths from the config,
         # else override them with default file paths in lnd_home
@@ -99,18 +107,21 @@ class LndNode(Node):
                 self.lnd_home, 'data/chain/bitcoin/',
                 bitcoin_network, 'admin.macaroon')
             if self.lnd_host is None:
-                raise ValueError('if lnd_home is given, lnd_host must be given also')
+                raise ValueError(
+                    'if lnd_home is given, lnd_host must be given also')
             lnd_host = self.lnd_host
         else:
             config = settings.read_config(self.config_file)
             cert_file = os.path.expanduser(config['network']['tls_cert_file'])
-            macaroon_file = os.path.expanduser(config['network']['admin_macaroon_file'])
+            macaroon_file = \
+                os.path.expanduser(config['network']['admin_macaroon_file'])
             lnd_host = config['network']['lnd_grpc_host']
 
+        cert = None
         try:
             with open(cert_file, 'rb') as f:
                 cert = f.read()
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             logger.error("tls.cert not found, please configure %s.",
                          self.config_file)
             exit(1)
@@ -120,13 +131,12 @@ class LndNode(Node):
                 with open(macaroon_file, 'rb') as f:
                     macaroon_bytes = f.read()
                     macaroon = codecs.encode(macaroon_bytes, 'hex')
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 logger.error("admin.macaroon not found, please configure %s.",
                              self.config_file)
                 exit(1)
 
             def metadata_callback(context, callback):
-                # for more info see grpc docs
                 callback([('macaroon', macaroon)], None)
 
             cert_creds = grpc.ssl_channel_credentials(cert)
@@ -136,25 +146,30 @@ class LndNode(Node):
         else:
             creds = grpc.ssl_channel_credentials(cert)
 
+        # necessary to circumvent standard size limitation
         channel = grpc.secure_channel(lnd_host, creds, options=[
-            ('grpc.max_receive_message_length', 50 * 1024 * 1024)  # necessary to circumvent standard size limitation
+            ('grpc.max_receive_message_length', 50 * 1024 * 1024)
         ])
 
-        return lnrpc.LightningStub(channel)
+        # establish connections to rpc servers
+        self._rpc = lndrpc.LightningStub(channel)
+        self._routerrpc = lndrouterrpc.RouterStub(channel)
 
     def update_blockheight(self):
-        info = self._stub.GetInfo(ln.GetInfoRequest())
+        info = self._rpc.GetInfo(lnd.GetInfoRequest())
         self.blockheight = int(info.block_height)
 
     def get_channel_info(self, channel_id):
-        channel = self._stub.GetChanInfo(ln.ChanInfoRequest(chan_id=channel_id))
-        channel_dict = MessageToDict(channel, including_default_value_fields=True)
+        channel = self._rpc.GetChanInfo(
+            lnd.ChanInfoRequest(chan_id=channel_id))
+        channel_dict = MessageToDict(
+            channel, including_default_value_fields=True)
         channel_dict = convert_dictionary_number_strings_to_ints(channel_dict)
         return channel_dict
 
     @staticmethod
     def lnd_hops(hops):
-        return [ln.Hop(**hop) for hop in hops]
+        return [lnd.Hop(**hop) for hop in hops]
 
     def lnd_route(self, route):
         """
@@ -164,7 +179,7 @@ class LndNode(Node):
         :return:
         """
         hops = self.lnd_hops(route.hops)
-        return ln.Route(
+        return lnd.Route(
             total_time_lock=route.total_time_lock,
             total_fees=route.total_fee_msat // 1000,
             total_amt=route.total_amt_msat // 1000,
@@ -181,7 +196,7 @@ class LndNode(Node):
         :param amt_msat:
         :return: payment result
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=amt_msat // 1000))
+        invoice = self._rpc.AddInvoice(lnd.Invoice(value=amt_msat // 1000))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -196,7 +211,7 @@ class LndNode(Node):
         :param memo: str, Comment field for an invoice.
         :return: payment result
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=0, memo=memo))
+        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -209,8 +224,8 @@ class LndNode(Node):
         :param memo: str
         :return: Hash of invoice preimage.
         """
-        invoice = self._stub.AddInvoice(
-            ln.Invoice(value=amt_msat // 1000, memo=memo))
+        invoice = self._rpc.AddInvoice(
+            lnd.Invoice(value=amt_msat // 1000, memo=memo))
         return invoice.r_hash
 
     def get_rebalance_invoice(self, memo):
@@ -220,7 +235,7 @@ class LndNode(Node):
         :param memo: Comment for the invoice.
         :return: Hash of the invoice preimage.
         """
-        invoice = self._stub.AddInvoice(ln.Invoice(value=0, memo=memo))
+        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
         return invoice.r_hash
 
     def send_to_route(self, route, r_hash_bytes):
@@ -233,19 +248,19 @@ class LndNode(Node):
         :return:
         """
         lnd_route = self.lnd_route(route)
-        request = ln.SendToRouteRequest(
+        request = lnd.SendToRouteRequest(
             route=lnd_route,
             payment_hash_string=r_hash_bytes.hex(),
         )
         try:
             # timeout after 5 minutes
-            return self._stub.SendToRouteSync(request, timeout=5*60)
+            return self._rpc.SendToRouteSync(request, timeout=5 * 60)
         except _Rendezvous:
             raise PaymentTimeOut
 
     def get_raw_network_graph(self):
         try:
-            graph = self._stub.DescribeGraph(ln.ChannelGraphRequest())
+            graph = self._rpc.DescribeGraph(lnd.ChannelGraphRequest())
         except _Rendezvous:
             logger.error(
                 "Problem connecting to lnd. "
@@ -260,7 +275,7 @@ class LndNode(Node):
 
         :return: node information
         """
-        return self._stub.GetInfo(ln.GetInfoRequest())
+        return self._rpc.GetInfo(lnd.GetInfoRequest())
 
     def set_info(self):
         """
@@ -298,7 +313,7 @@ class LndNode(Node):
         :param public_only: bool, only take public channels into account (off by default)
         :return: list of channels sorted by remote pubkey
         """
-        raw_channels = self._stub.ListChannels(ln.ListChannelsRequest(
+        raw_channels = self._rpc.ListChannels(lnd.ListChannelsRequest(
             active_only=active_only, public_only=public_only))
         channels_data = raw_channels.ListFields()[0][1]
         channels = OrderedDict()
@@ -442,7 +457,7 @@ class LndNode(Node):
         now = self.timestamp_from_now()
         then = self.timestamp_from_now(offset_days)
 
-        forwardings = self._stub.ForwardingHistory(ln.ForwardingHistoryRequest(
+        forwardings = self._rpc.ForwardingHistory(lnd.ForwardingHistoryRequest(
             start_time=then,
             end_time=now,
             num_max_events=NUM_MAX_FORWARDING_EVENTS))
@@ -467,8 +482,8 @@ class LndNode(Node):
 
         :return: dict, channel list
         """
-        request = ln.ClosedChannelsRequest()
-        closed_channels = self._stub.ClosedChannels(request)
+        request = lnd.ClosedChannelsRequest()
+        closed_channels = self._rpc.ClosedChannels(request)
         closed_channels_dict = {}
         for c in closed_channels.channels:
             closed_channels_dict[c.chan_id] = {
@@ -527,25 +542,25 @@ class LndNode(Node):
             for c, cv in ignored_channels.items():
                 direction_reverse = cv['source'] > cv['target']
                 ignored_channels_api.append(
-                    ln.EdgeLocator(channel_id=c,
-                                   direction_reverse=direction_reverse))
+                    lnd.EdgeLocator(channel_id=c,
+                                    direction_reverse=direction_reverse))
         else:
             ignored_channels_api = []
 
         logger.debug(f"Ignored for queryroutes: channels: "
                      f"{ignored_channels_api}, nodes: {ignored_nodes_api}")
 
-        request = ln.QueryRoutesRequest(
+        request = lnd.QueryRoutesRequest(
             pub_key=target_pubkey,
             amt=amt_sat,
             final_cltv_delta=0,
-            fee_limit=ln.FeeLimit(fixed=max_fee),
+            fee_limit=lnd.FeeLimit(fixed=max_fee),
             ignored_nodes=ignored_nodes_api,
             ignored_edges=ignored_channels_api,
             source_pub_key=source_pubkey,
         )
         try:
-            response = self._stub.QueryRoutes(request)
+            response = self._rpc.QueryRoutes(request)
         except _Rendezvous:
             raise NoRoute
         # print(response)
