@@ -95,21 +95,24 @@ class Rebalancer(object):
             if count > settings.REBALANCING_TRIALS:
                 raise RebalancingTrialsExhausted
 
+            # method is set to external-mc to use mission control based
+            # pathfinding
             routes = self.router.get_routes_for_rebalancing(
-                channel_id_from, channel_id_to, amt_msat)
+                channel_id_from, channel_id_to, amt_msat, method='external-mc')
 
             if len(routes) == 0:
                 raise NoRoute
             else:
+                # take only the first route from routes
                 r = routes[0]
 
             if previous_route_channel_hops == r.channel_hops:
                 raise DuplicateRoute("Have tried this route already.")
 
             logger.info(
-                f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat,"
-                f" fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f},"
-                f" hops: {len(r.channel_hops)}")
+                f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat, "
+                f"fee rate: {r.total_fee_msat / r.total_amt_msat:1.6f}, "
+                f"hops: {len(r.channel_hops)}")
             logger.info(f"   Channel hops: {r.channel_hops}")
 
             rate = r.total_fee_msat / r.total_amt_msat
@@ -565,7 +568,6 @@ class Rebalancer(object):
         logger.info(f">>> Trying to rebalance channel {channel_id} "
                     f"with a max rate of {self.max_effective_fee_rate} "
                     f"and a max fee of {self.budget_sat} sat.")
-        logger.info(f">>> Chunk size is set to {chunksize}.")
 
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
@@ -585,6 +587,12 @@ class Rebalancer(object):
 
         # copy the original target
         local_balance_change_left = initial_local_balance_change
+
+        # if chunksize is set, rebalance in portions of chunked_amount
+        chunked_amount = int(initial_local_balance_change * chunksize)
+        logger.info(f">>> Chunk size is set to {chunksize}. "
+                    f"Results in chunksize of {chunked_amount} sat.")
+
         # determine rebalance direction 1: receive, -1: send (of channel_id)
         rebalance_direction = math.copysign(1, initial_local_balance_change)
 
@@ -680,15 +688,19 @@ class Rebalancer(object):
                 self._get_source_and_target_channels(
                     channel_id, c['chan_id'], rebalance_direction)
 
-            # amt must be always positive
+            # counterparty channel affords less than total rebalance amount
             if abs(local_balance_change_left) > abs(c['amt_affordable']):
-                amt = -int(rebalance_direction *
-                           c['amt_affordable'] *
-                           chunksize)
+                sign = math.copysign(1, c['amt_affordable'])
+                minimal_amount = sign * min(
+                    abs(chunked_amount), abs(c['amt_affordable']))
+                amt = -int(rebalance_direction * minimal_amount)
+            # counterparty channel affords more than total rebalance amount
             else:
-                amt = int(rebalance_direction *
-                          local_balance_change_left *
-                          chunksize)
+                sign = math.copysign(1, local_balance_change_left)
+                minimal_amount = sign * min(
+                    abs(local_balance_change_left), abs(chunked_amount))
+                amt = int(rebalance_direction * minimal_amount)
+            # amt must be always positive
             if amt < 0:
                 raise RebalanceCandidatesExhausted(
                     f"Amount should not be negative! amt:{amt} sat")
