@@ -15,7 +15,7 @@ import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, RouterRPCError
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
@@ -606,35 +606,7 @@ class LndNode(Node):
         logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
         logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
 
-    def query_missioncontrol(self):
-        """Queries the mission control system of lnd."""
-        try:
-            request = lndrouter.QueryMissionControlRequest()
-            result = self._routerrpc.QueryMissionControl(request)
-
-            pair_history = {}
-            for pair in result.pairs:
-                pair_history[(pair.node_from.hex(), pair.node_to.hex())] = {
-                        'timestamp': pair.history.timestamp,
-                        'min_penalize_amt_sat':
-                            pair.history.min_penalize_amt_sat,
-                        'last_attempt_successful':
-                            pair.history.last_attempt_successful,
-                }
-
-            return pair_history
-        except _Rendezvous:
-            logger.warning(
-                "Routerrpc is not available, which is neccessary to run this "
-                "command.\n"
-                "Build lnd with 'make install tags=\"routerrpc\"'.")
-            raise RouterRPCError
-
-
 
 if __name__ == '__main__':
-    # def __init__(self, config_file=None, lnd_home=None, lnd_host=None,
-    #             regtest=False):
-    node = LndNode(config_file='')
+    node = LndNode()
     print(node.get_closed_channels().keys())
-    mc = node.query_missioncontrol()

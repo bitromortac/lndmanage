@@ -8,7 +8,6 @@ import time
 from collections import OrderedDict
 
 from lndmanage.lib.forwardings import get_forwarding_statistics_channels
-from lndmanage.lib.rating import NodeRater
 from lndmanage import settings
 
 logger = logging.getLogger(__name__)
@@ -67,28 +66,6 @@ PRINT_CHANNELS_FORMAT = {
         'description': 'bandwidth demand: capacity / max(mean_in, mean_out)',
         'width': 5,
         'format': '5.2f',
-        'align': '>',
-    },
-    'cr': {
-        'dict_key': 'channel_reliability',
-        'description': 'channel reliability score (good routers)',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
-    },
-    'crc': {
-        'dict_key': 'channel_reliability_certainty',
-        'description': 'channel reliability certainty '
-                       '(rated channels / number of channels)',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
-    },
-    'crt': {
-        'dict_key': 'total_rated_channels',
-        'description': 'total rated channels from pair history',
-        'width': 3,
-        'format': '3.0f',
         'align': '>',
     },
     'cap': {
@@ -443,16 +420,15 @@ class ListChannels(object):
         """
         Prints hygiene statistics for each channel.
 
-        :param time_interval_start: starting time interval for analysis (unix)
-        :type time_interval_start: int
-        :param sort_string: string for sorting (key in PRINT_CHANNELS_FORMAT)
-        :type sort_string: str
+        :param time_interval_start: int
+        :param time_interval_end: int
+        :param sort_string: str
         """
         time_interval_end = time.time()
         channels = get_forwarding_statistics_channels(
             self.node, time_interval_start, time_interval_end)
+
         channels = self._add_channel_annotations(channels)
-        channels = self._add_channel_reliabilities(channels)
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
@@ -464,8 +440,7 @@ class ListChannels(object):
 
         self._print_channels(
             channels,
-            columns='cid,age,nfwd,f/w,ulr,cr,crc,crt,lb,cap,pbf,pfr,'
-                    'annotation,alias',
+            columns='cid,age,nfwd,f/w,ulr,lb,cap,pbf,pfr,annotation,alias',
             sort_dict=sort_dict)
 
     def _add_channel_annotations(self, channels):
@@ -488,14 +463,14 @@ class ListChannels(object):
         channel_annotations_funding_id = {}
         channel_annotations_channel_id = {}
 
-        for cid, annotation in annotations.items():
-            if len(cid) == 18 and cid.isnumeric():
+        for id, annotation in annotations.items():
+            if len(id) == 18 and id.isnumeric():
                 # valid channel id
-                channel_annotations_channel_id[int(cid)] = \
+                channel_annotations_channel_id[int(id)] = \
                     annotation
-            elif len(cid) == 64 and cid.isalnum():
+            elif len(id) == 64 and id.isalnum():
                 # valid funding transaction id
-                channel_annotations_funding_id[cid] = \
+                channel_annotations_funding_id[id] = \
                     annotation
             else:
                 raise ValueError(
@@ -519,34 +494,6 @@ class ListChannels(object):
             else:
                 channels[channel_id]['annotation'] = ''
 
-        return channels
-
-    def _add_channel_reliabilities(self, channels):
-        """
-        Adds channel reliability scores to the channel data.
-
-        :param channels: channel data
-        :type channels: dict
-        :return: channel data
-        :rtype: dict
-        """
-        rater = NodeRater(self.node)
-        node_ratings = rater.rate_nodes()
-
-        for cid, channel_values in channels.items():
-            remote_pubkey = channel_values['remote_pubkey']
-            ratings = node_ratings.get(remote_pubkey, None)
-            if ratings is None:
-                channels[cid]['channel_reliability'] = 0
-                channels[cid]['channel_reliability_certainty'] = 0
-                channels[cid]['total_rated_channels'] = 0
-            else:
-                channels[cid]['channel_reliability'] = \
-                    ratings['channel_reliability']
-                channels[cid]['channel_reliability_certainty'] = \
-                    ratings['certainty']
-                channels[cid]['total_rated_channels'] = \
-                    ratings['good_channels'] + ratings['bad_channels']
         return channels
 
     def _print_channels(self, channels, columns, sort_dict):
