@@ -1,7 +1,10 @@
-# lndmanage
+<p align="center">
+<img src="logo.png" style="max-width:100%;" width="400" />
+</p>
+<hr />
 
-lndmanage is a command line tool for advanced channel management of an 
-[`LND`](https://github.com/lightningnetwork/lnd) node.
+# lndmanage
+lndmanage is a command line tool for advanced channel management of an [LND](https://github.com/lightningnetwork/lnd) node.
 
 Current feature list (use the ```--help``` flag for subcommands):
 
