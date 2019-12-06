@@ -116,7 +116,7 @@ class FeeSetter(object):
             fee_rate = \
                 self.channel_fee_policies[
                     channel_data['channel_point']]['fee_rate']
-            min_base_fee_msat = \
+            base_fee_msat = \
                 self.channel_fee_policies[
                     channel_data['channel_point']]['base_fee_msat']
 
@@ -168,11 +168,11 @@ class FeeSetter(object):
             # BASE FEES
             factor_base_fee = self.factor_demand_base_fee(
                 number_forwardings_out)
-            base_fee_msat_new = min_base_fee_msat * factor_base_fee
-            base_fee_msat_new = max(min_base_fee_msat, base_fee_msat_new)
+            base_fee_msat_new = base_fee_msat * factor_base_fee
+            base_fee_msat_new = int(max(min_base_fee_msat, base_fee_msat_new))
 
             logger.info("    Base fee: %4d -> %4d (factor %1.3f)",
-                        min_base_fee_msat, base_fee_msat_new, factor_base_fee)
+                        base_fee_msat, base_fee_msat_new, factor_base_fee)
 
             # give parsable output
             logger.debug(
@@ -181,10 +181,12 @@ class FeeSetter(object):
                 f"{ub:.3f} {flow:.3f} "
                 f"{fees_sat:.3f} {capacity} {factor_demand:.3f} "
                 f"{factor_unbalancedness:.3f} {factor_flow:.3f} "
-                f"{weighted_change:.3f} {fee_rate:.6f} {fee_rate_new:.6f}")
+                f"{weighted_change:.3f} {fee_rate:.6f} {fee_rate_new:.6f} "
+                f"{number_forwardings} {number_forwardings_out} "
+                f"{factor_base_fee:.3f} {base_fee_msat} {base_fee_msat_new}")
 
             channel_fee_policies[channel_data['channel_point']] = {
-                'base_fee_msat': min_base_fee_msat,
+                'base_fee_msat': base_fee_msat_new,
                 'fee_rate': fee_rate_new,
                 'cltv': cltv,
             }
