@@ -1,5 +1,3 @@
-import lndmanage.grpc_compiled.rpc_pb2 as ln
-
 import logging
 import time
 
@@ -132,8 +130,7 @@ class FeeSetter(object):
             # FEE RATES
             # we want to give the demand the highest weight of the three
             # indicators
-            # TODO: optimize those parameters
-            wgt_demand = 1.2
+            wgt_demand = 1.3
             wgt_ub = 1.0
             wgt_flow = 0.6
 
@@ -269,8 +266,7 @@ class FeeSetter(object):
 
         return min(c, 1 + c_max)
 
-    @staticmethod
-    def factor_demand_base_fee(num_fwd_out):
+    def factor_demand_base_fee(self, num_fwd_out):
         """
         Calculates a change factor by taking into account the number of
         transactions transacted in a time interval compared to a fixed number
@@ -286,8 +282,9 @@ class FeeSetter(object):
         c_min = 0.25  # change by 25% downwards
         c_max = 1.00  # change by 100% upwards
 
-        num_fwd_target = 5
-        c = c_min * (num_fwd_out / num_fwd_target - 1) + 1
+        num_fwd_target = 5 / 7
+        c = c_min * ((num_fwd_out / self.time_interval_days)
+                     / num_fwd_target - 1) + 1
 
         return min(c, 1 + c_max)
 
