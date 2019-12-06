@@ -113,6 +113,7 @@ class ForwardingAnalyzer(object):
                 'median_forwarding_in': c.median_forwarding_in(),
                 'median_forwarding_out': c.median_forwarding_out(),
                 'number_forwardings': c.number_forwardings(),
+                'number_forwardings_out': c.number_forwardings_out(),
                 'largest_forwarding_amount_in':
                     c.largest_forwarding_amount_in(),
                 'largest_forwarding_amount_out':
@@ -517,6 +518,9 @@ class ChannelStatistics(object):
 
     def number_forwardings(self):
         return len(self.inward_forwardings) + len(self.outward_forwardings)
+
+    def number_forwardings_out(self):
+        return len(self.outward_forwardings)
 
 
 def get_forwarding_statistics_channels(node, time_interval_start,

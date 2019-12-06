@@ -22,15 +22,15 @@ class FeeSetter(object):
         self.forwarding_analyzer = ForwardingAnalyzer(node)
         self.channel_fee_policies = node.get_channel_fee_policies()
 
-    def set_fees_demand(self, cltv=20, base_fee_msat=40, from_days_ago=7,
-                        min_fee_rate=0.000004, reckless=False):
+    def set_fees(self, cltv=20, min_base_fee_msat=40, from_days_ago=7,
+                 min_fee_rate=0.000004, reckless=False):
         """
         Sets channel fee rates by estimating an economic demand factor.
         The change factor is based on four quantities, the unbalancedness,
         the fund flow, the fees collected (in a certain time frame) and
         the remaining remote balance.
         :param cltv: int
-        :param base_fee_msat: int
+        :param min_base_fee_msat: int
         :param from_days_ago: int, forwarding history is taken over the past
                                    from_days_ago
         :param min_fee_rate: float, the fee rate will be not set lower than
@@ -47,7 +47,7 @@ class FeeSetter(object):
         channels_forwarding_stats = \
             self.forwarding_analyzer.get_forwarding_statistics_channels()
         channel_fee_policies = self.fee_rate_change(
-            channels, channels_forwarding_stats, base_fee_msat, cltv,
+            channels, channels_forwarding_stats, min_base_fee_msat, cltv,
             min_fee_rate)
 
         if not reckless:
@@ -62,12 +62,12 @@ class FeeSetter(object):
             logger.info("Have set new fee policy.")
 
     def fee_rate_change(self, channels, channels_forwarding_stats,
-                        base_fee_msat, cltv, min_fee_rate=0.000001):
+                        min_base_fee_msat, cltv, min_fee_rate):
         """
         Calculates and reports the changes of the new fee policy.
         :param channels: dict with basic channel information
         :param channels_forwarding_stats: dict with forwarding information
-        :param base_fee_msat: int
+        :param min_base_fee_msat: int
         :param cltv: int
         :param min_fee_rate: float, the fee rate will be not smaller than this
                                     parameter
@@ -75,7 +75,7 @@ class FeeSetter(object):
         """
         logger.info("Determining new channel policies based on demand.")
         logger.info("Every channel will have a base fee of %d msat and cltv "
-                    "of %d.", base_fee_msat, cltv)
+                    "of %d.", min_base_fee_msat, cltv)
         channel_fee_policies = {}
 
         for channel_id, channel_data in channels.items():
@@ -87,6 +87,7 @@ class FeeSetter(object):
                 total_forwarding_out = 0
                 total_forwarding = 0
                 number_forwardings = 0
+                number_forwardings_out = 0
             else:
                 flow = channel_stats['flow_direction']
                 fees_sat = channel_stats['fees_total'] / 1000
@@ -94,6 +95,7 @@ class FeeSetter(object):
                 total_forwarding_out = channel_stats['total_forwarding_out']
                 total_forwarding = total_forwarding_in + total_forwarding_out
                 number_forwardings = channel_stats['number_forwardings']
+                number_forwardings_out = channel_stats['number_forwardings_out']
 
             ub = channel_data['unbalancedness']
             capacity = channel_data['capacity']
@@ -101,6 +103,9 @@ class FeeSetter(object):
             fee_rate = \
                 self.channel_fee_policies[
                     channel_data['channel_point']]['fee_rate']
+            min_base_fee_msat = \
+                self.channel_fee_policies[
+                    channel_data['channel_point']]['base_fee_msat']
 
             logger.info(">>> New channel policy for channel %s", channel_id)
             logger.info(
@@ -108,6 +113,7 @@ class FeeSetter(object):
                 "nfwd: %d, in: %d sat, out: %d sat.", ub, flow, fees_sat, capacity,
                  number_forwardings, total_forwarding_in, total_forwarding_out)
 
+            # FEE RATES
             # we want to give the demand the highest weight of the three
             # indicators
             # TODO: optimize those parameters
@@ -115,7 +121,7 @@ class FeeSetter(object):
             wgt_ub = 1.0
             wgt_flow = 0.6
 
-            factor_demand = self.factor_demand(total_forwarding_out)
+            factor_demand = self.factor_demand_fee_rate(total_forwarding_out)
             factor_unbalancedness = self.factor_unbalancedness(ub)
             factor_flow = self.factor_flow(flow)
             # in the case where no forwarding was done, ignore the flow factor
@@ -146,6 +152,15 @@ class FeeSetter(object):
             logger.info("    Fee rate: %1.6f -> %1.6f",
                         fee_rate, fee_rate_new)
 
+            # BASE FEES
+            factor_base_fee = self.factor_demand_base_fee(
+                number_forwardings_out)
+            base_fee_msat_new = min_base_fee_msat * factor_base_fee
+            base_fee_msat_new = max(min_base_fee_msat, base_fee_msat_new)
+
+            logger.info("    Base fee: %4d -> %4d (factor %1.3f)",
+                        min_base_fee_msat, base_fee_msat_new, factor_base_fee)
+
             # give parsable output
             logger.debug(
                 f"stats: {time.time():.0f} {channel_id} "
@@ -156,7 +171,7 @@ class FeeSetter(object):
                 f"{weighted_change:.3f} {fee_rate:.6f} {fee_rate_new:.6f}")
 
             channel_fee_policies[channel_data['channel_point']] = {
-                'base_fee_msat': base_fee_msat,
+                'base_fee_msat': min_base_fee_msat,
                 'fee_rate': fee_rate_new,
                 'cltv': cltv,
             }
@@ -173,7 +188,7 @@ class FeeSetter(object):
         :return: float, [1-c_max, 1+c_max]
         """
         # maximal change
-        c_max = 0.50
+        c_max = 0.5
         # give unbalancedness a more refined weight
         rescale = 0.5
 
@@ -203,7 +218,7 @@ class FeeSetter(object):
         else:
             return max(c, 1 - c_max)
 
-    def factor_demand(self, amount_out):
+    def factor_demand_fee_rate(self, amount_out):
         """
         Calculates a change factor by taking into account the amount transacted
         in a time interval compared to a fixed amount.
@@ -230,6 +245,26 @@ class FeeSetter(object):
 
         return min(c, 1 + c_max)
 
+    @staticmethod
+    def factor_demand_base_fee(number_forwardings_out):
+        """
+        Calculates a change factor by taking into account the number of
+        transactions transacted in a time interval compared to a fixed number
+        of transactions.
+
+        :param number_forwardings: int
+        :return: float, [1-c_max, 1+c_max]
+        """
+        logger.info(
+            "    Number of outward forwardings: %6.0f", number_forwardings_out)
+        c_min = 0.25  # change by 25% downwards
+        c_max = 1.00  # change by 100% upwards
+
+        number_forwardings_target = 5
+        c = c_min * (number_forwardings_out / number_forwardings_target - 1) + 1
+
+        return min(c, 1 + c_max)
+
 
 if __name__ == '__main__':
     from lndmanage.lib.node import LndNode
@@ -240,4 +275,4 @@ if __name__ == '__main__':
 
     nd = LndNode()
     fee_setter = FeeSetter(nd)
-    fee_setter.set_fees_demand()
+    fee_setter.set_fees()

@@ -421,9 +421,9 @@ def main():
 
     elif args.cmd == 'update-fees':
         feesetter = FeeSetter(node)
-        feesetter.set_fees_demand(
+        feesetter.set_fees(
             cltv=args.cltv, from_days_ago=args.from_days_ago,
-            base_fee_msat=args.base_fee_msat, reckless=args.reckless,
+            min_base_fee_msat=args.base_fee_msat, reckless=args.reckless,
             min_fee_rate=args.min_fee_rate
         )
 
