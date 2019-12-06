@@ -16,26 +16,32 @@ class FeeSetter(object):
     """
     def __init__(self, node):
         """
-            :param: node: `class`:lib.node.Node
+            :param node: node instance
+            :type node: `class`:lib.node.Node
         """
         self.node = node
         self.forwarding_analyzer = ForwardingAnalyzer(node)
         self.channel_fee_policies = node.get_channel_fee_policies()
+        self.time_interval_days = None
 
     def set_fees(self, cltv=20, min_base_fee_msat=40, from_days_ago=7,
                  min_fee_rate=0.000004, reckless=False):
         """
-        Sets channel fee rates by estimating an economic demand factor.
-        The change factor is based on four quantities, the unbalancedness,
-        the fund flow, the fees collected (in a certain time frame) and
-        the remaining remote balance.
-        :param cltv: int
-        :param min_base_fee_msat: int
-        :param from_days_ago: int, forwarding history is taken over the past
-                                   from_days_ago
-        :param min_fee_rate: float, the fee rate will be not set lower than
-                                    this amount
-        :param reckless: bool, if set, there won't be any user interaction
+        Sets channel fee policies considering different metrics like
+        unbalancedness, flow, and demand.
+
+        :param cltv: lock time, don't take a too small number < 5
+        :type cltv: int
+        :param min_base_fee_msat: minimal base fee in msat
+        :type min_base_fee_msat: int
+        :param from_days_ago: forwarding history is taken over the past
+            from_days_ago days
+        :type from_days_ago: int
+        :param min_fee_rate: the fee rate will be not set lower than
+            this amount
+        :type min_fee_rate: float
+        :param reckless: if set, there won't be any user interaction
+        :type reckless: bool
         """
         time_end = time.time()
         time_start = time_end - from_days_ago * 24 * 60 * 60
@@ -64,14 +70,22 @@ class FeeSetter(object):
     def fee_rate_change(self, channels, channels_forwarding_stats,
                         min_base_fee_msat, cltv, min_fee_rate):
         """
-        Calculates and reports the changes of the new fee policy.
-        :param channels: dict with basic channel information
-        :param channels_forwarding_stats: dict with forwarding information
-        :param min_base_fee_msat: int
-        :param cltv: int
-        :param min_fee_rate: float, the fee rate will be not smaller than this
-                                    parameter
-        :return: dict, channel fee policies
+        Calculates and reports the changes to the new fee policy.
+
+        :param channels: basic channel information
+        :type channels: dict
+        :param channels_forwarding_stats: forwarding information
+        :type channels_forwarding_stats: dict
+        :param min_base_fee_msat: minimal base fee in msat that will be set
+        :type min_base_fee_msat: int
+        :param cltv: lock time
+        :type cltv: int
+        :param min_fee_rate: the fee rate will be not smaller than this
+            parameter
+        :type min_fee_rate: float
+
+        :return: channel fee policies
+        :rtype: dict
         """
         logger.info("Determining new channel policies based on demand.")
         logger.info("Every channel will have a base fee of %d msat and cltv "
@@ -95,7 +109,8 @@ class FeeSetter(object):
                 total_forwarding_out = channel_stats['total_forwarding_out']
                 total_forwarding = total_forwarding_in + total_forwarding_out
                 number_forwardings = channel_stats['number_forwardings']
-                number_forwardings_out = channel_stats['number_forwardings_out']
+                number_forwardings_out = channel_stats[
+                    'number_forwardings_out']
 
             ub = channel_data['unbalancedness']
             capacity = channel_data['capacity']
@@ -110,8 +125,9 @@ class FeeSetter(object):
             logger.info(">>> New channel policy for channel %s", channel_id)
             logger.info(
                 "    ub: %0.2f flow: %0.2f, fees: %1.3f sat, cap: %d sat, "
-                "nfwd: %d, in: %d sat, out: %d sat.", ub, flow, fees_sat, capacity,
-                 number_forwardings, total_forwarding_in, total_forwarding_out)
+                "nfwd: %d, in: %d sat, out: %d sat.", ub, flow, fees_sat,
+                capacity, number_forwardings, total_forwarding_in,
+                total_forwarding_out)
 
             # FEE RATES
             # we want to give the demand the highest weight of the three
@@ -182,10 +198,13 @@ class FeeSetter(object):
     def factor_unbalancedness(ub):
         """
         Calculates a change rate for the unbalancedness.
+
         The lower the unbalancedness, the lower the fee rate should be.
         This encourages outward flow through this channel.
-        :param ub: float, in [-1 ... 1]
-        :return: float, [1-c_max, 1+c_max]
+        :param ub: in [-1 ... 1]
+        :type ub: float
+        :return: [1-c_max, 1+c_max]
+        :rtype: float
         """
         # maximal change
         c_max = 0.5
@@ -203,10 +222,13 @@ class FeeSetter(object):
     def factor_flow(flow):
         """
         Calculates a change rate for the flow rate.
+
         If forwardings are predominantly flowing outward, we want to increase
-        the fee rate, because there seems to be demand.
-        :param flow: float, [-1 ... 1]
-        :return: float, [1-c_max, 1+c_max]
+        the fee rate, because there seems to be demand and the trend is bad.
+        :param flow: [-1 ... 1]
+        :type flow: float
+        :return: [1-c_max, 1+c_max]
+        :rtype: float
         """
         c_max = 0.5
         rescale = 0.5
@@ -220,17 +242,18 @@ class FeeSetter(object):
 
     def factor_demand_fee_rate(self, amount_out):
         """
-        Calculates a change factor by taking into account the amount transacted
-        in a time interval compared to a fixed amount.
+        Calculates a change factor for a channel by taking into account
+        the amount transacted in a time interval compared to a fixed amount.
+
         The higher the amount forwarded, the larger the fee rate should be. The
         amount forwarded is estimated dividing the fees_sat with the current
         fee_rate.
-        max_x is an empirical parameter that could be tuned in the future
-        The model for the change rate is determined by a linear function:
-        change = m * fee / fee_rate / capacity / time_interval_days + t
-        :param amount_out: float
-        :param capacity: int, capacity of channel
-        :return: float, [1-c_max, 1+c_max]
+
+        :param amount_out: amount transacted outwards for the channel
+        :type amount_out: float
+
+        :return: [1-c_max, 1+c_max]
+        :rtype: float
         """
         logger.info("    Outward forwarded amount: %6.0f",
                     amount_out)
@@ -238,6 +261,7 @@ class FeeSetter(object):
 
         c_min = 0.25  # change by 25% downwards
         c_max = 1.00  # change by 100% upwards
+
         # rate_target = 0.10 * capacity / 7  # target rate is 10% of capacity
         rate_target = 500000 / 7  # target rate is fixed 500000 sat per week
 
@@ -246,22 +270,24 @@ class FeeSetter(object):
         return min(c, 1 + c_max)
 
     @staticmethod
-    def factor_demand_base_fee(number_forwardings_out):
+    def factor_demand_base_fee(num_fwd_out):
         """
         Calculates a change factor by taking into account the number of
         transactions transacted in a time interval compared to a fixed number
         of transactions.
 
-        :param number_forwardings: int
-        :return: float, [1-c_max, 1+c_max]
+        :param num_fwd_out: number of outward forwardings
+        :type num_fwd_out: int
+        :return: [1-c_max, 1+c_max]
+        :rtype: float
         """
         logger.info(
-            "    Number of outward forwardings: %6.0f", number_forwardings_out)
+            "    Number of outward forwardings: %6.0f", num_fwd_out)
         c_min = 0.25  # change by 25% downwards
         c_max = 1.00  # change by 100% upwards
 
-        number_forwardings_target = 5
-        c = c_min * (number_forwardings_out / number_forwardings_target - 1) + 1
+        num_fwd_target = 5
+        c = c_min * (num_fwd_out / num_fwd_target - 1) + 1
 
         return min(c, 1 + c_max)
 
