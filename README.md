@@ -359,7 +359,6 @@ Tests can be run with
 from the root folder.
 
 ## Docker
-**Due to restructuring of the project, this option is currently defunct.**
 
 If you prefer to run `lndmanage` from a docker container, `cd docker` 
 and follow [`README`](docker/README.md) there.

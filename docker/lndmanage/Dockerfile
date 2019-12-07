@@ -1,7 +1,7 @@
 # for optimized python builds
 # we follow solution #2 described in https://pythonspeed.com/articles/multi-stage-docker-python/
 
-FROM python:3-slim as builder
+FROM python:3 as builder
 
 RUN python -m venv /root/.venv
 

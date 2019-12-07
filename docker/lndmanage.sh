@@ -29,7 +29,7 @@ fi
 exec docker run \
   --rm \
   --network host \
-  -v "$LNDMANAGE_CACHE_DIR_ABSOLUTE:/root/lndmanage/cache" \
+  -v "$LNDMANAGE_CACHE_DIR_ABSOLUTE:/root/.lndmanage/cache" \
   -v "$LNDMANAGE_AUX_DIR_ABSOLUTE:/root/aux" \
   -e "LND_GRPC_HOST=${LND_GRPC_HOST}" \
   -ti \

@@ -19,7 +19,8 @@ TEMPLATE_EOF_MARKER
 }
 
 # we dynamically prepare config from template by baking in env variables
-eval_template config_template.ini > lndmanage/config.ini
+mkdir -p .lndmanage
+eval_template config_template.ini > .lndmanage/config.ini
 
 cd lndmanage
 
