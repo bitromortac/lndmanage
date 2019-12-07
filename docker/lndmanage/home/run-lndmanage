@@ -13,7 +13,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 eval_template() {
   local template_file=$1
   eval "cat <<TEMPLATE_EOF_MARKER
-$(<${template_file})
+$(<"${template_file}")
 TEMPLATE_EOF_MARKER
 " 2> /dev/null
 }

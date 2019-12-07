@@ -8,7 +8,6 @@
 # other config tweaks have to be done by changing lndmanage/home/config_template.ini
 
 # note: docker uses network_mode: host
-set -e -o pipefail
 
 if [[ -z "$ADMIN_MACAROON_FILE" || -z "$TLS_CERT_FILE" ]]; then
   if [[ -z "$LND_HOME" ]]; then
