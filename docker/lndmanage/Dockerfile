@@ -15,7 +15,7 @@ RUN pip install -r requirements.txt
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
-FROM python:3-slim as final
+FROM python:3 as final
 
 # install fish shell for convenience
 RUN apt-get update && apt-get install -y --no-install-recommends \
