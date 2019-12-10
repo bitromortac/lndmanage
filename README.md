@@ -340,7 +340,7 @@ lndmanage supports an interactive mode with command history. The interactive
 mode has the advantage that the network graph has to be read into memory only
 once, giving a much faster execution time for subsequent command invocations.
 
-Interacive mode is started by calling lndmanage without arguments:
+Interactive mode is started by calling lndmanage without arguments:
 ```bash
 $ lndmanage
 Running in interactive mode. You can type 'help' or 'exit'.
