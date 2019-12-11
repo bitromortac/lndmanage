@@ -13,13 +13,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 eval_template() {
   local template_file=$1
   eval "cat <<TEMPLATE_EOF_MARKER
-$(<${template_file})
+$(<"${template_file}")
 TEMPLATE_EOF_MARKER
 " 2> /dev/null
 }
 
 # we dynamically prepare config from template by baking in env variables
-eval_template config_template.ini > lndmanage/config.ini
+mkdir -p .lndmanage
+eval_template config_template.ini > .lndmanage/config.ini
 
 cd lndmanage
 

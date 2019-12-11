@@ -1,7 +1,7 @@
 # for optimized python builds
 # we follow solution #2 described in https://pythonspeed.com/articles/multi-stage-docker-python/
 
-FROM python:3-slim as builder
+FROM python:3 as builder
 
 RUN python -m venv /root/.venv
 
@@ -15,7 +15,7 @@ RUN pip install -r requirements.txt
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
-FROM python:3-slim as final
+FROM python:3 as final
 
 # install fish shell for convenience
 RUN apt-get update && apt-get install -y --no-install-recommends \

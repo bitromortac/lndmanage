@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e -o pipefail
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 . _settings.sh
@@ -26,10 +28,11 @@ cp "$TLS_CERT_FILE" "$LNDMANAGE_AUX_DIR/tls.cert"
 if [[ -n "$LNDMANAGE_VERBOSE" ]]; then
   set -x
 fi
+
 exec docker run \
   --rm \
   --network host \
-  -v "$LNDMANAGE_CACHE_DIR_ABSOLUTE:/root/lndmanage/cache" \
+  -v "$LNDMANAGE_CACHE_DIR_ABSOLUTE:/root/.lndmanage/cache" \
   -v "$LNDMANAGE_AUX_DIR_ABSOLUTE:/root/aux" \
   -e "LND_GRPC_HOST=${LND_GRPC_HOST}" \
   -ti \

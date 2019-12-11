@@ -232,7 +232,7 @@ payments, you can use this information to your favor. If you want to improve
 your position in the Lightning Network for routing, you may want to look for
  need of inbound liquidity. This can be achieved by estimating the 
  probability where the payments you routed were ending up. If you connect to
- those nodes directly you bypass outher routing nodes.
+ those nodes directly you bypass other routing nodes.
 * ```recommend-nodes external-source```: This command lets you access text-based
 lists of nodes, which are associated with economic activity. You can provide a
 URL, which is parsed for node public keys and suggests nodes to connect to
@@ -359,10 +359,9 @@ Tests can be run with
 from the root folder.
 
 ## Docker
-**Due to restructuring of the project, this option is currently defunct.**
 
 If you prefer to run `lndmanage` from a docker container, `cd docker` 
-and follow [`README`](docker/README.md) there.
+and follow the [`README`](docker/README.md) there.
 
 ## Compiling grpc in python [development]
 ```
