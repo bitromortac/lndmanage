@@ -289,14 +289,23 @@ class Parser(object):
                  'channel',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         self.parser_update_fees.add_argument(
-            '--cltv', type=int, default=20,
+            '--cltv', type=int, default=14,
             help='CLTV time delta in fee policy')
         self.parser_update_fees.add_argument(
-            '--base-fee-msat', type=int, default=40,
-            help='base fee in msat')
+            '--min-base-fee-msat', type=int, default=20,
+            help='minimal base fee in msat')
+        self.parser_update_fees.add_argument(
+            '--max-base-fee-msat', type=int, default=400,
+            help='maximal base fee in msat (for initialization)')
         self.parser_update_fees.add_argument(
             '--min-fee-rate', type=float, default=0.000004,
-            help='fees rates are always kept above this amount')
+            help='minimal fee rate')
+        self.parser_update_fees.add_argument(
+            '--max-fee-rate', type=float, default=0.000050,
+            help='maximal fee rate (for initialization)')
+        self.parser_update_fees.add_argument(
+            '--init', action='store_true',
+            help='If set, uses a reasonable guess for initial fees.')
         self.parser_update_fees.add_argument(
             '--from-days-ago', type=int, default=7,
             help='sets the number of days over which the last fees are taken '
@@ -423,8 +432,12 @@ def main():
         feesetter = FeeSetter(node)
         feesetter.set_fees(
             cltv=args.cltv, from_days_ago=args.from_days_ago,
-            min_base_fee_msat=args.base_fee_msat, reckless=args.reckless,
-            min_fee_rate=args.min_fee_rate
+            min_base_fee_msat=args.min_base_fee_msat,
+            max_base_fee_msat=args.max_base_fee_msat,
+            min_fee_rate=args.min_fee_rate,
+            max_fee_rate=args.max_fee_rate,
+            init=args.init,
+            reckless=args.reckless
         )
 
 

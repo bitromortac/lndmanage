@@ -22,8 +22,9 @@ class FeeSetter(object):
         self.channel_fee_policies = node.get_channel_fee_policies()
         self.time_interval_days = None
 
-    def set_fees(self, cltv=20, min_base_fee_msat=40, from_days_ago=7,
-                 min_fee_rate=0.000004, reckless=False):
+    def set_fees(self, cltv=14, min_base_fee_msat=20, max_base_fee_msat=400,
+                 min_fee_rate=0.000004, max_fee_rate=0.000050, from_days_ago=7,
+                 init=False, reckless=False):
         """
         Sets channel fee policies considering different metrics like
         unbalancedness, flow, and demand.
@@ -32,12 +33,18 @@ class FeeSetter(object):
         :type cltv: int
         :param min_base_fee_msat: minimal base fee in msat
         :type min_base_fee_msat: int
-        :param from_days_ago: forwarding history is taken over the past
-            from_days_ago days
-        :type from_days_ago: int
+        :param max_base_fee_msat: maximal base fee in msat applied initially
+        :type max_base_fee_msat: int
         :param min_fee_rate: the fee rate will be not set lower than
             this amount
         :type min_fee_rate: float
+        :param max_fee_rate: maximal fee rate applied initially
+        :type max_fee_rate: float
+        :param from_days_ago: forwarding history is taken over the past
+            from_days_ago days
+        :type from_days_ago: int
+        :param init: true if fees are set initially with this method
+        :type init: bool
         :param reckless: if set, there won't be any user interaction
         :type reckless: bool
         """
@@ -46,13 +53,18 @@ class FeeSetter(object):
         self.time_interval_days = from_days_ago
         self.forwarding_analyzer.initialize_forwarding_data(
             time_start, time_end)
+        self.min_base_fee_msat = min_base_fee_msat
+        self.max_base_fee_msat = max_base_fee_msat
+        self.min_fee_rate = min_fee_rate
+        self.max_fee_rate = max_fee_rate
+        self.init = init
+        self.cltv = cltv
 
         channels = self.node.get_all_channels()
         channels_forwarding_stats = \
             self.forwarding_analyzer.get_forwarding_statistics_channels()
-        channel_fee_policies = self.fee_rate_change(
-            channels, channels_forwarding_stats, min_base_fee_msat, cltv,
-            min_fee_rate)
+        channel_fee_policies = self.new_fee_policy(
+            channels, channels_forwarding_stats)
 
         if not reckless:
             logger.info("Do you want to set these fees? Enter [yes/no]:")
@@ -65,8 +77,7 @@ class FeeSetter(object):
             self.node.set_channel_fee_policies(channel_fee_policies)
             logger.info("Have set new fee policy.")
 
-    def fee_rate_change(self, channels, channels_forwarding_stats,
-                        min_base_fee_msat, cltv, min_fee_rate):
+    def new_fee_policy(self, channels, channels_forwarding_stats):
         """
         Calculates and reports the changes to the new fee policy.
 
@@ -74,20 +85,13 @@ class FeeSetter(object):
         :type channels: dict
         :param channels_forwarding_stats: forwarding information
         :type channels_forwarding_stats: dict
-        :param min_base_fee_msat: minimal base fee in msat that will be set
-        :type min_base_fee_msat: int
-        :param cltv: lock time
-        :type cltv: int
-        :param min_fee_rate: the fee rate will be not smaller than this
-            parameter
-        :type min_fee_rate: float
 
         :return: channel fee policies
         :rtype: dict
         """
         logger.info("Determining new channel policies based on demand.")
         logger.info("Every channel will have a base fee of %d msat and cltv "
-                    "of %d.", min_base_fee_msat, cltv)
+                    "of %d.", self.min_base_fee_msat, self.cltv)
         channel_fee_policies = {}
 
         for channel_id, channel_data in channels.items():
@@ -137,6 +141,7 @@ class FeeSetter(object):
             factor_demand = self.factor_demand_fee_rate(total_forwarding_out)
             factor_unbalancedness = self.factor_unbalancedness(ub)
             factor_flow = self.factor_flow(flow)
+
             # in the case where no forwarding was done, ignore the flow factor
             if total_forwarding == 0:
                 wgt_flow = 0
@@ -154,13 +159,21 @@ class FeeSetter(object):
                 factor_demand, factor_unbalancedness, factor_flow,
                 weighted_change)
 
-            # for small fee rates we need to exaggerate the change in order
-            # to get a change
-            if fee_rate <= 2E-6:
-                weighted_change = 1 + (weighted_change - 1) * 3
+            # if we initialize the fee optimization, we want to start with
+            # reasonable starting values
+            if self.init:
+                if weighted_change < 1:
+                    fee_rate_new = self.min_fee_rate
+                else:
+                    fee_rate_new = self.max_fee_rate
+            else:
+                # for small fee rates we need to exaggerate the change in order
+                # to get a change
+                if fee_rate <= 2E-6:
+                    weighted_change = 1 + (weighted_change - 1) * 3
 
-            fee_rate_new = fee_rate * weighted_change
-            fee_rate_new = max(min_fee_rate, fee_rate_new)
+                fee_rate_new = fee_rate * weighted_change
+                fee_rate_new = max(self.min_fee_rate, fee_rate_new)
 
             logger.info("    Fee rate: %1.6f -> %1.6f",
                         fee_rate, fee_rate_new)
@@ -169,10 +182,17 @@ class FeeSetter(object):
             factor_base_fee = self.factor_demand_base_fee(
                 number_forwardings_out)
             base_fee_msat_new = base_fee_msat * factor_base_fee
-            base_fee_msat_new = int(max(min_base_fee_msat, base_fee_msat_new))
+            if self.init:
+                if factor_base_fee < 1:
+                    base_fee_msat_new = self.min_base_fee_msat
+                else:
+                    base_fee_msat_new = self.max_base_fee_msat
+            else:
+                base_fee_msat_new = int(max(self.min_base_fee_msat, base_fee_msat_new))
 
             logger.info("    Base fee: %4d -> %4d (factor %1.3f)",
                         base_fee_msat, base_fee_msat_new, factor_base_fee)
+
 
             # give parsable output
             logger.debug(
@@ -188,7 +208,7 @@ class FeeSetter(object):
             channel_fee_policies[channel_data['channel_point']] = {
                 'base_fee_msat': base_fee_msat_new,
                 'fee_rate': fee_rate_new,
-                'cltv': cltv,
+                'cltv': self.cltv,
             }
 
         return channel_fee_policies
