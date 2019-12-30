@@ -292,7 +292,7 @@ $ python3 setup.py install
 ### Windows (powershell):
 Install [python3](https://www.python.org/downloads/release/python-374/),
 [git](https://git-scm.com/download/win), and
- [visual studio build tools](https://visualstudio.microsoft.com/de/downloads/?q=build+tools).
+ [visual studio build tools](https://visualstudio.microsoft.com/en/downloads/?q=build+tools).
 
 You need to set the environment variable `PYTHONIOENCODING` for proper encoding to:
 `$env:PYTHONIOENCODING="UTF-8"`
