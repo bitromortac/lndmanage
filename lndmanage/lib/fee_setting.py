@@ -172,7 +172,12 @@ class FeeSetter(object):
                 if fee_rate <= 2E-6:
                     weighted_change = 1 + (weighted_change - 1) * 3
 
-                fee_rate_new = fee_rate * weighted_change
+                # round down to 6 digits, as this is the expected data for
+                # the api
+                fee_rate_new = round(fee_rate * weighted_change, 6)
+
+                # if the fee rate is too low, cap it, as we don't want to
+                # necessarily have too low fees
                 fee_rate_new = max(self.min_fee_rate, fee_rate_new)
 
             logger.info("    Fee rate: %1.6f -> %1.6f",
