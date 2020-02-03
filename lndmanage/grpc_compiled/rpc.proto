@@ -359,6 +359,13 @@ service Lightning {
         };
     }
 
+    /**
+    SubscribePeerEvents creates a uni-directional stream from the server to
+    the client in which any events relevant to the state of peers are sent
+    over. Events include peers going online and offline.
+    */
+    rpc SubscribePeerEvents (PeerEventSubscription) returns (stream PeerEvent);
+
     /** lncli: `getinfo`
     GetInfo returns general information concerning the lightning node including
     it's identity pubkey, alias, the chains it is connected to, and information
@@ -430,9 +437,24 @@ service Lightning {
     request to a remote peer. Users are able to specify a target number of
     blocks that the funding transaction should be confirmed in, or a manual fee
     rate to us for the funding transaction. If neither are specified, then a
-    lax block confirmation target is used.
+    lax block confirmation target is used. Each OpenStatusUpdate will return
+    the pending channel ID of the in-progress channel. Depending on the
+    arguments specified in the OpenChannelRequest, this pending channel ID can
+    then be used to manually progress the channel funding flow.
     */
     rpc OpenChannel (OpenChannelRequest) returns (stream OpenStatusUpdate);
+
+    /**
+    FundingStateStep is an advanced funding related call that allows the caller
+    to either execute some preparatory steps for a funding workflow, or
+    manually progress a funding workflow. The primary way a funding flow is
+    identified is via its pending channel ID. As an example, this method can be
+    used to specify that we're expecting a funding flow for a particular
+    pending channel ID, for which we need to use specific parameters.
+    Alternatively, this can be used to interactively drive PSBT signing for
+    funding for partially complete funding transactions.
+    */
+    rpc FundingStateStep(FundingTransitionMsg) returns (FundingStateStepResp);
 
     /**
     ChannelAcceptor dispatches a bi-directional streaming RPC in which
@@ -852,8 +874,19 @@ message TransactionDetails {
 
 message FeeLimit {
     oneof limit {
-        /// The fee limit expressed as a fixed amount of satoshis.
+        /**
+        The fee limit expressed as a fixed amount of satoshis.
+
+        The fields fixed and fixed_msat are mutually exclusive.
+        */
         int64 fixed = 1;
+
+        /**
+        The fee limit expressed as a fixed amount of millisatoshis.
+
+        The fields fixed and fixed_msat are mutually exclusive.
+        */
+        int64 fixed_msat = 3;
 
         /// The fee limit expressed as a percentage of the payment amount.
         int64 percent = 2;
@@ -873,8 +906,19 @@ message SendRequest {
     */
     string dest_string = 2 [deprecated = true];
 
-    /// Number of satoshis to send.
+    /**
+    The amount to send expressed in satoshis.
+
+    The fields amt and amt_msat are mutually exclusive.
+    */
     int64 amt = 3;
+
+    /**
+    The amount to send expressed in millisatoshis.
+
+    The fields amt and amt_msat are mutually exclusive.
+    */
+    int64 amt_msat = 12;
 
     /**
     The hash to use within the payment's HTLC. When using REST, this field
@@ -915,6 +959,11 @@ message SendRequest {
     */
     uint64 outgoing_chan_id = 9 [jstype = JS_STRING];
 
+    /**
+    The pubkey of the last hop of the route. If empty, any hop may be used.
+    */
+    bytes last_hop_pubkey = 13;
+
     /** 
     An optional maximum total time lock for the route. This should not exceed
     lnd's `--max-cltv-expiry` setting. If zero, then the value of
@@ -925,10 +974,23 @@ message SendRequest {
     /** 
     An optional field that can be used to pass an arbitrary set of TLV records
     to a peer which understands the new records. This can be used to pass
-    application specific data during the payment attempt. When using REST, the
-    values must be encoded as base64.
+    application specific data during the payment attempt. Record types are
+    required to be in the custom range >= 65536. When using REST, the values
+    must be encoded as base64.
     */
-    map<uint64, bytes> dest_tlv = 11;
+    map<uint64, bytes> dest_custom_records = 11;
+
+    /// If set, circular payments to self are permitted.
+    bool allow_self_payment = 14;
+
+    /**
+    Features assumed to be supported by the final node. All transitive feature
+    depdencies must also be set properly. For a given feature bit pair, either
+    optional or remote may be set, but not both. If this field is nil or empty,
+    the router will try to load destination features from the graph as a
+    fallback.
+    */
+    repeated FeatureBit dest_features = 15;
 }
 
 message SendResponse {
@@ -1306,6 +1368,15 @@ message Channel {
     by the channel scoring system over the lifetime of the channel [EXPERIMENTAL].
     */
     int64 uptime = 24 [json_name = "uptime"];
+
+    /**
+    Close address is the address that we will enforce payout to on cooperative
+    close if the channel was opened utilizing option upfront shutdown. This
+    value can be set on channel open by setting close_address in an open channel
+    request. If this value is not set, you can still choose a payout address by
+    cooperatively closing with the delivery_address field set.
+    */
+    string close_address = 25 [json_name ="close_address"];
 }
 
 
@@ -1418,6 +1489,9 @@ message Peer {
 
     // The type of sync we are currently performing with this peer.
     SyncType sync_type = 10 [json_name = "sync_type"];
+
+    /// Features advertised by the remote peer in their init message.
+    map<uint32, Feature> features = 11 [json_name = "features"];
 }
 
 message ListPeersRequest {
@@ -1427,9 +1501,27 @@ message ListPeersResponse {
     repeated Peer peers = 1 [json_name = "peers"];
 }
 
+message PeerEventSubscription {
+}
+
+message PeerEvent {
+    /// The identity pubkey of the peer.
+    string pub_key = 1 [json_name = "pub_key"];
+
+    enum EventType {
+        PEER_ONLINE = 0;
+        PEER_OFFLINE = 1;
+    }
+
+    EventType type = 2 [ json_name = "type" ];
+}
+
 message GetInfoRequest {
 }
 message GetInfoResponse {
+
+    /// The version of the LND software that the node is running.
+    string version = 14 [ json_name = "version" ];
 
     /// The identity pubkey of the current node.
     string identity_pubkey = 1 [json_name = "identity_pubkey"];
@@ -1437,11 +1529,17 @@ message GetInfoResponse {
     /// If applicable, the alias of the current node, e.g. "bob"
     string alias = 2 [json_name = "alias"];
 
+    /// The color of the current node in hex code format
+    string color = 17 [json_name = "color"];
+
     /// Number of pending channels
     uint32 num_pending_channels = 3 [json_name = "num_pending_channels"];
 
     /// Number of active channels
     uint32 num_active_channels = 4 [json_name = "num_active_channels"];
+
+    /// Number of inactive channels
+    uint32 num_inactive_channels = 15 [json_name = "num_inactive_channels"];
 
     /// Number of peers
     uint32 num_peers = 5 [json_name = "num_peers"];
@@ -1452,8 +1550,14 @@ message GetInfoResponse {
     /// The node's current view of the hash of the best block
     string block_hash = 8 [json_name = "block_hash"];
 
+    /// Timestamp of the block best known to the wallet
+    int64 best_header_timestamp = 13 [ json_name = "best_header_timestamp" ];
+
     /// Whether the wallet's view is synced to the main chain
     bool synced_to_chain = 9 [json_name = "synced_to_chain"];
+
+    // Whether we consider ourselves synced with the public channel graph.
+    bool synced_to_graph = 18 [json_name = "synced_to_graph"];
 
     /** 
     Whether the current node is connected to testnet. This field is 
@@ -1463,26 +1567,17 @@ message GetInfoResponse {
 
     reserved 11;
 
-    /// The URIs of the current node.
-    repeated string uris = 12 [json_name = "uris"];
-
-    /// Timestamp of the block best known to the wallet
-    int64 best_header_timestamp = 13 [ json_name = "best_header_timestamp" ];
-
-    /// The version of the LND software that the node is running.
-    string version = 14 [ json_name = "version" ];
-
-    /// Number of inactive channels
-    uint32 num_inactive_channels = 15 [json_name = "num_inactive_channels"];
-
     /// A list of active chains the node is connected to
     repeated Chain chains = 16 [json_name = "chains"];
 
-    /// The color of the current node in hex code format
-    string color = 17 [json_name = "color"];
+    /// The URIs of the current node.
+    repeated string uris = 12 [json_name = "uris"];
 
-    // Whether we consider ourselves synced with the public channel graph.
-    bool synced_to_graph = 18 [json_name = "synced_to_graph"];
+    /*
+    Features that our node has advertised in our init message, node
+    announcements and invoices.
+    */
+    map<uint32, Feature> features = 19 [json_name = "features"];
 }
 
 message Chain {
@@ -1526,6 +1621,14 @@ message CloseChannelRequest {
 
     /// A manual fee rate set in sat/byte that should be used when crafting the closure transaction.
     int64 sat_per_byte = 4;
+
+    /*
+    An optional address to send funds to in the case of a cooperative close.
+    If the channel was opened with an upfront shutdown script and this field
+    is set, the request to close will fail because the channel must pay out
+    to the upfront shutdown addresss.
+    */
+    string delivery_address = 5 [json_name = "delivery_address"];
 }
 
 message CloseStatusUpdate {
@@ -1579,12 +1682,112 @@ message OpenChannelRequest {
 
     /// Whether unconfirmed outputs should be used as inputs for the funding transaction.
     bool spend_unconfirmed = 12 [json_name = "spend_unconfirmed"];
+
+    /*
+    Close address is an optional address which specifies the address to which
+    funds should be paid out to upon cooperative close. This field may only be
+    set if the peer supports the option upfront feature bit (call listpeers
+    to check). The remote peer will only accept cooperative closes to this
+    address if it is set.
+
+    Note: If this value is set on channel creation, you will *not* be able to
+    cooperatively close out to a different address.
+    */
+    string close_address = 13 [json_name = "close_address"];
+
+    /**
+    Funding shims are an optional argument that allow the caller to intercept
+    certain funding functionality. For example, a shim can be provided to use a
+    particular key for the commitment key (ideally cold) rather than use one
+    that is generated by the wallet as normal, or signal that signing will be
+    carried out in an interactive manner (PSBT based).
+    */
+    FundingShim funding_shim = 14 [json_name = "funding_shim"];
 }
 message OpenStatusUpdate {
     oneof update {
         PendingUpdate chan_pending = 1 [json_name = "chan_pending"];
         ChannelOpenUpdate chan_open = 3 [json_name = "chan_open"];
+   }
+
+    /**
+    The pending channel ID of the created channel. This value may be used to
+    further the funding flow manually via the FundingStateStep method.
+    */
+    bytes pending_chan_id = 4 [json_name = "pending_chan_id"];
+}
+
+message KeyLocator {
+    /// The family of key being identified.
+    int32 key_family = 1;
+
+    /// The precise index of the key being identified.
+    int32 key_index = 2;
+}
+
+message KeyDescriptor {
+     /**
+     The raw bytes of the key being identified. 
+     */
+     bytes raw_key_bytes = 1;
+
+     /** 
+     The key locator that identifies which key to use for signing. 
+     */
+     KeyLocator key_loc = 2;
+}
+
+message ChanPointShim {
+    /**
+    The size of the pre-crafted output to be used as the channel point for this
+    channel funding.
+    */
+    int64 amt = 1;
+
+    /// The target channel point to refrence in created commitment transactions.
+    ChannelPoint chan_point = 2;
+
+    /// Our local key to use when creating the multi-sig output.
+    KeyDescriptor local_key = 3;
+
+    /// The key of the remote party to use when creating the multi-sig output.
+    bytes remote_key = 4;
+
+    /**
+    If non-zero, then this will be used as the pending channel ID on the wire
+    protocol to initate the funding request. This is an optional field, and
+    should only be set if the responder is already expecting a specific pending
+    channel ID.
+    */
+    bytes pending_chan_id = 5;
+}
+
+message FundingShim {
+    oneof shim {
+        ChanPointShim chan_point_shim = 1;
     }
+}
+
+message FundingShimCancel {
+    /// The pending channel ID of the channel to cancel the funding shim for.
+    bytes pending_chan_id = 1;
+}
+
+message FundingTransitionMsg {
+    oneof trigger {
+        /**
+        The funding shim to regsiter. This should be used before any
+        channel funding has began by the remote party, as it is intended as a
+        prepatory step for the full channel funding.
+        */
+        FundingShim shim_register = 1;
+
+        /// Used to cancel an existing registered funding shim.
+        FundingShimCancel shim_cancel = 2;
+    }
+}
+
+message FundingStateStepResp {
 }
 
 message PendingHTLC {
@@ -1727,6 +1930,7 @@ message ChannelEventUpdate {
         ChannelCloseSummary closed_channel = 2 [ json_name = "closed_channel" ];
         ChannelPoint active_channel = 3 [ json_name = "active_channel" ];
         ChannelPoint inactive_channel = 4 [ json_name = "inactive_channel" ];
+        PendingUpdate pending_open_channel = 6 [json_name = "pending_open_channel"];
     }
 
     enum UpdateType {
@@ -1734,6 +1938,7 @@ message ChannelEventUpdate {
          CLOSED_CHANNEL = 1;
          ACTIVE_CHANNEL = 2;
          INACTIVE_CHANNEL = 3;
+         PENDING_OPEN_CHANNEL = 4;
     }
 
     UpdateType type = 5 [ json_name = "type" ];
@@ -1766,12 +1971,29 @@ message QueryRoutesRequest {
     /// The 33-byte hex-encoded public key for the payment destination
     string pub_key = 1;
 
-    /// The amount to send expressed in satoshis
+    /**
+    The amount to send expressed in satoshis.
+
+    The fields amt and amt_msat are mutually exclusive.
+    */
     int64 amt = 2;
+
+    /**
+    The amount to send expressed in millisatoshis.
+
+    The fields amt and amt_msat are mutually exclusive.
+    */
+    int64 amt_msat = 12;
 
     reserved 3;
 
-    /// An optional CLTV delta from the current height that should be used for the timelock of the final hop
+    /**
+    An optional CLTV delta from the current height that should be used for the
+    timelock of the final hop. Note that unlike SendPayment, QueryRoutes does
+    not add any additional block padding on top of final_ctlv_delta. This
+    padding of a few blocks needs to be added manually or otherwise failures may
+    happen when a block comes in while the payment is in flight.
+    */
     int32 final_cltv_delta = 4;
 
     /**
@@ -1816,6 +2038,41 @@ message QueryRoutesRequest {
     zero, then the value of `--max-cltv-expiry` is used as the limit.
     */
     uint32 cltv_limit = 11;
+
+    /** 
+    An optional field that can be used to pass an arbitrary set of TLV records
+    to a peer which understands the new records. This can be used to pass
+    application specific data during the payment attempt. If the destination
+    does not support the specified recrods, and error will be returned.
+    Record types are required to be in the custom range >= 65536. When using
+    REST, the values must be encoded as base64.
+    */
+    map<uint64, bytes> dest_custom_records = 13;
+
+    /**
+    The channel id of the channel that must be taken to the first hop. If zero,
+    any channel may be used.
+    */
+    uint64 outgoing_chan_id = 14 [jstype = JS_STRING];
+
+    /**
+    The pubkey of the last hop of the route. If empty, any hop may be used.
+    */
+    bytes last_hop_pubkey = 15;
+
+    /**
+    Optional route hints to reach the destination through private channels.
+    */
+    repeated lnrpc.RouteHint route_hints = 16;
+
+    /**
+    Features assumed to be supported by the final node. All transitive feature
+    depdencies must also be set properly. For a given feature bit pair, either
+    optional or remote may be set, but not both. If this field is nil or empty,
+    the router will try to load destination features from the graph as a
+    fallback.
+    */
+    repeated lnrpc.FeatureBit dest_features = 17;
 }
 
 message NodePair {
@@ -1881,7 +2138,8 @@ message Hop {
 
     /** 
     If set to true, then this hop will be encoded using the new variable length
-    TLV format.
+    TLV format. Note that if any custom tlv_records below are specified, then
+    this field MUST be set to true for them to be encoded properly.
     */
     bool tlv_payload = 9 [json_name = "tlv_payload"];
 
@@ -1892,6 +2150,13 @@ message Hop {
     regular single-shot payment is or was attempted.
     */
     MPPRecord mpp_record = 10 [json_name = "mpp_record"];
+
+    /**
+    An optional set of key-value TLV records. This is useful within the context
+    of the SendToRoute call as it allows callers to specify arbitrary K-V pairs
+    to drop off at each hop within the onion.
+    */
+    map<uint64, bytes> custom_records = 11 [json_name = "custom_records"];
 }
 
 message MPPRecord {
@@ -2001,6 +2266,7 @@ message LightningNode {
     string alias = 3 [ json_name = "alias" ];
     repeated NodeAddress addresses = 4 [ json_name = "addresses" ];
     string color = 5 [ json_name = "color" ];
+    map<uint32, Feature> features = 6 [ json_name = "features" ];
 }
 
 message NodeAddress {
@@ -2179,10 +2445,7 @@ message Invoice {
     */
     string memo = 1 [json_name = "memo"];
 
-    /** Deprecated. An optional cryptographic receipt of payment which is not
-    implemented.
-    */
-    bytes receipt = 2 [json_name = "receipt", deprecated = true];
+    reserved 2;
 
     /**
     The hex-encoded preimage (32 byte) which will allow settling an incoming
@@ -2197,8 +2460,19 @@ message Invoice {
     */
     bytes r_hash = 4 [json_name = "r_hash"];
 
-    /// The value of this invoice in satoshis
+    /**
+    The value of this invoice in satoshis
+
+    The fields value and value_msat are mutually exclusive.
+    */
     int64 value = 5 [json_name = "value"];
+
+    /**
+    The value of this invoice in millisatoshis
+
+    The fields value and value_msat are mutually exclusive.
+    */
+    int64 value_msat = 23 [json_name = "value_msat"];
 
     /// Whether this invoice has been fulfilled
     bool settled = 6 [json_name = "settled", deprecated = true];
@@ -2295,6 +2569,15 @@ message Invoice {
 
     /// List of HTLCs paying to this invoice [EXPERIMENTAL].
     repeated InvoiceHTLC htlcs = 22 [json_name = "htlcs"];
+
+    /// List of features advertised on the invoice.
+    map<uint32, Feature> features = 24 [json_name = "features"];
+    
+    /**
+    Indicates if this invoice was a spontaneous payment that arrived via keysend
+    [EXPERIMENTAL].
+    */
+    bool is_keysend = 25 [json_name = "is_keysend"];
 }
 
 enum InvoiceHTLCState {
@@ -2328,6 +2611,12 @@ message InvoiceHTLC {
 
     /// Current state the htlc is in.
     InvoiceHTLCState state = 8 [json_name = "state"];
+
+    /// Custom tlv records.
+    map<uint64, bytes> custom_records = 9 [json_name = "custom_records"];
+
+    /// The total amount of the mpp payment in msat.
+    uint64 mpp_total_amt_msat = 10 [json_name = "mpp_total_amt_msat"];
 }
 
 message AddInvoiceResponse {
@@ -2365,7 +2654,10 @@ message PaymentHash {
 }
 
 message ListInvoiceRequest {
-    /// If set, only unsettled invoices will be returned in the response.
+    /**
+    If set, only invoices that are not settled and not canceled will be returned
+    in the response.
+    */
     bool pending_only = 1 [json_name = "pending_only"];
 
     /**
@@ -2429,11 +2721,11 @@ message Payment {
     /// Deprecated, use value_sat or value_msat.
     int64 value = 2 [json_name = "value", deprecated = true];
 
-    /// The date of this payment
-    int64 creation_date = 3 [json_name = "creation_date"];
+    /// Deprecated, use creation_time_ns
+    int64 creation_date = 3 [json_name = "creation_date", deprecated = true];
 
-    /// The path this payment took
-    repeated string path = 4 [ json_name = "path" ];
+    /// The path this payment took.
+    repeated string path = 4 [json_name = "path", deprecated = true];
 
     /// Deprecated, use fee_sat or fee_msat.
     int64 fee = 5 [json_name = "fee", deprecated = true];
@@ -2465,6 +2757,35 @@ message Payment {
 
     ///  The fee paid for this payment in milli-satoshis
     int64 fee_msat = 12 [json_name = "fee_msat"];
+
+    /// The time in UNIX nanoseconds at which the payment was created.
+    int64 creation_time_ns = 13 [json_name = "creation_time_ns"];
+
+    /// The HTLCs made in attempt to settle the payment [EXPERIMENTAL].
+    repeated HTLCAttempt htlcs = 14 [json_name = "htlcs"];
+}
+
+message HTLCAttempt {
+        enum HTLCStatus {
+                IN_FLIGHT = 0;
+                SUCCEEDED = 1;
+                FAILED = 2;
+        }
+
+        /// The status of the HTLC.
+        HTLCStatus status = 1 [json_name = "status"];
+
+        /// The route taken by this HTLC.
+        Route route = 2 [json_name = "route"];
+
+        /// The time in UNIX nanoseconds at which this HTLC was sent.
+        int64 attempt_time_ns = 3 [json_name = "attempt_time_ns"];
+
+        /**
+        The time in UNIX nanoseconds at which this HTLC was settled or failed.
+        This value will not be set if the HTLC is still IN_FLIGHT.
+        */
+        int64 resolve_time_ns = 4 [json_name = "resolve_time_ns"];
 }
 
 message ListPaymentsRequest {
@@ -2518,6 +2839,35 @@ message PayReq {
     string fallback_addr = 8 [json_name = "fallback_addr"];
     int64 cltv_expiry = 9 [json_name = "cltv_expiry"];
     repeated RouteHint route_hints = 10 [json_name = "route_hints"];
+    bytes payment_addr = 11 [json_name = "payment_addr"];
+    int64 num_msat = 12 [json_name = "num_msat"];
+    map<uint32, Feature> features = 13 [json_name = "features"];
+}
+
+enum FeatureBit {
+        DATALOSS_PROTECT_REQ = 0;
+        DATALOSS_PROTECT_OPT = 1;
+        INITIAL_ROUING_SYNC = 3;
+        UPFRONT_SHUTDOWN_SCRIPT_REQ = 4;
+        UPFRONT_SHUTDOWN_SCRIPT_OPT = 5;
+        GOSSIP_QUERIES_REQ = 6;
+        GOSSIP_QUERIES_OPT = 7;
+        TLV_ONION_REQ = 8;
+        TLV_ONION_OPT = 9;
+        EXT_GOSSIP_QUERIES_REQ = 10;
+        EXT_GOSSIP_QUERIES_OPT = 11;
+        STATIC_REMOTE_KEY_REQ = 12;
+        STATIC_REMOTE_KEY_OPT = 13;
+        PAYMENT_ADDR_REQ = 14;
+        PAYMENT_ADDR_OPT = 15;
+        MPP_REQ = 16;
+        MPP_OPT = 17;
+}
+
+message Feature {
+        string name = 2 [json_name = "name"];
+        bool is_required = 3 [json_name = "is_required"];
+        bool is_known = 4 [json_name = "is_known"];
 }
 
 message FeeReportRequest {}
@@ -2568,6 +2918,12 @@ message PolicyUpdateRequest {
 
     /// If set, the maximum HTLC size in milli-satoshis. If unset, the maximum HTLC will be unchanged.
     uint64 max_htlc_msat = 6 [json_name = "max_htlc_msat"];
+
+    /// The minimum HTLC size in milli-satoshis. Only applied if min_htlc_msat_specified is true.
+    uint64 min_htlc_msat = 7 [json_name = "min_htlc_msat"];
+
+    /// If true, min_htlc_msat is applied.
+    bool min_htlc_msat_specified = 8 [json_name = "set_min_htlc_msat"];
 }
 message PolicyUpdateResponse {
 }
