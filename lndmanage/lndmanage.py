@@ -432,7 +432,7 @@ def main():
                 logger.info("exit")
                 return 0
 
-            if user_input == 'help':
+            if not user_input or user_input in ['help', '-h', '--help']:
                 parser.parser.print_help()
                 continue
             elif user_input == 'exit':
