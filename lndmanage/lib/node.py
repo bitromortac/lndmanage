@@ -280,8 +280,8 @@ class LndNode(Node):
     def set_info(self):
         """
         Fetches information about this node and computes total capacity,
-        local and remote total balance, how many satoshis were sent and received,
-        and some networking peer stats.
+        local and remote total balance, how many satoshis were sent and
+        received, and some networking peer stats.
         """
 
         raw_info = self.get_raw_info()
@@ -307,12 +307,20 @@ class LndNode(Node):
 
     def get_open_channels(self, active_only=False, public_only=False):
         """
-        Fetches information (fee settings of the counterparty, channel capacity, balancedness)
-         about this node's open channels and saves it into the channels dict attribute.
+        Fetches information (fee settings of the counterparty, channel
+        capacity, balancedness) about this node's open channels and saves
+        it into the channels dict attribute.
 
-        :param active_only: bool, only take active channels into account (default)
-        :param public_only: bool, only take public channels into account (off by default)
-        :return: list of channels sorted by remote pubkey
+        :param active_only: only take active channels into
+                            account (off by default)
+        :type active_only: bool
+        :param public_only: only take public channels into
+                            account (off by default)
+        :type public_only: bool
+
+        :return: dict of channels sorted by remote pubkey
+        :rtype: OrderedDict
+
         """
         raw_channels = self._rpc.ListChannels(lnd.ListChannelsRequest(
             active_only=active_only, public_only=public_only))
@@ -321,14 +329,18 @@ class LndNode(Node):
 
         for c in channels_data:
             # calculate age from blockheight
-            blockheight, _, _ = convert_channel_id_to_short_channel_id(c.chan_id)
+            blockheight, _, _ = convert_channel_id_to_short_channel_id(
+                c.chan_id)
             age_days = (self.blockheight - blockheight) * 10 / (60 * 24)
-            sent_received_per_week = int((c.total_satoshis_sent + c.total_satoshis_received) / (age_days / 7))
+            sent_received_per_week = int(
+                (c.total_satoshis_sent +
+                 c.total_satoshis_received) / (age_days / 7))
 
             # determine policy
             try:
                 edge_info = self.network.edges[c.chan_id]
-                if edge_info['node1_pub'] == self.pub_key:  # interested in node2
+                # interested in node2
+                if edge_info['node1_pub'] == self.pub_key:
                     policy_peer = edge_info['node2_policy']
                     policy_local = edge_info['node1_policy']
                 else:  # interested in node1
@@ -358,8 +370,9 @@ class LndNode(Node):
                 last_update_local = float('nan')
 
             # define unbalancedness |ub| large means very unbalanced
-            channel_unbalancedness, our_commit_fee = channel_unbalancedness_and_commit_fee(
-                c.local_balance, c.capacity, c.commit_fee, c.initiator)
+            channel_unbalancedness, our_commit_fee = \
+                channel_unbalancedness_and_commit_fee(
+                    c.local_balance, c.capacity, c.commit_fee, c.initiator)
             try:
                 uptime_lifetime_ratio =  c.uptime / c.lifetime
             except ZeroDivisionError:
