@@ -293,6 +293,7 @@ class LndNode(Node):
         # TODO: remove the following code and implement an advanced status
         all_channels = self.get_open_channels(
             active_only=False, public_only=False)
+        self.total_channels = len(all_channels)
 
         for k, c in all_channels.items():
             self.total_capacity += c['capacity']
