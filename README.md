@@ -4,7 +4,8 @@
 <hr />
 
 # lndmanage
-lndmanage is a command line tool for advanced channel management of an [LND](https://github.com/lightningnetwork/lnd) node.
+lndmanage is a command line tool for advanced channel management of an 
+[LND](https://github.com/lightningnetwork/lnd) node.
 
 Current feature list (use the ```--help``` flag for subcommands):
 
@@ -259,7 +260,7 @@ lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-**Requirements:** python3.6, lnd v0.8.0-beta
+**Requirements:** python3.6, lnd v0.9.0-beta
 
 Some commands will only work correctly if lnd is built with the `routerrpc`.
 This can be done when compiling with `make install tags="routerrpc"`. If you
