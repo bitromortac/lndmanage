@@ -170,28 +170,33 @@ class NetworkAnalysis(object):
         # print(len(new_second_neighbors))
         return len(new_second_neighbors)
 
-    def find_nodes_giving_most_secondary_hops(self, node_pub_key, results=10):
+    def nodes_most_second_neighbors(self, node_pub_key, number_of_nodes=10):
         """
-        Which node should be added in order to reach the most other nodes with two hops?
+        Which node should be added in order to reach the most other nodes
+        with two hops?
 
         :param node_pub_key: string
-        :param results: int
+        :param number_of_nodes: int
         :return: list of results nodes, which bring the most secondary neighbors
         """
 
         node_candidates = []
 
-        # these are the neighbors currently two hops away
-        current_close_neighbors = set(self.get_nodes_n_hops_away(node_pub_key, 2).keys())
+        # set of nodes currently two hops away
+        current_close_neighbors = set(
+            self.get_nodes_n_hops_away(node_pub_key, 2).keys())
 
+        # loop through nodes in the network and check their direct neighbors
         for n in self.node.network.graph:
-            # find neighbors of all nodes in the graph
-            potential_new_second_neighbors = set(nx.all_neighbors(self.node.network.graph, n))
-            # subtract current_close_neighbors from the potential new second neighbors
-            new_second_neighbors = potential_new_second_neighbors.difference(current_close_neighbors)
+            potential_new_second_neighbors = set(
+                nx.all_neighbors(self.node.network.graph, n))
+            # subtract current_close_neighbors from
+            # the potential new second neighbors
+            new_second_neighbors = potential_new_second_neighbors.difference(
+                current_close_neighbors)
             # add the node and its number of secondary neighbors to a list
             node_candidates.append([n, len(new_second_neighbors)])
-        return sorted(node_candidates, key=lambda x: x[1], reverse=True)[:results]
+        return sorted(node_candidates, key=lambda x: x[1], reverse=True)[:number_of_nodes]
 
     def print_find_nodes_giving_most_secondary_hops(self, node_pub_key):
         """
@@ -200,7 +205,7 @@ class NetworkAnalysis(object):
         :param node_pub_key: node public key of the interested node
         """
 
-        nodes = self.find_nodes_giving_most_secondary_hops(node_pub_key)
+        nodes = self.nodes_most_second_neighbors(node_pub_key)
         logger.info("Finding all nodes, which when connected would give n new nodes reachable with two hops.")
         for node, number_neighbors in nodes:
             logger.info(f"Node: {node} - new neighbors: {number_neighbors}")
