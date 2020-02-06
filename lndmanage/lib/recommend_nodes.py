@@ -152,6 +152,13 @@ print_node_format = {
         'format': '9d',
         'align': '>',
     },
+    'sec': {
+        'dict_key': 'new_second_neighbors',
+        'description': 'new second neighbors',
+        'width': 5,
+        'format': '5d',
+        'align': '>',
+    },
     'weight': {
         'dict_key': 'weight',
         'description': 'forwarding weight',
@@ -168,8 +175,6 @@ class RecommendNodes(object):
     """
     def __init__(self, node, show_connected=False, show_addresses=False):
         self.node = node
-        self.network_analysis = NetworkAnalysis(self.node)
-
         self.show_connected = show_connected
         self.show_address = show_addresses
         self.network_analysis = NetworkAnalysis(self.node)
@@ -204,6 +209,12 @@ class RecommendNodes(object):
                         'openmed,openavg,nchan,cap,cpc,age,alias'
         self.print_nodes(
             nodes, number_of_nodes, format_string, sort_by=sort_by)
+
+    def print_second_neighbors(self, number_of_nodes=20, sort_by='sec'):
+        nodes = self.second_neighbors(number_of_nodes)
+        nodes = self.add_metadata_and_remove_pruned(nodes)
+        format_string = 'rpk,sec,nchan,cap,cpc,alias'
+        self.print_nodes(nodes, number_of_nodes, format_string, sort_by)
 
     def good_old(self):
         """
@@ -366,6 +377,24 @@ class RecommendNodes(object):
             # node operators who dedicate themselves to their nodes and add
             # a lot of value to the network
             nodes[n]['metric_steady'] = nv['opening_median_time'] * (nv['openings_total_capacity'])**2
+
+        return nodes
+
+    def second_neighbors(self, number_of_nodes):
+        """
+        Returns a dict of nodes, which would give the most second neighbors
+        when would be opened to them.
+
+        :param number_of_nodes: number of nodes returned
+        :type number_of_nodes: int
+        :return: nodes
+        :rtype: dict
+        """
+        node_tuples = self.network_analysis.nodes_most_second_neighbors(
+            self.node.pub_key, number_of_nodes)
+        nodes = {}
+        for n in node_tuples:
+            nodes[n[0]] = {'new_second_neighbors': n[1]}
 
         return nodes
 
