@@ -247,6 +247,11 @@ Another example of the command using 'bos-scores' is
   predominantly be of outbound type, the node will have a large
  demand for inbound liquidity, which is something you want to exploit as a
  routing node.
+* ```recommend-nodes second-neighbors```: One way of positioning the node
+better in the network is to get connected to as many as possible other nodes
+with a least number of additional hops. With the `second-neighbors` command
+you can get a list of nodes that would give you the most new second neighbors,
+ if you would open up a channel with.
 
 lndmanage supports a __channel annotation functionality__. This serves for
  remembering why a certain channel was opened. By adding the funding
