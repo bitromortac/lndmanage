@@ -7,6 +7,15 @@ from lndmanage.lib.forwardings import ForwardingAnalyzer
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+# fee_lock_rate is used to disable forwardings of a channel via fees
+FEE_LOCK_RATE = 0.002500
+# threshold_ub_open is the value of unbalancedness below which the channel goes
+# into full open mode if no forwardings where happening
+THRESHOLD_UB_OPEN = -0.5
+# threshold_lb_close is the value of local balance below which the channel
+# goes into closed mode
+THRESHOLD_LB_CLOSE = 50000
+
 
 class FeeSetter(object):
     """
@@ -23,7 +32,7 @@ class FeeSetter(object):
         self.time_interval_days = None
 
     def set_fees(self, cltv=14, min_base_fee_msat=20, max_base_fee_msat=400,
-                 min_fee_rate=0.000004, max_fee_rate=0.000050, from_days_ago=7,
+                 min_fee_rate=0.000004, max_fee_rate=0.000100, from_days_ago=7,
                  init=False, reckless=False):
         """
         Sets channel fee policies considering different metrics like
@@ -113,7 +122,7 @@ class FeeSetter(object):
                 number_forwardings = channel_stats['number_forwardings']
                 number_forwardings_out = channel_stats[
                     'number_forwardings_out']
-
+            lb = channel_data['local_balance']
             ub = channel_data['unbalancedness']
             capacity = channel_data['capacity']
 
@@ -165,20 +174,38 @@ class FeeSetter(object):
                 if weighted_change < 1:
                     fee_rate_new = self.min_fee_rate
                 else:
-                    fee_rate_new = self.max_fee_rate
+                    fee_rate_new = self.max_fee_rate / 2
             else:
-                # for small fee rates we need to exaggerate the change in order
-                # to get a change
-                if fee_rate <= 2E-6:
-                    weighted_change = 1 + (weighted_change - 1) * 3
-
                 # round down to 6 digits, as this is the expected data for
                 # the api
                 fee_rate_new = round(fee_rate * weighted_change, 6)
 
                 # if the fee rate is too low, cap it, as we don't want to
-                # necessarily have too low fees
+                # necessarily have too low fees, limit also from top
                 fee_rate_new = max(self.min_fee_rate, fee_rate_new)
+
+            # THRESHOLD MODES
+            # LOW UNBALANCEDNESS
+            # in the case of low fees and no forwarding traffic go into
+            # completely open mode
+            if fee_rate <= self.min_fee_rate and ub < THRESHOLD_UB_OPEN \
+                    and total_forwarding_out == 0:
+                logger.info("    > Open mode.")
+                fee_rate_new = 0
+            # if we were in full open mode, leave it when forwardings
+            # rebalanced the channel
+            elif fee_rate == 0 and total_forwarding_out > 0 and \
+                    ub > THRESHOLD_UB_OPEN:
+                logger.info("    > Leaving open mode.")
+                fee_rate_new = self.min_fee_rate
+
+            # HIGH UNBALANCEDNESS
+            if lb < THRESHOLD_LB_CLOSE and total_forwarding_out == 0:
+                logger.info("    > Fee locked mode.")
+                fee_rate_new = FEE_LOCK_RATE
+            elif fee_rate == FEE_LOCK_RATE and lb > THRESHOLD_LB_CLOSE:
+                logger.info("    > Leaving fee locked mode.")
+                fee_rate_new = self.max_fee_rate / 2
 
             logger.info("    Fee rate: %1.6f -> %1.6f",
                         fee_rate, fee_rate_new)
