@@ -206,8 +206,7 @@ class Parser(object):
         parser_recommend_nodes_good_old = \
             parser_recommend_nodes_subparsers.add_parser(
                 'good-old',
-                help='shows nodes already interacted with but no '
-                     'active channels',
+                help='nodes with previous good relationship (channels)',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_good_old.add_argument(
             '--nnodes', default=20, type=int,
@@ -219,7 +218,7 @@ class Parser(object):
         # subcmd: recommend-nodes flow-analysis
         parser_recommend_nodes_flow_analysis = \
             parser_recommend_nodes_subparsers.add_parser(
-                'flow-analysis', help='recommends nodes from a flow analysis',
+                'flow-analysis', help='nodes from a flow analysis',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_flow_analysis.add_argument(
             '--nnodes', default=20, type=int,
@@ -239,7 +238,7 @@ class Parser(object):
         parser_recommend_nodes_external_source = \
             parser_recommend_nodes_subparsers.add_parser(
                 'external-source',
-                help='recommends nodes from a given file/url',
+                help='nodes from a given file/url',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_external_source.add_argument(
             '--nnodes', default=20, type=int,
@@ -261,7 +260,7 @@ class Parser(object):
         parser_recommend_nodes_channel_openings = \
             parser_recommend_nodes_subparsers.add_parser(
                 'channel-openings',
-                help='recommends nodes from recent channel openings',
+                help='nodes from recent channel openings',
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_recommend_nodes_channel_openings.add_argument(
             '--nnodes', default=20, type=int,
@@ -273,6 +272,28 @@ class Parser(object):
         parser_recommend_nodes_channel_openings.add_argument(
             '--sort-by', default='msteady', type=str,
             help="sort by column [abbreviation, e.g. 'nchan']")
+
+        # subcmd: recommend-nodes second-neighbors
+        parser_recommend_nodes_second_neighbors = \
+            parser_recommend_nodes_subparsers.add_parser(
+                'second-neighbors',
+                help='nodes from network analysis giving most '
+                     'second neighbors',
+                description="This command recommends nodes for getting more "
+                            "second neighbors. "
+                            "This is achieved by checking how many second "
+                            "neighbors would be added if one would connect to "
+                            "the suggested node. A channel to the node "
+                            "should get your node closer to "
+                            "more other nodes.",
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser_recommend_nodes_second_neighbors.add_argument(
+            '--nnodes', default=20, type=int,
+            help='sets the number of nodes displayed')
+        parser_recommend_nodes_second_neighbors.add_argument(
+            '--sort-by', default='sec', type=str,
+            help="sort by column [abbreviation, e.g. 'sec']")
+
 
         # cmd: report
         parser_report = subparsers.add_parser(
@@ -389,6 +410,9 @@ class Parser(object):
             elif args.subcmd == 'channel-openings':
                 recommend_nodes.print_channel_openings(
                     from_days_ago=args.from_days_ago,
+                    number_of_nodes=args.nnodes, sort_by=args.sort_by)
+            elif args.subcmd == 'second-neighbors':
+                recommend_nodes.print_second_neighbors(
                     number_of_nodes=args.nnodes, sort_by=args.sort_by)
 
         elif args.cmd == 'report':
