@@ -11,6 +11,7 @@ from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
+from lndmanage.lib.info import Info
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -306,6 +307,14 @@ class Parser(object):
             '--to-days-ago', default=0, type=int,
             help='time interval end (days ago)')
 
+        # cmd: info
+        parser_info = subparsers.add_parser(
+            'info',
+            help='displays info on channels and nodes')
+        parser_info.add_argument(
+            'info_string', type=str,
+            help='info string can represent a node public key or a channel id')
+
     def parse_arguments(self):
         return self.parser.parse_args()
 
@@ -420,6 +429,10 @@ class Parser(object):
             time_to = time.time() - args.to_days_ago * 24 * 60 * 60
             report = Report(node, time_from, time_to)
             report.report()
+
+        elif args.cmd == 'info':
+            info = Info(node)
+            info.parse_and_print(args.info_string)
 
 
 def main():

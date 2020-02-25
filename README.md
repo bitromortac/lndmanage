@@ -11,6 +11,7 @@ Current feature list (use the ```--help``` flag for subcommands):
 
 * __Activity reports ```report```__
 * __Display the node summary ```status```__
+* __Info command ```info```__: display info about a channel or node
 * __Advanced channel listings ```listchannels```__
   * ```listchannels rebalance```: list channels for rebalancing
   * ```listchannels forwardings```: list forwarding statistics for each channel 
@@ -42,6 +43,60 @@ positional arguments:
     recommend-nodes     recommends nodes [see also subcommands with -h]
     report              displays reports of activity on the node
     status              display node status
+    info                displays info on channels and nodes
+```
+
+## Info Command
+Sometimes it is necessary to get more information about a specific public channel
+or node. This could be for example trying to figure out what fees are typically
+charged by a node or to look up its IP address.
+
+With the info command you can enter
+
+`$ lndmanage info CHANNEL_ID`
+
+or
+
+`$ lndmanage info NODE_PUBLIC_KEY`
+
+and it will automatically detect whether you are asking for a channel or node info.
+
+Sample output for a channel:
+```
+-------- Channel info --------
+channel id: CHANIDXXXXXXXXXXXX  channel point: CHANPOINTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:X
+          capacity:                 500000 sat                                                                                      
+          blockheight:              606273                                                                                          
+          open since:               2019-10-07 13:31:24                                                                             
+          channel age:              139.030000 days                                                                                  
+          last update:              2020-02-25 06:15:09                                                                             
+
+-------- Channel partners --------
+NODEPUBKEYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX | NODEPUBKEYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                       ALIAS 1                                     |                       ALIAS 2
+          base fee:                 1000 msat                      |           base fee:                 1000 msat                       
+          fee rate:                 0.000001 sat/sat               |           fee rate:                 0.002500 sat/sat              
+          time lock delta:          40 blocks                      |           time lock delta:          14 blocks                     
+          disabled:                 False                          |           disabled:                 False                         
+          last update:              2020-01-20 13:12:09            |           last update:              2020-01-22 10:28:57
+```
+
+Sample output for a node:
+```
+-------- Node info --------
+NODEPUBKEYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+          alias:                    ALIAS                                                                                           
+          last update:              2020-02-24 16:45:09                                                                             
+          number of channels:       44                                                                                              
+          total capacity:           33333333 sat                                                                                    
+          capacity (median):        150000 sat                                                                                      
+          capacity (mean):          500000 sat                                                                                      
+          base fee (median):        1000 msat                                                                                       
+          base fee (mean):          666 msat                                                                                        
+          fee rate (median):        0.000001 sat/sat                                                                                
+          fee rate (mean):          0.002039 sat/sat                                                                                
+-------- Addresses --------
+     NODEPUBKEYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX@XX.XXX.XXX.XXX:9735
 ```
 
 ## Activity Report
