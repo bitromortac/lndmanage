@@ -82,7 +82,6 @@ class Network(object):
                 color=n.color)
 
         for e in raw_graph.edges:
-            # TODO refactor out grpc file format
             # create a dictionary for channel_id lookups
             self.edges[e.channel_id] = {
                 'node1_pub': e.node1_pub,
@@ -90,6 +89,7 @@ class Network(object):
                 'capacity': e.capacity,
                 'last_update': e.last_update,
                 'channel_id': e.channel_id,
+                'chan_point': e.chan_point,
                 'node1_policy': {
                     'time_lock_delta': e.node1_policy.time_lock_delta,
                     'fee_base_msat': e.node1_policy.fee_base_msat,
