@@ -2,7 +2,7 @@
 .idea/*
 .vscode/*
 venv/*
-grpc_compiled/googleapis/*
+lndmanage/grpc_compiled/googleapis/*
 
 # runtime data
 *.log
