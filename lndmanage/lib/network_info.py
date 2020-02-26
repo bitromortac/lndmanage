@@ -338,7 +338,7 @@ class NetworkAnalysis(object):
                     'relative_openings':
                         float(openings) / node_number_channels,
                     'relative_total_capacity':  # unit: ksat
-                        float(openings_total_capacity) / node_total_capacity,
+                        0 if node_total_capacity == 0 else float(openings_total_capacity) / node_total_capacity,
                 }
 
         return opening_statistics_per_node
