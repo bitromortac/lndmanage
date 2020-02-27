@@ -2,6 +2,8 @@ import os
 import codecs
 import time
 import datetime
+import statistics
+
 from collections import OrderedDict
 
 import grpc
@@ -351,9 +353,9 @@ class LndNode(Node):
                 # if channel is unknown in describegraph
                 # we need to set the fees to some error value
                 policy_peer = {'fee_base_msat': float(-999),
-                          'fee_rate_milli_msat': float(999)}
-                policy_local = {'fee_base_msat': float(-999),
                                'fee_rate_milli_msat': float(999)}
+                policy_local = {'fee_base_msat': float(-999),
+                                'fee_rate_milli_msat': float(999)}
 
             # calculate last update (days ago)
             def convert_to_days_ago(timestamp):
@@ -603,6 +605,40 @@ class LndNode(Node):
         channel_route = [h.chan_id for h in response.routes[0].hops]
 
         return channel_route
+
+    def get_node_info(self, pub_key):
+        """
+        Retrieves information on a node with a specific pub key.
+
+        :param pub_key: node public key
+        :type pub_key: str
+        :return: node information including all channels
+        :rtype: dict
+        """
+        request = lnd.NodeInfoRequest(pub_key=pub_key, include_channels=True)
+        try:
+            response = self._rpc.GetNodeInfo(request)
+        except _Rendezvous as e:
+            if e.details() == "unable to find node":
+                logger.info(
+                    "LND node has no information about node with pub key %s.",
+                    pub_key)
+            raise KeyError
+
+        node_info = {
+            'alias': response.node.alias,
+            'color': response.node.color,
+            'channels': response.channels,
+            'last_update': response.node.last_update,
+            'pub_key': pub_key,
+            'num_channels': int(response.num_channels),
+            'total_capacity': int(response.total_capacity),  # sat
+        }
+
+        addresses = [address.addr for address in response.node.addresses]
+        node_info['addresses'] = addresses
+
+        return node_info
 
     def print_status(self):
         logger.info("-------- Node status --------")

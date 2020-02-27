@@ -1,4 +1,5 @@
 from collections import defaultdict
+from statistics import median, mean
 
 import numpy as np
 import networkx as nx
@@ -23,7 +24,7 @@ class NetworkAnalysis(object):
         """
 
         self.node = node
-        self.nodes_info = self.nodes_information()
+        self.nodes_info = None
 
     def find_nodes_with_largest_degrees(self, node_count=10):
         """
@@ -89,6 +90,32 @@ class NetworkAnalysis(object):
             nodes, key=lambda x: x[key], reverse=decrementing)
 
         return sorted_nodes[:node_count]
+
+    def node_info_basic(self, node_pub_key):
+        node_info = self.node.get_node_info(node_pub_key)
+        # calculate average and mean channel fees
+
+        base_fees = []
+        fee_rates_milli_msat = []
+        capacities = []
+        for c in node_info['channels']:
+            # Determine which policy to look at.
+            if node_pub_key == c.node1_pub:
+                policy = c.node1_policy
+            else:
+                policy = c.node2_policy
+            base_fees.append(policy.fee_base_msat)
+            fee_rates_milli_msat.append(policy.fee_rate_milli_msat)
+            capacities.append(c.capacity)
+
+        node_info['mean_base_fee'] = int(mean(base_fees))
+        node_info['median_base_fee'] = int(median(base_fees))
+        node_info['mean_fee_rate'] = round(mean(fee_rates_milli_msat) / 1E6, 6)
+        node_info['median_fee_rate'] = round(median(fee_rates_milli_msat) / 1E6, 6)
+        node_info['mean_capacity'] = int(mean(capacities))
+        node_info['median_capacity'] = int(median(capacities))
+
+        return node_info
 
     def node_information(self, node_pub_key):
         """
