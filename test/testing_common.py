@@ -24,5 +24,7 @@ test_graphs_paths = {
         graph_definitions_dir, 'star_ring_4_unbalanced.py'),
     'star_ring_4_illiquid': os.path.join(
         graph_definitions_dir, 'star_ring_4_illiquid.py'),
+    'empty_graph': os.path.join(
+        graph_definitions_dir, 'empty_graph.py'),
 }
 

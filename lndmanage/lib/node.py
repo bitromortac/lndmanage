@@ -327,7 +327,12 @@ class LndNode(Node):
         """
         raw_channels = self._rpc.ListChannels(lnd.ListChannelsRequest(
             active_only=active_only, public_only=public_only))
-        channels_data = raw_channels.ListFields()[0][1]
+        try:
+            channels_data = raw_channels.ListFields()[0][1]
+        except IndexError:
+            # If there are no channels, return.
+            return OrderedDict({})
+
         channels = OrderedDict()
 
         for c in channels_data:

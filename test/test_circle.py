@@ -2,11 +2,7 @@
 Tests for circular self-payments.
 """
 import time
-from unittest import TestCase
 
-from lnregtest.lib.network import RegtestNetwork
-
-from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.exceptions import (
@@ -15,13 +11,11 @@ from lndmanage.lib.exceptions import (
     DryRun,
     RebalancingTrialsExhausted,
     NoRoute,
-    DuplicateRoute,
 )
 from lndmanage import settings
+from test.testnetwork import TestNetwork
 
 from test.testing_common import (
-    bin_dir,
-    test_data_dir,
     test_graphs_paths,
     lndmanage_home,
     SLEEP_SEC_AFTER_REBALANCING
@@ -35,55 +29,18 @@ logger.setLevel(logging.INFO)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 
-class CircleTest(TestCase):
-
+class CircleTest(TestNetwork):
+    """
+    Implements testing of circular self-payments.
+    """
     network_definition = None
 
-    def setUp(self):
-        if self.network_definition is None:
-            self.skipTest("This class doesn't represent a real test case.")
-            raise NotImplementedError("A network definition needs to be given.")
-
-        self.testnet = RegtestNetwork(
-            binary_folder=bin_dir,
-            network_definition_location=self.network_definition,
-            nodedata_folder=test_data_dir,
-            node_limit='H',
-            from_scratch=True
-        )
-        self.testnet.run_nocleanup()
-
-        master_node_data_dir = self.testnet.master_node.lnd_data_dir
-        master_node_port = self.testnet.master_node.grpc_port
-        self.master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
-
-        self.lndnode = LndNode(
-            lnd_home=master_node_data_dir,
-            lnd_host='localhost:' + str(master_node_port),
-            regtest=True
-        )
-
-        self.rebalancer = Rebalancer(
-            self.lndnode,
-            max_effective_fee_rate=50,
-            budget_sat=20
-        )
-        self.graph_test()
-
-    def tearDown(self):
-        self.testnet.cleanup()
-
-    def graph_test(self):
-        raise NotImplementedError
-
-    def circle_and_check(self, rebalancer, channel_number_send,
+    def circle_and_check(self, channel_number_send,
                          channel_number_receive, amount_sat,
-                         expected_fees_msat, dry=False):
+                         expected_fees_msat, budget_sat=20,
+                         max_effective_fee_rate=50, dry=False):
         """
         Helper function for testing a circular payment.
-
-        :param rebalancer:
-        :type rebalancer: lndmanage.lib.rebalance.Rebalancer
 
         :param channel_number_send: channel whose local balance is decreased
         :type channel_number_send: int
@@ -98,10 +55,22 @@ class CircleTest(TestCase):
             the rebalance
         :type expected_fees_msat: int
 
+        :param budget_sat: budget for rebalancing
+        :type budget_sat: int
+
+        :param max_effective_fee_rate: the maximal effective fee rate accepted
+        :type max_effective_fee_rate: int
+
         :param dry: if it should be a dry run
         :type dry: bool
         """
-        # setup
+
+        self.rebalancer = Rebalancer(
+            self.lndnode,
+            max_effective_fee_rate=max_effective_fee_rate,
+            budget_sat=budget_sat,
+        )
+
         graph_before = self.testnet.assemble_graph()
         channel_id_send = self.testnet.channel_mapping[
             channel_number_send]['channel_id']
@@ -111,12 +80,12 @@ class CircleTest(TestCase):
 
         # exercise
         try:
-            fees_msat = rebalancer.rebalance_two_channels(
+            fees_msat = self.rebalancer.rebalance_two_channels(
                 channel_id_send,
                 channel_id_receive,
                 amount_sat,
                 invoice_r_hash,
-                rebalancer.budget_sat,
+                budget_sat,
                 dry=dry
             )
             time.sleep(SLEEP_SEC_AFTER_REBALANCING)
@@ -150,6 +119,13 @@ class CircleTest(TestCase):
             "Receiving local balance is wrong"
         )
 
+    def graph_test(self):
+        """
+        graph_test should be implemented by each subclass test and check,
+        wheteher the test graph has the correct shape.
+        """
+        raise NotImplementedError
+
 
 class TestCircleLiquid(CircleTest):
     network_definition = test_graphs_paths['star_ring_3_liquid']
@@ -169,7 +145,6 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 43
 
         self.circle_and_check(
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -186,7 +161,6 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 33
 
         self.circle_and_check(
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -206,7 +180,6 @@ class TestCircleLiquid(CircleTest):
         self.assertRaises(
             RebalanceFailure,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -221,16 +194,16 @@ class TestCircleLiquid(CircleTest):
         channel_number_to = 6
         amount_sat = 10000
         expected_fees_msat = 33
-        self.rebalancer.budget_sat = 0
+        budget_sat = 0
 
         self.assertRaises(
             TooExpensive,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
             expected_fees_msat,
+            budget_sat,
         )
 
     def test_circle_1_6_fail_max_fee_rate_too_expensive(self):
@@ -242,16 +215,19 @@ class TestCircleLiquid(CircleTest):
         channel_number_to = 6
         amount_sat = 10000
         expected_fees_msat = 33
-        self.rebalancer.max_effective_fee_rate = 0
+        budget = 20
+        max_effective_fee_rate = 0
 
         self.assertRaises(
             TooExpensive,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
             expected_fees_msat,
+            budget,
+            max_effective_fee_rate,
+
         )
 
     def test_circle_1_6_fail_first_hop_insufficient_funds(self):
@@ -267,7 +243,6 @@ class TestCircleLiquid(CircleTest):
         self.assertRaises(
             RebalanceFailure,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -293,7 +268,6 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 2938
 
         self.circle_and_check(
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -312,7 +286,6 @@ class TestCircleLiquid(CircleTest):
         self.assertRaises(
             DryRun,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -341,7 +314,6 @@ class TestCircleIlliquid(CircleTest):
         self.assertRaises(
             NoRoute,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -361,7 +333,6 @@ class TestCircleIlliquid(CircleTest):
         self.assertRaises(
             RebalancingTrialsExhausted,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
@@ -378,7 +349,6 @@ class TestCircleIlliquid(CircleTest):
     #     expected_fees_msat = 1207
 
     #     self.circle_and_check(
-    #         self.rebalancer,
     #         channel_number_from,
     #         channel_number_to,
     #         amount_sat,
@@ -396,10 +366,8 @@ class TestCircleIlliquid(CircleTest):
         self.assertRaises(
             RebalancingTrialsExhausted,
             self.circle_and_check,
-            self.rebalancer,
             channel_number_from,
             channel_number_to,
             amount_sat,
             expected_fees_msat
         )
-

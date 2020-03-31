@@ -1,21 +1,16 @@
 """
-Tests for rebalancing of channels.
+Integration tests for rebalancing of channels.
 """
 import time
-from unittest import TestCase
-
-from lnregtest.lib.network import RegtestNetwork
 
 from lndmanage import settings
-from lndmanage.lib.node import LndNode
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
 from lndmanage.lib.exceptions import RebalanceCandidatesExhausted
+from test.testnetwork import TestNetwork
 
 from test.testing_common import (
-    bin_dir,
-    test_data_dir,
     lndmanage_home,
     test_graphs_paths,
     SLEEP_SEC_AFTER_REBALANCING)
@@ -28,68 +23,25 @@ logger.setLevel(logging.INFO)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 
-class RebalanceTest(TestCase):
+class RebalanceTest(TestNetwork):
     """
-    Abstract class for rebalance testing.
+    Implements an abstract testing class for channel rebalancing.
     """
-    network_definition = None
-
-    def setUp(self):
-        if self.network_definition is None:
-            self.skipTest("This class doesn't represent a real test case.")
-            raise NotImplementedError("A network definition needs to be given.")
-
-        self.testnet = RegtestNetwork(
-            binary_folder=bin_dir,
-            network_definition_location=self.network_definition,
-            nodedata_folder=test_data_dir,
-            node_limit='H',
-            from_scratch=True
-        )
-        self.testnet.run_nocleanup()
-        # to run the lightning network in the background and do some testing
-        # here, run:
-        # $ lnregtest --nodedata_folder /path/to/lndmanage/test/test_data/
-        # self.testnet.run_from_background()
-
-        # logger.info("Generated network information:")
-        # logger.info(format_dict(self.testnet.node_mapping))
-        # logger.info(format_dict(self.testnet.channel_mapping))
-        # logger.info(format_dict(self.testnet.assemble_graph()))
-
-        master_node_data_dir = self.testnet.master_node.lnd_data_dir
-        master_node_port = self.testnet.master_node.grpc_port
-        self.master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
-
-        self.lndnode = LndNode(
-            lnd_home=master_node_data_dir,
-            lnd_host='localhost:' + str(master_node_port),
-            regtest=True
-        )
-        self.graph_test()
-
-    def tearDown(self):
-        self.testnet.cleanup()
-
-    def graph_test(self):
-        raise NotImplementedError
-
     def rebalance_and_check(self, test_channel_number, target,
                             allow_unbalancing, places=5):
         """
-        Test function for rebalancing to a specific target and assert after-
-        wards that is was reached.
+        Test function for rebalancing to a specific target unbalancedness and
+        asserts afterwards that the target was reached.
 
-        :param test_channel_number: int
-        :param target: float:
-            unbalancedness target
-        :param allow_unbalancing: bool:
-            unbalancing should be allowed
-        :param places: int
-            number of digits the result should match to the requested
-        :param should_fail: bool:
-            indicates whether the rebalancing should fail as requested due to
-            maybe unbalancing of other channels
+        :param test_channel_number: channel id
+        :type test_channel_number: int
+        :param target: unbalancedness target
+        :type target: float
+        :param allow_unbalancing: if unbalancing should be allowed
+        :type allow_unbalancing: bool
+        :param places: accuracy of the comparison between expected and tested
+            values
+        :type places: int
         """
         rebalancer = Rebalancer(
             self.lndnode,
@@ -99,6 +51,7 @@ class RebalanceTest(TestCase):
 
         channel_id = self.testnet.channel_mapping[
             test_channel_number]['channel_id']
+
         try:
             fees_msat = rebalancer.rebalance(
                 channel_id,
@@ -110,7 +63,10 @@ class RebalanceTest(TestCase):
         except Exception as e:
             raise e
 
+        # sleep a bit to let LNDs update their balances
         time.sleep(SLEEP_SEC_AFTER_REBALANCING)
+
+        # check if graph has the desired channel balances
         graph = self.testnet.assemble_graph()
         channel_data = graph['A'][test_channel_number]
         listchannels = ListChannels(self.lndnode)
@@ -127,6 +83,13 @@ class RebalanceTest(TestCase):
             target, channel_unbalancedness, places=places)
 
         return fees_msat
+
+    def graph_test(self):
+        """
+        graph_test should be implemented by each subclass test and check,
+        whether the test graph has the correct shape.
+        """
+        raise NotImplementedError
 
 
 class TestLiquidRebalance(RebalanceTest):
