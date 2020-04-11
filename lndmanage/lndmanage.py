@@ -3,6 +3,7 @@ import argparse
 import time
 import os
 import sys
+import distutils.spawn as spawn
 # readline has a desired side effect on keyword input of enabling history
 import readline
 
@@ -12,6 +13,7 @@ from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
 from lndmanage.lib.info import Info
+from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -54,6 +56,13 @@ def unbalanced_float(x):
 
 class Parser(object):
     def __init__(self):
+
+        # figure out if lncli is available and determine path of executable
+        self.lncli = False
+        self.lncli_path = None
+
+        self.check_for_lncli()
+
         # setup the command line parser
         self.parser = argparse.ArgumentParser(
             prog='lndmanage.py',
@@ -295,7 +304,6 @@ class Parser(object):
             '--sort-by', default='sec', type=str,
             help="sort by column [abbreviation, e.g. 'sec']")
 
-
         # cmd: report
         parser_report = subparsers.add_parser(
             'report',
@@ -314,6 +322,29 @@ class Parser(object):
         parser_info.add_argument(
             'info_string', type=str,
             help='info string can represent a node public key or a channel id')
+
+        # cmd: lncli
+        if self.lncli:
+            parser_lncli = subparsers.add_parser(
+            'lncli',
+            help='execute lncli')
+
+    def check_for_lncli(self):
+        """
+        Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
+        and self.lncli_path. Executable in LNDMANAGE_HOME is prioritized.
+        """
+        lncli_candidate = os.path.join(settings.home_dir, 'lncli')
+
+        # look in lndmanage home folder after lncli
+        if os.access(lncli_candidate, os.X_OK):
+            self.lncli = True
+            self.lncli_path = lncli_candidate
+        # look in PATH
+        else:
+            path = spawn.find_executable('lncli')
+            self.lncli = True
+            self.lncli_path = path
 
     def parse_arguments(self):
         return self.parser.parse_args()
@@ -461,6 +492,9 @@ def main():
                     "You can type 'help' or 'exit'.")
         node = LndNode(config_file=config_file)
 
+        if parser.lncli:
+            logger.info("Enabled lncli: using " + parser.lncli_path)
+
         while True:
             try:
                 user_input = input("$ lndmanage ")
@@ -480,6 +514,12 @@ def main():
                 return 0
 
             args_list = user_input.split(" ")
+
+            # lncli execution
+            if args_list[0] == 'lncli':
+                lncli = Lncli(parser.lncli_path, config_file)
+                lncli.lncli(args_list[1:])
+                continue
             try:
                 # need to run with parse_known_args to get an exception
                 args = parser.parser.parse_args(args_list)
