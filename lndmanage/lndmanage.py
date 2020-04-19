@@ -464,7 +464,10 @@ def main():
         while True:
             try:
                 user_input = input("$ lndmanage ")
-            except (EOFError, KeyboardInterrupt):
+            except KeyboardInterrupt:
+                logger.info("")
+                continue
+            except EOFError:
                 readline.write_history_file(history_file)
                 logger.info("exit")
                 return 0
