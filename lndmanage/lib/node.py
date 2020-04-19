@@ -340,9 +340,13 @@ class LndNode(Node):
             blockheight, _, _ = convert_channel_id_to_short_channel_id(
                 c.chan_id)
             age_days = (self.blockheight - blockheight) * 10 / (60 * 24)
-            sent_received_per_week = int(
-                (c.total_satoshis_sent +
-                 c.total_satoshis_received) / (age_days / 7))
+            try:
+                sent_received_per_week = int(
+                    (c.total_satoshis_sent +
+                     c.total_satoshis_received) / (age_days / 7))
+            except ZeroDivisionError:
+                # age could be zero right after channel becomes pending
+                sent_received_per_week = 0
 
             # determine policy
             try:
