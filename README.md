@@ -432,9 +432,3 @@ $ git clone https://github.com/googleapis/googleapis.git
 $ curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto
 $ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. rpc.proto
 ```
-
-## Donate
-
-You can support this work under [bitromortac.hopto.org](https://bitromortac.hopto.org),
-taking Bitcoin donations both natively and via the Lightning Network. Help is greatly
-appreciated!
