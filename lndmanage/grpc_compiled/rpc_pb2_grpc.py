@@ -9,7 +9,7 @@ class WalletUnlockerStub(object):
   Comments in this file will be directly parsed into the API
   Documentation as descriptions of the associated method, message, or field.
   These descriptions should go right above the definition of the object, and
-  can be in either block or /// comment format. 
+  can be in either block or /// comment format.
 
   One edge case exists where a // comment followed by a /// comment in the
   next line will cause the description not to show up in the documentation. In
@@ -63,7 +63,7 @@ class WalletUnlockerServicer(object):
   Comments in this file will be directly parsed into the API
   Documentation as descriptions of the associated method, message, or field.
   These descriptions should go right above the definition of the object, and
-  can be in either block or /// comment format. 
+  can be in either block or /// comment format.
 
   One edge case exists where a // comment followed by a /// comment in the
   next line will cause the description not to show up in the documentation. In
@@ -100,7 +100,7 @@ class WalletUnlockerServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def InitWallet(self, request, context):
-    """* 
+    """*
     InitWallet is used when lnd is starting up for the first time to fully
     initialize the daemon and its internal wallet. At the very least a wallet
     password must be provided. This will be used to encrypt sensitive material
@@ -364,6 +364,11 @@ class LightningStub(object):
         '/lnrpc.Lightning/DescribeGraph',
         request_serializer=rpc__pb2.ChannelGraphRequest.SerializeToString,
         response_deserializer=rpc__pb2.ChannelGraph.FromString,
+        )
+    self.GetNodeMetrics = channel.unary_unary(
+        '/lnrpc.Lightning/GetNodeMetrics',
+        request_serializer=rpc__pb2.NodeMetricsRequest.SerializeToString,
+        response_deserializer=rpc__pb2.NodeMetricsResponse.FromString,
         )
     self.GetChanInfo = channel.unary_unary(
         '/lnrpc.Lightning/GetChanInfo',
@@ -729,10 +734,11 @@ class LightningServicer(object):
 
   def SendPayment(self, request_iterator, context):
     """* lncli: `sendpayment`
-    SendPayment dispatches a bi-directional streaming RPC for sending payments
-    through the Lightning Network. A single RPC invocation creates a persistent
-    bi-directional stream allowing clients to rapidly send payments through the
-    Lightning Network with a single persistent connection.
+    Deprecated, use routerrpc.SendPayment. SendPayment dispatches a
+    bi-directional streaming RPC for sending payments through the Lightning
+    Network. A single RPC invocation creates a persistent bi-directional
+    stream allowing clients to rapidly send payments through the Lightning
+    Network with a single persistent connection.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -853,6 +859,15 @@ class LightningServicer(object):
     vertexes themselves. As this is a directed graph, the edges also contain
     the node directional specific routing policy which includes: the time lock
     delta, fee information, etc.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GetNodeMetrics(self, request, context):
+    """* lncli: `getnodemetrics`
+    GetNodeMetrics returns node metrics calculated from the graph. Currently
+    the only supported metric is betweenness centrality of individual nodes.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -1229,6 +1244,11 @@ def add_LightningServicer_to_server(servicer, server):
           servicer.DescribeGraph,
           request_deserializer=rpc__pb2.ChannelGraphRequest.FromString,
           response_serializer=rpc__pb2.ChannelGraph.SerializeToString,
+      ),
+      'GetNodeMetrics': grpc.unary_unary_rpc_method_handler(
+          servicer.GetNodeMetrics,
+          request_deserializer=rpc__pb2.NodeMetricsRequest.FromString,
+          response_serializer=rpc__pb2.NodeMetricsResponse.SerializeToString,
       ),
       'GetChanInfo': grpc.unary_unary_rpc_method_handler(
           servicer.GetChanInfo,

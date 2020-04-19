@@ -2,6 +2,7 @@
 import grpc
 
 import lndmanage.grpc_compiled.router_pb2 as router__pb2
+import lndmanage.grpc_compiled.rpc_pb2 as rpc__pb2
 
 
 class RouterStub(object):
@@ -14,15 +15,15 @@ class RouterStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.SendPayment = channel.unary_stream(
-        '/routerrpc.Router/SendPayment',
+    self.SendPaymentV2 = channel.unary_stream(
+        '/routerrpc.Router/SendPaymentV2',
         request_serializer=router__pb2.SendPaymentRequest.SerializeToString,
-        response_deserializer=router__pb2.PaymentStatus.FromString,
+        response_deserializer=rpc__pb2.Payment.FromString,
         )
-    self.TrackPayment = channel.unary_stream(
-        '/routerrpc.Router/TrackPayment',
+    self.TrackPaymentV2 = channel.unary_stream(
+        '/routerrpc.Router/TrackPaymentV2',
         request_serializer=router__pb2.TrackPaymentRequest.SerializeToString,
-        response_deserializer=router__pb2.PaymentStatus.FromString,
+        response_deserializer=rpc__pb2.Payment.FromString,
         )
     self.EstimateRouteFee = channel.unary_unary(
         '/routerrpc.Router/EstimateRouteFee',
@@ -54,25 +55,40 @@ class RouterStub(object):
         request_serializer=router__pb2.BuildRouteRequest.SerializeToString,
         response_deserializer=router__pb2.BuildRouteResponse.FromString,
         )
+    self.SubscribeHtlcEvents = channel.unary_stream(
+        '/routerrpc.Router/SubscribeHtlcEvents',
+        request_serializer=router__pb2.SubscribeHtlcEventsRequest.SerializeToString,
+        response_deserializer=router__pb2.HtlcEvent.FromString,
+        )
+    self.SendPayment = channel.unary_stream(
+        '/routerrpc.Router/SendPayment',
+        request_serializer=router__pb2.SendPaymentRequest.SerializeToString,
+        response_deserializer=router__pb2.PaymentStatus.FromString,
+        )
+    self.TrackPayment = channel.unary_stream(
+        '/routerrpc.Router/TrackPayment',
+        request_serializer=router__pb2.TrackPaymentRequest.SerializeToString,
+        response_deserializer=router__pb2.PaymentStatus.FromString,
+        )
 
 
 class RouterServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def SendPayment(self, request, context):
+  def SendPaymentV2(self, request, context):
     """*
-    SendPayment attempts to route a payment described by the passed
+    SendPaymentV2 attempts to route a payment described by the passed
     PaymentRequest to the final destination. The call returns a stream of
-    payment status updates.
+    payment updates.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def TrackPayment(self, request, context):
+  def TrackPaymentV2(self, request, context):
     """*
-    TrackPayment returns an update stream for the payment identified by the
+    TrackPaymentV2 returns an update stream for the payment identified by the
     payment hash.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -135,18 +151,46 @@ class RouterServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def SubscribeHtlcEvents(self, request, context):
+    """*
+    SubscribeHtlcEvents creates a uni-directional stream from the server to
+    the client which delivers a stream of htlc events.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def SendPayment(self, request, context):
+    """*
+    Deprecated, use SendPaymentV2. SendPayment attempts to route a payment 
+    described by the passed PaymentRequest to the final destination. The call
+    returns a stream of payment status updates.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def TrackPayment(self, request, context):
+    """*
+    Deprecated, use TrackPaymentV2. TrackPayment returns an update stream for
+    the payment identified by the payment hash.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_RouterServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'SendPayment': grpc.unary_stream_rpc_method_handler(
-          servicer.SendPayment,
+      'SendPaymentV2': grpc.unary_stream_rpc_method_handler(
+          servicer.SendPaymentV2,
           request_deserializer=router__pb2.SendPaymentRequest.FromString,
-          response_serializer=router__pb2.PaymentStatus.SerializeToString,
+          response_serializer=rpc__pb2.Payment.SerializeToString,
       ),
-      'TrackPayment': grpc.unary_stream_rpc_method_handler(
-          servicer.TrackPayment,
+      'TrackPaymentV2': grpc.unary_stream_rpc_method_handler(
+          servicer.TrackPaymentV2,
           request_deserializer=router__pb2.TrackPaymentRequest.FromString,
-          response_serializer=router__pb2.PaymentStatus.SerializeToString,
+          response_serializer=rpc__pb2.Payment.SerializeToString,
       ),
       'EstimateRouteFee': grpc.unary_unary_rpc_method_handler(
           servicer.EstimateRouteFee,
@@ -177,6 +221,21 @@ def add_RouterServicer_to_server(servicer, server):
           servicer.BuildRoute,
           request_deserializer=router__pb2.BuildRouteRequest.FromString,
           response_serializer=router__pb2.BuildRouteResponse.SerializeToString,
+      ),
+      'SubscribeHtlcEvents': grpc.unary_stream_rpc_method_handler(
+          servicer.SubscribeHtlcEvents,
+          request_deserializer=router__pb2.SubscribeHtlcEventsRequest.FromString,
+          response_serializer=router__pb2.HtlcEvent.SerializeToString,
+      ),
+      'SendPayment': grpc.unary_stream_rpc_method_handler(
+          servicer.SendPayment,
+          request_deserializer=router__pb2.SendPaymentRequest.FromString,
+          response_serializer=router__pb2.PaymentStatus.SerializeToString,
+      ),
+      'TrackPayment': grpc.unary_stream_rpc_method_handler(
+          servicer.TrackPayment,
+          request_deserializer=router__pb2.TrackPaymentRequest.FromString,
+          response_serializer=router__pb2.PaymentStatus.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
