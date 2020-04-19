@@ -481,8 +481,10 @@ def main():
                 # need to run with parse_known_args to get an exception
                 args = parser.parser.parse_args(args_list)
                 parser.run_commands(node, args)
-            except:
-                logger.exception("Exception encountered.")
+            except SystemExit:
+                # argparse may raise SystemExit on incorrect user input,
+                # which is a graceful exit. The user gets the standard output
+                # from argparse of what went wrong.
                 continue
 
 
