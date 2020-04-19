@@ -22,6 +22,7 @@ Current feature list (use the ```--help``` flag for subcommands):
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * __Circular self-payments ```circle```__
 * __Recommendation of good nodes ```recommend-nodes```__
+* __Support of lncli__
    
 **DISCLAIMER: This is BETA software, so please be careful (All actions are 
   executed as a dry run unless you call lndmanage with the ```--reckless``` 
@@ -314,6 +315,23 @@ transaction id or channel id to the config file `~/.lndmanage/config.ini`
 under the `annotations` section (as specified in 
 [`config_sample.ini`](lndmanage/templates/config_sample.ini)), annotations
 can be saved. These annotations will then appear in the `listchannels` views.
+
+## Support of lncli
+lndmanage supports the native command line interface of `lnd` in interactive mode.
+This achieves the goal of having to only open one terminal window for node
+management and enables an easy way to run `lncli` from remote machines. In
+interactive mode `lncli` is available as it would be via command line, e.g.:
+
+`$ lndmangage lncli getinfo`
+
+The json text output you get from `lncli` is syntax highlighted. To enable
+`lncli` support, lndmanage needs to find the `lncli` executable on the path, or
+in the `~/.lndmanage` home folder (or environment variable `LNDMANAGE_HOME`).
+To get the `lncli` binary, copy it over from your `$GOPATH/bin/lncli`, compile it
+yourself, or download one of the official [releases](https://github.com/lightningnetwork/lnd/releases).
+*If lndmanage runs on the same host as `lnd` you typically don't have to do
+anything.* To check if it's working you should see
+`Enabled lncli: using /path/to/lncli` and be able to access the `lncli` option.
 
 ## Setup
 lndmanage will be developed in lockstep with lnd and tagged accordingly. 
