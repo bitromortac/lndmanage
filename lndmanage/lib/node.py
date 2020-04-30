@@ -1,10 +1,10 @@
 import binascii
 import codecs
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import datetime
 import os
 import time
-from typing import Dict, List, Tuple, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING, Optional
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -464,6 +464,42 @@ class LndNode(Node):
             if abs(c['unbalancedness']) >= unbalancedness_greater_than
         }
         return unbalanced_channels
+
+    def get_channel_fee_policies(self):
+        """
+        Gets the node's channel fee policies for every open channel.
+        :return: dict
+        """
+        feereport = self._rpc.FeeReport(lnd.FeeReportRequest())
+        channels = {}
+        for fee in feereport.channel_fees:
+            channels[fee.channel_point] = {
+                'base_fee_msat': fee.base_fee_msat,
+                'fee_per_mil': fee.fee_per_mil,
+                'fee_rate': fee.fee_rate,
+            }
+        return channels
+
+    def set_channel_fee_policies(self, channels: dict):
+        """
+        Sets the node's channel fee policy for every channel.
+        :param channels: channel point -> fee policy
+        """
+
+        for channel_point, channel_fee_policy in channels.items():
+            funding_txid, output_index = channel_point.split(':')
+            output_index = int(output_index)
+
+            channel_point = lnd.ChannelPoint(
+                funding_txid_str=funding_txid, output_index=output_index)
+
+            update_request = lnd.PolicyUpdateRequest(
+                chan_point=channel_point,
+                base_fee_msat=channel_fee_policy['base_fee_msat'],
+                fee_rate=channel_fee_policy['fee_rate'],
+                time_lock_delta=channel_fee_policy['cltv'],
+            )
+            self._rpc.UpdateChannelPolicy(request=update_request)
 
     @staticmethod
     def timestamp_from_now(offset_days=0):
@@ -932,7 +968,19 @@ class LndNode(Node):
                 raise ConnectionRefusedError
         return succeeded_nodes
 
+    def pubkey_to_channel_map(self):
+        """
+        Determines a dict with node pubkeys this node has a channel with, which
+        maps to a list of all the channels with the node.
 
-if __name__ == '__main__':
-    node = LndNode()
-    print(node.get_closed_channels().keys())
+        :return: dictionary of pubkeys with list of channels as value
+        :rtype: dict[list]
+        """
+        channels = self.get_all_channels()
+
+        node_to_channel_map = defaultdict(list)
+
+        for c, cv in channels.items():
+            node_to_channel_map[cv['remote_pubkey']].append(c)
+
+        return node_to_channel_map
