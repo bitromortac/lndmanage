@@ -14,6 +14,7 @@ from lndmanage.lib.exceptions import (
     RebalanceFailure,
     RebalancingTrialsExhausted,
 )
+from lndmanage.lib.fee_setting import FeeSetter, optimization_parameters
 from lndmanage.lib.info import Info
 from lndmanage.lib.listchannels import ListChannels
 from lndmanage.lib.lncli import Lncli
@@ -374,6 +375,66 @@ class Parser(object):
             type=str,
             help='Comma-separated list of node pubkeys.')
 
+        # cmd: update-fees
+        self.parser_update_fees = subparsers.add_parser(
+            'update-fees',
+            description='Periodically running this command increases/decreases'
+                        'the fees on all channels by adapting them according to '
+                        'the forwarding demand in the last interval, which can '
+                        'be set by the parameter --from-days-ago. The fee optimization '
+                        'tries to keep a liquidity buffer for excess-demand times.'
+                        'Channels can be excluded via the config section'
+                        'excluded-channels-fee-opt.\n'
+                        'The command will prompt the fees it would set after a yes/no question.'
+                        "\n\n**Don't run this command too frequently (only once a week), "
+                        "otherwise you put strain on the network and the new"
+                        "fee policies won't reach end points like mobile phones"
+                        "and you will route less.**",
+            help='optimize the fees on your channels to increase revenue and to automatically rebalance',
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+        self.parser_update_fees.add_argument(
+            '--cltv', type=int, default=optimization_parameters['cltv'],
+            help='CLTV time delta.')
+        self.parser_update_fees.add_argument(
+            '--min-base-fee-msat', type=int,
+            default=optimization_parameters['min_base_fee'],
+            help='The base fee cannot go lower than this.')
+        self.parser_update_fees.add_argument(
+            '--max-base-fee-msat', type=int,
+            default=optimization_parameters['max_base_fee'],
+            help='The base fee cannot go higher than this.')
+        self.parser_update_fees.add_argument(
+            '--min-fee-rate', type=float,
+            default=optimization_parameters['min_fee_rate'],
+            help='The fee rate cannot go lower than this.')
+        self.parser_update_fees.add_argument(
+            '--max-fee-rate', type=float,
+            default=optimization_parameters['max_fee_rate'],
+            help='The fee rate cannot go higher than this.'
+            'Half of this value is also used for initialization.'
+        )
+        self.parser_update_fees.add_argument(
+            '--init', action='store_true',
+            help='If set, uses half of max-fee-rate for fee rates.')
+        self.parser_update_fees.add_argument(
+            '--from-days-ago', type=int,
+            default=7,
+            help='Sets the number of days over which forwarding action is taken'
+                 'into account. This value should coincide with the fee '
+                 'update interval.')
+        self.parser_update_fees.add_argument(
+            '--target-forwarding-amount-sat', type=int,
+            default=optimization_parameters['r_t'],
+            help='The target for how much a channel should route per day.'
+                 'The value of this parameter will influence how much you earn in forwarding'
+                 'fees. If you set it too low, no forwardings will happen. If you set it too'
+                 'high, you sell your liquidity too cheaply.'
+                 'A good value could be half the amount you route in your most-income channel per day.')
+        self.parser_update_fees.add_argument(
+            '--reckless',
+            help='Update the fees without asking the user explicitly.',
+            action='store_true')
+
     def check_for_lncli(self):
         """
         Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
@@ -525,6 +586,25 @@ class Parser(object):
                 )
             except Exception as e:
                 logger.info(e)
+        elif args.cmd == 'update-fees':
+            # overwrite default optimization parameters
+            optimization_parameters['cltv'] = args.cltv
+            optimization_parameters['min_base_fee'] = args.min_base_fee_msat
+            optimization_parameters['max_base_fee'] = args.max_base_fee_msat
+            optimization_parameters['min_fee_rate'] = args.min_fee_rate
+            optimization_parameters['max_fee_rate'] = args.max_fee_rate
+            optimization_parameters['r_t'] = args.target_forwarding_amount_sat
+
+            feesetter = FeeSetter(
+                node,
+                from_days_ago=args.from_days_ago,
+                parameters=optimization_parameters
+            )
+
+            feesetter.set_fees(
+                init=args.init,
+                reckless=args.reckless
+            )
 
 
 def main():
