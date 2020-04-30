@@ -14,6 +14,7 @@ from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
 from lndmanage.lib.info import Info
 from lndmanage.lib.lncli import Lncli
+from lndmanage.lib.fee_setting import FeeSetter, optimization_parameters
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -329,6 +330,45 @@ class Parser(object):
             'lncli',
             help='execute lncli')
 
+        # cmd: update-fees
+        self.parser_update_fees = subparsers.add_parser(
+            'update-fees',
+            description='This command increases/decreases the fee rate of all '
+                        'channels by adapting according to the demand in the '
+                        'last interval (default: week), which can be set by '
+                        'the parameter --from-days-ago. The fee optimization '
+                        'tries to keep a buffer for bad times.',
+            help='change the fees of all channels taking into '
+                 'account the unbalancedness, flow, and demand for the '
+                 'channel',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_update_fees.add_argument(
+            '--cltv', type=int, default=14,
+            help='CLTV time delta in fee policy')
+        self.parser_update_fees.add_argument(
+            '--min-base-fee-msat', type=int, default=20,
+            help='minimal base fee in msat')
+        self.parser_update_fees.add_argument(
+            '--max-base-fee-msat', type=int, default=5000,
+            help='minimal base fee in msat')
+        self.parser_update_fees.add_argument(
+            '--min-fee-rate', type=float, default=0.000004,
+            help='minimal fee rate')
+        self.parser_update_fees.add_argument(
+            '--max-fee-rate', type=float, default=0.001000,
+            help='maximal fee rate (half of it for initialization)')
+        self.parser_update_fees.add_argument(
+            '--init', action='store_true',
+            help='If set, uses a reasonable guess for initial fees.')
+        self.parser_update_fees.add_argument(
+            '--from-days-ago', type=int, default=7,
+            help='sets the number of days over which the last fees are taken '
+                 'into account when estimating the demand')
+        self.parser_update_fees.add_argument(
+            '--reckless', help='Update the fees without asking the user '
+                               'explicitly.',
+            action='store_true')
+
     def check_for_lncli(self):
         """
         Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
@@ -464,6 +504,25 @@ class Parser(object):
         elif args.cmd == 'info':
             info = Info(node)
             info.parse_and_print(args.info_string)
+
+        elif args.cmd == 'update-fees':
+            # overwrite default optimization parameters
+            optimization_parameters['cltv'] = args.cltv
+            optimization_parameters['min_base_fee'] = args.min_base_fee_msat
+            optimization_parameters['max_base_fee'] = args.max_base_fee_msat
+            optimization_parameters['min_fee_rate'] = args.min_fee_rate
+            optimization_parameters['max_fee_rate'] = args.max_fee_rate
+
+            feesetter = FeeSetter(
+                node,
+                from_days_ago=args.from_days_ago,
+                parameters=optimization_parameters
+            )
+
+            feesetter.set_fees(
+                init=args.init,
+                reckless=args.reckless
+            )
 
 
 def main():
