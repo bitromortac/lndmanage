@@ -10,7 +10,7 @@ logger.addHandler(logging.NullHandler())
 optimization_parameters = {
     'cltv': 14,  # blocks
     'min_base_fee': 20,  # msat
-    'max_base_fee': 2000,  # msat
+    'max_base_fee': 5000,  # msat
     'max_fee_rate': 0.001000,
     'min_fee_rate': 0.000004,
     'delta_max': 1.5,
@@ -45,15 +45,15 @@ def delta_min(params, local_balance, capacity):
     else:
         reserve = params['local_balance_reserve']
 
+    # if local balance is below balance reserve, start to chage more fees
     if local_balance < params['local_balance_reserve']:
         x = params['delta_min_up'] / reserve
-
         return -x * (local_balance - reserve) + 1
 
+    # if local balance is above balance reserve, charge less fees
     else:
         x = params['delta_min_dn'] / (
                     capacity - reserve)
-
         return -x * (local_balance - reserve) + 1
 
 
@@ -272,8 +272,12 @@ class FeeSetter(object):
             if init:
                 base_fee_msat_new = self.params['min_base_fee']
             else:
+                # limit from below
                 base_fee_msat_new = int(
                     max(self.params['min_base_fee'], base_fee_msat_new))
+                # limit from above
+                base_fee_msat_new = int(
+                    min(self.params['max_base_fee'], base_fee_msat_new))
 
             logger.info("    Base fee: %4d -> %4d (factor %1.3f)",
                         base_fee_msat, base_fee_msat_new, factor_base_fee)
