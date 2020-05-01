@@ -38,16 +38,23 @@ def delta_min(params, local_balance, capacity):
             f"local balance must be lower than capacity "
             f"{local_balance} / {capacity}")
 
-    if local_balance < params['local_balance_reserve']:
-        x = params['delta_min_up'] / params['local_balance_reserve']
+    # if we have small channels, which can't respect the reserve, lower the
+    # reserve to a third of the channel
+    if params['local_balance_reserve'] > capacity // 2:
+        reserve = capacity // 3
+    else:
+        reserve = params['local_balance_reserve']
 
-        return -x * (local_balance - params['local_balance_reserve']) + 1
+    if local_balance < params['local_balance_reserve']:
+        x = params['delta_min_up'] / reserve
+
+        return -x * (local_balance - reserve) + 1
 
     else:
         x = params['delta_min_dn'] / (
-                    capacity - params['local_balance_reserve'])
+                    capacity - reserve)
 
-        return -x * (local_balance - params['local_balance_reserve']) + 1
+        return -x * (local_balance - reserve) + 1
 
 
 def delta_demand(params, time_interval, amount_out, local_balance, capacity):
@@ -238,12 +245,6 @@ class FeeSetter(object):
                 "unbalancedness %1.3f, flow: %1.3f. Weighted change: %1.3f",
                 factor_demand, 0, 0, change_factor)
 
-            # if we initialize the fee optimization, we want to start with
-            # reasonable starting values and then adapt as if we have already
-            # had that fees
-            if init:
-                fee_rate = self.params['max_fee_rate']
-
             # round down to 6 digits, as this is the expected data for
             # the api
             fee_rate_new = round(fee_rate * change_factor, 6)
@@ -251,6 +252,15 @@ class FeeSetter(object):
             # if the fee rate is too low, cap it, as we don't want to
             # necessarily have too low fees, limit also from top
             fee_rate_new = max(self.params['min_fee_rate'], fee_rate_new)
+
+            # if the fee rate is too high, cap it, as we don't want to
+            # loose channels due to other parties thinking we are too greedy
+            fee_rate_new = min(self.params['max_fee_rate'], fee_rate_new)
+
+            # if we initialize the fee optimization, we want to start with
+            # reasonable starting values
+            if init:
+                fee_rate_new = self.params['max_fee_rate'] / 2
 
             logger.info("    Fee rate: %1.6f -> %1.6f",
                         fee_rate, fee_rate_new)
