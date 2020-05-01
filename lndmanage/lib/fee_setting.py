@@ -1,6 +1,9 @@
 import logging
 import time
+import os
+import json
 
+from lndmanage import settings
 from lndmanage.lib.user import yes_no_question
 from lndmanage.lib.forwardings import ForwardingAnalyzer
 
@@ -104,16 +107,13 @@ class FeeSetter(object):
     Class for setting fees.
     """
 
-    def __init__(self, node, from_days_ago=7, history_path='history.log',
-                 parameters=None):
+    def __init__(self, node, from_days_ago=7, parameters=None):
         """
         :param node: node instance
         :type node: `class`:lib.node.Node
         :param from_days_ago: forwarding history is taken over the past
             from_days_ago days
         :type from_days_ago: int
-        :param history_path: path for the fee history log
-        :type history_path: str
         :param parameters: fee algo parameters
         :type parameters: dict
         """
@@ -122,12 +122,12 @@ class FeeSetter(object):
         # by default, channel fees are updated, not initialized
         self.node = node
 
+        self.history_path = os.path.join(settings.home_dir, 'fee_history.log')
+
         if parameters is None:
             self.params = optimization_parameters
         else:
             self.params = parameters
-
-        self.history_path = history_path
 
         # initialize fee setter
         self.forwarding_analyzer = ForwardingAnalyzer(node)
@@ -171,7 +171,7 @@ class FeeSetter(object):
         if set_fees:
             logger.info("Have set new fee policy.")
             self.node.set_channel_fee_policies(channel_fee_policies)
-            self.append_history(stats)
+            self.append_to_history(stats)
         else:
             logger.info("Didn't set new fee policy.")
 
@@ -292,8 +292,6 @@ class FeeSetter(object):
                 'fees': fees_sat,
                 'cap': capacity,
                 'fdem': factor_demand,
-                'fub': 0,
-                'fflow': 0,
                 'wchange': change_factor,
                 'fr': fee_rate,
                 'frn': fee_rate_new,
@@ -345,9 +343,30 @@ class FeeSetter(object):
 
         return min(c, 1 + c_max)
 
-    def append_history(self, stats):
-        # TODO: implement
-        pass
+    def append_to_history(self, stats):
+        """
+        append_history adds the fee setting statistics to a pickle file.
+
+        :param stats: fee statistics
+        :type stats: dict
+        """
+        logger.debug("Saving fee setting stats to fee history.")
+        with open(self.history_path, 'a') as f:
+            json.dump(stats, f)
+            f.write('\n')
+
+    def read_history(self):
+        """
+        read_history is a function for unpickling the fee setting history.
+
+        :return: list of fee setting statistics
+        :rtype: list[dict]
+        """
+        with open(self.history_path, 'r') as f:
+            history = []
+            for i, line in enumerate(f):
+                history.append(json.loads(line))
+        return history
 
 
 if __name__ == '__main__':
