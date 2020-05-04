@@ -17,3 +17,4 @@ test/test_data/*
 build/*
 dist/*
 lndmanage.egg-info/*
+googleapis/*

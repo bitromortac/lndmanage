@@ -338,7 +338,7 @@ lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-**Requirements:** python3.6, lnd v0.9.0-beta
+**Requirements:** python3.6, lnd v0.10.0-beta
 
 Some commands will only work correctly if lnd is built with the `routerrpc`.
 This can be done when compiling with `make install tags="routerrpc"`. If you
@@ -444,9 +444,16 @@ and follow the [`README`](docker/README.md) there.
 
 ## Compiling grpc in python [development]
 ```
-$ cd grpc_compiled
+$ cd lndmanage/grpc_compiled
 $ pip install grpcio grpcio-tools googleapis-common-protos
+
 $ git clone https://github.com/googleapis/googleapis.git
+
 $ curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto
+$ curl -o router.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/routerrpc/router.proto
+
 $ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. rpc.proto
+$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. routerrpc.proto
 ```
+Then correct to absolute import paths, for instance change `import rpc_pb2 as rpc__pb2`
+ to `from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2`.
