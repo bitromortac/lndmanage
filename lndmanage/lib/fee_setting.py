@@ -22,6 +22,10 @@ optimization_parameters = {
     'r_t': 100000 / 7,  # sat / day
     'r_max': 200000 / 7,  # sat / day  -- rule of thumb: about 2 * r_t
     'local_balance_reserve': 500000,  # sat
+    'delta_b_min': 0.25,
+    'delta_b_max': 0.50,
+    'delta_b': 0.5,
+    'n_t': 4 / 7,
 }
 
 
@@ -56,7 +60,7 @@ def delta_min(params, local_balance, capacity):
     # if local balance is above balance reserve, charge less fees
     else:
         x = params['delta_min_dn'] / (
-                    capacity - reserve)
+                capacity - reserve)
         return -x * (local_balance - reserve) + 1
 
 
@@ -334,14 +338,14 @@ class FeeSetter(object):
         """
         logger.info(
             "    Number of outward forwardings: %6.0f", num_fwd_out)
-        c_min = 0.25  # change by 25% downwards
-        c_max = 1.00  # change by 100% upwards
 
-        num_fwd_target = 5 / 7
-        c = c_min * ((num_fwd_out / self.time_interval_days)
-                     / num_fwd_target - 1) + 1
+        n = num_fwd_out / self.time_interval_days
+        delta = 1 + optimization_parameters['delta_b'] * (
+                n / optimization_parameters['n_t'] - 1)
 
-        return min(c, 1 + c_max)
+        delta = max(1 - optimization_parameters['delta_b_min'],
+                    min(delta, 1 + optimization_parameters['delta_b_max']))
+        return delta
 
     def append_to_history(self, stats):
         """
