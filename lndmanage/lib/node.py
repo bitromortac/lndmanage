@@ -651,8 +651,12 @@ class LndNode(Node):
 
     def print_status(self):
         logger.info("-------- Node status --------")
-        balancedness_local = self.total_local_balance / self.total_capacity
-        balancedness_remote = self.total_remote_balance / self.total_capacity
+        if self.total_capacity == 0:
+            balancedness_local = 0
+            balancedness_remote = 0
+        else:
+            balancedness_local = self.total_local_balance / self.total_capacity
+            balancedness_remote = self.total_remote_balance / self.total_capacity
         logger.info(f"alias: {self.alias}")
         logger.info(f"pub key: {self.pub_key}")
         logger.info(f"blockheight: {self.blockheight}")
