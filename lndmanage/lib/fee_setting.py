@@ -33,6 +33,8 @@ def delta_min(params, local_balance, capacity):
     """
     The cap from below for the delta_demand function.
 
+    :param params: fee optimization parameters
+    :type params: dict
     :param local_balance: local balance in sat
     :type local_balance: int
     :param capacity: capacity in sat
@@ -70,6 +72,8 @@ def delta_demand(params, time_interval, amount_out, local_balance, capacity):
     the amount transacted in a time interval compared to a target rate.
 
     The higher the amount forwarded, the larger the fee rate should be.
+    :param params: fee optimization parameters
+    :type params: dict
     :param time_interval: time interval in days
     :type time_interval: float
     :param amount_out: amount transacted outwards for the channel in sat
@@ -164,7 +168,7 @@ class FeeSetter(object):
         :rtype: list[dict]
         """
 
-        channel_fee_policies, stats = self.new_fee_policy(init)
+        channel_fee_policies, stats = self.new_fee_policies(init)
 
         if reckless:
             set_fees = True
@@ -181,7 +185,7 @@ class FeeSetter(object):
 
         return stats
 
-    def new_fee_policy(self, init=False):
+    def new_fee_policies(self, init=False):
         """
         Calculates and reports the changes to the new fee policy.
 
@@ -198,60 +202,67 @@ class FeeSetter(object):
 
         stats = []
 
-        for channel_id, channel_data in self.channels.items():
-            channel_stats = self.channels_forwarding_stats.get(
-                channel_id,
-                None
-            )
-            if channel_stats is None:
-                flow = 0
-                fees_sat = 0
-                total_forwarding_in = 0
-                total_forwarding_out = 0
-                total_forwarding = 0
-                number_forwardings = 0
-                number_forwardings_out = 0
-            else:
-                flow = channel_stats['flow_direction']
-                fees_sat = channel_stats['fees_total'] / 1000
-                total_forwarding_in = channel_stats['total_forwarding_in']
-                total_forwarding_out = channel_stats['total_forwarding_out']
-                total_forwarding = total_forwarding_in + total_forwarding_out
-                number_forwardings = channel_stats['number_forwardings']
-                number_forwardings_out = channel_stats[
-                    'number_forwardings_out']
-            lb = channel_data['local_balance']
-            ub = channel_data['unbalancedness']
-            capacity = channel_data['capacity']
+        # loop over channel peers
+        for pk, cs in self.node.pubkey_to_channel_map().items():
+            logger.info(f">>> Fee optmization for node {pk} "
+                        f"({self.node.network.node_alias(pk)}):")
+            # loop over channels with peer
+            peer_capacity = 0
+            peer_local_balance = 0
+            peer_number_forwardings_out = 0
+            peer_total_forwarding_out = 0
+            cumul_base_fee = 0
+            cumul_fee_rate = 0
 
-            fee_rate = \
-                self.channel_fee_policies[
-                    channel_data['channel_point']]['fee_rate']
-            base_fee_msat = \
-                self.channel_fee_policies[
-                    channel_data['channel_point']]['base_fee_msat']
+            # accumulate information on a per peer basis
+            for channel_id in cs:
+                # collect channel info and stats
+                channel_data = self.channels[channel_id]
+                channel_stats = self.channels_forwarding_stats.get(
+                    channel_id,
+                    None
+                )
 
-            logger.info(">>> New channel policy for channel %s",
-                        channel_id)
-            logger.info(
-                "    ub: %0.2f flow: %0.2f, fees: %1.3f sat, cap: %d sat, "
-                "nfwd: %d, in: %d sat, out: %d sat.", ub, flow, fees_sat,
-                capacity, number_forwardings, total_forwarding_in,
-                total_forwarding_out)
+                if channel_stats is None:
+                    number_forwardings_out = 0
+                    total_forwarding_out = 0
+                else:
+                    number_forwardings_out = channel_stats[
+                        'number_forwardings_out']
+                    total_forwarding_out = channel_stats[
+                        'total_forwarding_out']
+
+                peer_capacity += channel_data['capacity']
+                peer_local_balance += channel_data['local_balance']
+                peer_number_forwardings_out += number_forwardings_out
+                peer_total_forwarding_out += total_forwarding_out
+
+                cumul_fee_rate += \
+                    self.channel_fee_policies[
+                        channel_data['channel_point']]['fee_rate']
+                cumul_base_fee += \
+                    self.channel_fee_policies[
+                        channel_data['channel_point']]['base_fee_msat']
+
+            logger.info(f"    Channels with peer: {len(cs)}, "
+                        f"total capacity: {peer_capacity}, "
+                        f"total local balance: {peer_local_balance}")
+
+            # calculate average base fee and fee rate
+            base_fee_msat = int(cumul_base_fee / len(cs))
+            fee_rate = round(cumul_fee_rate / len(cs), 6)
 
             # FEE RATES
-            factor_demand = delta_demand(self.params, self.time_interval_days,
-                                         total_forwarding_out, lb, capacity)
-            change_factor = factor_demand
-
-            logger.info(
-                "    Change factors: demand: %1.3f, "
-                "unbalancedness %1.3f, flow: %1.3f. Weighted change: %1.3f",
-                factor_demand, 0, 0, change_factor)
+            factor_demand = delta_demand(
+                self.params,
+                self.time_interval_days,
+                peer_total_forwarding_out,
+                peer_local_balance, peer_capacity
+            )
 
             # round down to 6 digits, as this is the expected data for
             # the api
-            fee_rate_new = round(fee_rate * change_factor, 6)
+            fee_rate_new = round(fee_rate * factor_demand, 6)
 
             # if the fee rate is too low, cap it, as we don't want to
             # necessarily have too low fees, limit also from top
@@ -266,12 +277,9 @@ class FeeSetter(object):
             if init:
                 fee_rate_new = self.params['max_fee_rate'] / 2
 
-            logger.info("    Fee rate: %1.6f -> %1.6f",
-                        fee_rate, fee_rate_new)
-
             # BASE FEES
             factor_base_fee = self.factor_demand_base_fee(
-                number_forwardings_out)
+                peer_number_forwardings_out)
             base_fee_msat_new = base_fee_msat * factor_base_fee
             if init:
                 base_fee_msat_new = self.params['min_base_fee']
@@ -283,46 +291,76 @@ class FeeSetter(object):
                 base_fee_msat_new = int(
                     min(self.params['max_base_fee'], base_fee_msat_new))
 
-            logger.info("    Base fee: %4d -> %4d (factor %1.3f)",
+            logger.info("    Fee rate change: %1.6f -> %1.6f (factor %1.3f)",
+                        fee_rate, fee_rate_new, factor_demand)
+
+            logger.info("    Base fee change: %4d -> %4d (factor %1.3f)",
                         base_fee_msat, base_fee_msat_new, factor_base_fee)
 
-            stats.append({
-                'date': self.time_end,
-                'channelid': channel_id,
-                'total_in': total_forwarding_in,
-                'total_out': total_forwarding_out,
-                'ub': ub,
-                'flow': flow,
-                'fees': fees_sat,
-                'cap': capacity,
-                'fdem': factor_demand,
-                'wchange': change_factor,
-                'fr': fee_rate,
-                'frn': fee_rate_new,
-                'nfwd': number_forwardings,
-                'nfwdo': number_forwardings_out,
-                'fbase': factor_base_fee,
-                'bf': base_fee_msat,
-                'bfn': base_fee_msat_new,
-            })
+            # second loop through channels
+            for channel_id in cs:
+                channel_data = self.channels[channel_id]
+                channel_stats = self.channels_forwarding_stats.get(
+                    channel_id,
+                    None
+                )
+                if channel_stats is None:
+                    flow = 0
+                    fees_sat = 0
+                    total_forwarding_in = 0
+                    total_forwarding_out = 0
+                    number_forwardings = 0
+                    number_forwardings_out = 0
+                else:
+                    flow = channel_stats['flow_direction']
+                    fees_sat = channel_stats['fees_total'] / 1000
+                    total_forwarding_in = channel_stats['total_forwarding_in']
+                    total_forwarding_out = channel_stats[
+                        'total_forwarding_out']
+                    number_forwardings = channel_stats['number_forwardings']
+                    number_forwardings_out = channel_stats[
+                        'number_forwardings_out']
 
-            # give parsable output
-            logger.info(
-                f"stats: {self.time_end:.0f} {channel_id} "
-                f"{total_forwarding_in} {total_forwarding_out} "
-                f"{ub:.3f} {flow:.3f} "
-                f"{fees_sat:.3f} {capacity} {factor_demand:.3f} "
-                f"{0:.3f} {0:.3f} "
-                f"{change_factor:.3f} {fee_rate:.6f} {fee_rate_new:.6f} "
-                f"{number_forwardings} {number_forwardings_out} "
-                f"{factor_base_fee:.3f} {base_fee_msat} {base_fee_msat_new}")
+                lb = channel_data['local_balance']
+                ub = channel_data['unbalancedness']
+                capacity = channel_data['capacity']
 
-            channel_fee_policies[channel_data['channel_point']] = {
-                'base_fee_msat': base_fee_msat_new,
-                'fee_rate': fee_rate_new,
-                'cltv': self.params['cltv'],
-            }
+                logger.info("  > Statistics for channel %s:", channel_id)
+                logger.info(
+                    "    ub: %0.2f, flow: %0.2f, fees: %1.3f sat, "
+                    "cap: %d sat, lb: %d sat, nfwd: %d, in: %d sat, "
+                    "out: %d sat.", ub, flow, fees_sat, capacity, lb,
+                    number_forwardings, total_forwarding_in,
+                    total_forwarding_out)
 
+                stats.append({
+                    'date': self.time_end,
+                    'channelid': channel_id,
+                    'total_in': total_forwarding_in,
+                    'total_out': total_forwarding_out,
+                    'lb': lb,
+                    'ub': ub,
+                    'flow': flow,
+                    'fees': fees_sat,
+                    'cap': capacity,
+                    'fdem': factor_demand,
+                    'fr': self.channel_fee_policies[
+                        channel_data['channel_point']]['fee_rate'],
+                    'frn': fee_rate_new,
+                    'nfwd': number_forwardings,
+                    'nfwdo': number_forwardings_out,
+                    'fbase': factor_base_fee,
+                    'bf': self.channel_fee_policies[
+                        channel_data['channel_point']]['base_fee_msat'],
+                    'bfn': base_fee_msat_new,
+                })
+
+                channel_fee_policies[channel_data['channel_point']] = {
+                    'base_fee_msat': base_fee_msat_new,
+                    'fee_rate': fee_rate_new,
+                    'cltv': self.params['cltv'],
+                }
+            logger.info("")
         return channel_fee_policies, stats
 
     def factor_demand_base_fee(self, num_fwd_out):
@@ -380,6 +418,6 @@ if __name__ == '__main__':
 
     logging.config.dictConfig(settings.logger_config)
 
-    nd = LndNode()
+    nd = LndNode('/home/user/.lndmanage/config.ini')
     fee_setter = FeeSetter(nd)
     fee_setter.set_fees()
