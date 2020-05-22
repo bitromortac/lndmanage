@@ -3,7 +3,7 @@ import codecs
 import time
 import datetime
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -701,7 +701,24 @@ class LndNode(Node):
         logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
         logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
 
+    def pubkey_to_channel_map(self):
+        """
+        Determines a dict with node pubkeys this node has a channel with, which
+        maps to a list of all the channels with the node.
+
+        :return: dictionary of pubkeys with list of channels as value
+        :rtype: dict[list]
+        """
+        channels = self.get_all_channels()
+
+        node_to_channel_map = defaultdict(list)
+
+        for c, cv in channels.items():
+            node_to_channel_map[cv['remote_pubkey']].append(c)
+
+        return node_to_channel_map
+
 
 if __name__ == '__main__':
-    node = LndNode()
-    print(node.get_closed_channels().keys())
+    node = LndNode('/home/user/.lndmanage/config.ini')
+    print(node.pubkey_to_channel_map())
