@@ -14,13 +14,12 @@ optimization_parameters = {
     'cltv': 14,  # blocks
     'min_base_fee': 20,  # msat
     'max_base_fee': 5000,  # msat
-    'max_fee_rate': 0.001000,
     'min_fee_rate': 0.000004,
+    'max_fee_rate': 0.001000,
     'delta_max': 1.5,
     'delta_min_up': 0.05,
     'delta_min_dn': 0.50,
     'r_t': 100000 / 7,  # sat / day
-    'r_max': 200000 / 7,  # sat / day  -- rule of thumb: about 2 * r_t
     'local_balance_reserve': 500000,  # sat
     'delta_b_min': 0.25,
     'delta_b_max': 0.50,
@@ -93,8 +92,7 @@ def delta_demand(params, time_interval, amount_out, local_balance, capacity):
         f"    Outward forwarded amount: {amount_out:6.0f} "
         f"(rate {r:5.0f} / target rate {r_t:5.0f})")
 
-    m = params['delta_max'] - 1.
-    m /= (params['r_max'] / r_t - 1.)
+    m = params['delta_min_dn']
 
     c = 1. + m * (r / r_t - 1.)
 
