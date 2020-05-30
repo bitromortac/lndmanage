@@ -20,7 +20,7 @@ optimization_parameters = {
     'delta_min_up': 0.05,
     'delta_min_dn': 0.50,
     'r_t': 100000 / 7,  # sat / day
-    'local_balance_reserve': 500000,  # sat
+    'local_balance_reserve': 300000,  # sat
     'delta_b_min': 0.25,
     'delta_b_max': 0.50,
     'delta_b': 0.5,
