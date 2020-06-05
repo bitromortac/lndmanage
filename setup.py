@@ -29,7 +29,7 @@ setuptools.setup(
         'grpcio==1.19.0',
         'grpcio-tools==1.13.0',
         'kiwisolver==1.0.1',
-        'networkx==2.2',
+        'networkx==2.4',
         'numpy==1.16.2',
         'protobuf==3.7.1',
         'Pygments==2.4.2',
