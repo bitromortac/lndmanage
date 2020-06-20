@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 optimization_parameters = {
-    'cltv': 14,  # blocks
+    'cltv': 40,  # blocks
     'min_base_fee': 20,  # msat
     'max_base_fee': 5000,  # msat
     'min_fee_rate': 0.000004,
