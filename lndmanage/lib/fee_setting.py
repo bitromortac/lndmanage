@@ -202,7 +202,7 @@ class FeeSetter(object):
 
         # loop over channel peers
         for pk, cs in self.node.pubkey_to_channel_map().items():
-            logger.info(f">>> Fee optmization for node {pk} "
+            logger.info(f">>> Fee optimization for node {pk} "
                         f"({self.node.network.node_alias(pk)}):")
             # loop over channels with peer
             peer_capacity = 0
