@@ -339,6 +339,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 **Requirements:** python3.6, lnd v0.10.0-beta
+**Optional Requirements** (depending on distro): `$ sudo apt install gcc g++ python3-devel python3-venv`
 
 Some commands will only work correctly if lnd is built with the `routerrpc`.
 This can be done when compiling with `make install tags="routerrpc"`. If you
@@ -357,6 +358,7 @@ You can install lndmanage via two methods:
 ```
 $ python3 -m venv venv
 $ source venv/bin/activate
+$ pip install --upgrade pip setuptools wheel
 $ python3 -m pip install lndmanage
 ```
 2\. Install from source:
@@ -365,6 +367,7 @@ $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
 $ python3 -m venv venv
 $ source venv/bin/activate
+$ pip install --upgrade pip setuptools wheel
 $ python3 setup.py install
 ```
 
@@ -380,6 +383,7 @@ You need to set the environment variable `PYTHONIOENCODING` for proper encoding 
 ```
 $ py -m venv venv
 $ .\venv\Scripts\activate
+$ pip install --upgrade pip setuptools wheel
 $ python -m pip install lndmanage
 ```
 
@@ -389,6 +393,7 @@ $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
 $ py -m venv venv
 $ .\venv\Scripts\activate
+$ pip install --upgrade pip setuptools wheel
 $ python setup.py install
 ```
 ### Configuration:
