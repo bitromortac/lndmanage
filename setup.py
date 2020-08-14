@@ -7,9 +7,12 @@ with open('./lndmanage/__init__.py', 'r') as f:
     MATCH_EXPR = "__version__[^'\"]+(['\"])([^'\"]+)"
     VERSION = re.search(MATCH_EXPR, f.read()).group(2)
 
-# to package, run:
-# pip install setuptools wheel sdist twine
-# python3 setup.py sdist bdist_wheel
+# package:
+# (venv) pip install pip517 setuptools wheel sdist twine
+# (venv) python3 -m pep517.build --source --binary .
+# upload:
+# (venv) twine upload --repository testpypi dist/*
+
 setuptools.setup(
     name="lndmanage",
     version=VERSION,
