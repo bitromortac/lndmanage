@@ -11,6 +11,8 @@ from lndmanage.lib.exceptions import (
     DryRun,
     RebalancingTrialsExhausted,
     NoRoute,
+    PolicyError,
+    InsufficientBandwidth,
 )
 from lndmanage import settings
 from test.testnetwork import TestNetwork
@@ -25,7 +27,7 @@ import logging.config
 settings.set_lndmanage_home_dir(lndmanage_home)
 logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.handlers[0].setLevel(logging.DEBUG)
 
 
@@ -178,7 +180,7 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 33
 
         self.assertRaises(
-            RebalanceFailure,
+            InsufficientBandwidth,
             self.circle_and_check,
             channel_number_from,
             channel_number_to,
@@ -241,7 +243,7 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 33
 
         self.assertRaises(
-            RebalanceFailure,
+            PolicyError,
             self.circle_and_check,
             channel_number_from,
             channel_number_to,
