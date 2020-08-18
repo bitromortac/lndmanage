@@ -7,9 +7,12 @@ with open('./lndmanage/__init__.py', 'r') as f:
     MATCH_EXPR = "__version__[^'\"]+(['\"])([^'\"]+)"
     VERSION = re.search(MATCH_EXPR, f.read()).group(2)
 
-# to package, run:
-# pip install setuptools wheel sdist twine
-# python3 setup.py sdist bdist_wheel
+# package:
+# (venv) pip install pip517 setuptools wheel sdist twine
+# (venv) python3 -m pep517.build --source --binary .
+# upload:
+# (venv) twine upload --repository testpypi dist/*
+
 setuptools.setup(
     name="lndmanage",
     version=VERSION,
@@ -22,20 +25,19 @@ setuptools.setup(
     url="https://github.com/bitromortac/lndmanage",
     packages=setuptools.find_packages(),
     install_requires=[
-        'wheel',
         'cycler==0.10.0',
-        'decorator==4.4.0',
-        'googleapis-common-protos==1.5.9',
-        'grpcio==1.19.0',
-        'grpcio-tools==1.13.0',
-        'kiwisolver==1.0.1',
+        'decorator==4.4.2',
+        'googleapis-common-protos==1.52.0',
+        'grpcio==1.31.0',
+        'grpcio-tools==1.31.0',
+        'kiwisolver==1.2.0',
         'networkx==2.4',
-        'numpy==1.16.2',
-        'protobuf==3.7.1',
-        'Pygments==2.4.2',
-        'pyparsing==2.4.0',
-        'python-dateutil==2.8.0',
-        'six==1.12.0',
+        'numpy==1.19.1',
+        'protobuf==3.12.4',
+        'Pygments==2.6.1',
+        'pyparsing==2.4.7',
+        'python-dateutil==2.8.1',
+        'six==1.15.0',
     ],
     include_package_data=True,
     classifiers=[
