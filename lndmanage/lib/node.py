@@ -17,7 +17,7 @@ import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, PolicyError, InsufficientBandwidth
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
@@ -256,9 +256,19 @@ class LndNode(Node):
         )
         try:
             # timeout after 5 minutes
-            return self._rpc.SendToRouteSync(request, timeout=5 * 60)
+            payment = self._rpc.SendToRouteSync(request, timeout=5 * 60)
         except _Rendezvous:
             raise PaymentTimeOut
+
+        # check for unexpected payment errors
+        if "htlc exceeds maximum policy" in payment.payment_error:
+            logger.error("   HTLC exceeds maximum policy amount (channel reserve).")
+            raise PolicyError
+        elif "insufficient bandwidth to route" in payment.payment_error:
+            logger.error("   Insufficient bandwidth to route HTLC.")
+            raise InsufficientBandwidth
+
+        return payment
 
     def get_raw_network_graph(self):
         try:
@@ -607,9 +617,12 @@ class LndNode(Node):
         )
         try:
             response = self._rpc.QueryRoutes(request)
-        except _Rendezvous:
-            raise NoRoute
-        # print(response)
+        except Exception as e:
+            if "unable to find a path" in e.details():
+                raise NoRoute
+            else:
+                raise e
+
         # We give back only one route, as multiple routes will be deprecated
         channel_route = [h.chan_id for h in response.routes[0].hops]
 

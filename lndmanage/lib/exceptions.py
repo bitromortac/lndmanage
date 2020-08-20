@@ -42,6 +42,18 @@ class MultichannelInboundRebalanceFailure(RebalanceFailure):
     pass
 
 
+class PaymentError(Exception):
+    pass
+
+
+class PolicyError(PaymentError):
+    pass
+
+
+class InsufficientBandwidth(PaymentError):
+    pass
+
+
 class NoRoute(Exception):
     pass
 

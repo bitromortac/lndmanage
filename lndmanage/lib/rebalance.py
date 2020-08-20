@@ -86,7 +86,7 @@ class Rebalancer(object):
         :raises DryRun: attempt was just a dry run
         """
         amt_msat = amt_sat * 1000
-        previous_route_channel_hops = []
+        previous_route_channel_hops = None
 
         count = 0
         while True:
@@ -136,9 +136,11 @@ class Rebalancer(object):
                     raise PaymentTimeOut
 
                 previous_route_channel_hops = r.channel_hops
-                logger.debug(f"Payment error: {result.payment_error}.")
 
+                # handle expected payment errors
                 if result.payment_error:
+                    logger.debug(f"Payment error: {result.payment_error}.")
+
                     # determine the channel/node that reported a failure
                     reporting_channel_id = self.node.handle_payment_error(
                         result.payment_error)
