@@ -338,19 +338,25 @@ lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-**Requirements:** python3.6, lnd v0.10.0-beta
-**Optional Requirements** (depending on distro): `$ sudo apt install gcc g++ python3-devel python3-venv`
+###Requirements
+Installation of lndmange requires `>=python3.6`, `lnd >=v0.10.0-beta`, `python3-venv`
 
+####Optional Requirements
+Depending on if you want to install from source dependency packages you may
+need `gcc`, `g++`, `python3-dev(el)`.
+
+####LND Requirements
 Some commands will only work correctly if lnd is built with the `routerrpc`.
 This can be done when compiling with `make install tags="routerrpc"`. If you
 use precompiled binaries, you can ignore this.
 
+####Admin Macaroon and TLS cert needed
 If you run this tool from a different host than the lnd host, 
 make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
  and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
  configuration.
 
-### Linux:
+### Linux
 
 You can install lndmanage via two methods:
 
@@ -368,10 +374,10 @@ $ cd lndmanage
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install --upgrade pip setuptools wheel
-$ python3 setup.py install
+$ pip install .
 ```
 
-### Windows (powershell):
+### Windows (powershell)
 Install [python3](https://www.python.org/downloads/release/python-374/),
 [git](https://git-scm.com/download/win), and
  [visual studio build tools](https://visualstudio.microsoft.com/en/downloads/?q=build+tools).
@@ -394,9 +400,9 @@ $ cd lndmanage
 $ py -m venv venv
 $ .\venv\Scripts\activate
 $ pip install --upgrade pip setuptools wheel
-$ python setup.py install
+$ pip install .
 ```
-### Configuration:
+### Configuration
 
 When starting lndmanage for the first time, it will create a runtime folder 
 `/home/user/.lndmanage`, where the configuration `config.ini` and log files
