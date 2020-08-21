@@ -338,19 +338,19 @@ lndmanage will be developed in lockstep with lnd and tagged accordingly.
 If you are running an older version of lnd checkout the according 
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
-###Requirements
+### Requirements
 Installation of lndmange requires `>=python3.6`, `lnd >=v0.10.0-beta`, `python3-venv`
 
-####Optional Requirements
+#### Optional Requirements
 Depending on if you want to install from source dependency packages you may
 need `gcc`, `g++`, `python3-dev(el)`.
 
-####LND Requirements
+#### LND Requirements
 Some commands will only work correctly if lnd is built with the `routerrpc`.
 This can be done when compiling with `make install tags="routerrpc"`. If you
 use precompiled binaries, you can ignore this.
 
-####Admin Macaroon and TLS cert needed
+#### Admin Macaroon and TLS cert needed
 If you run this tool from a different host than the lnd host, 
 make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
  and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
