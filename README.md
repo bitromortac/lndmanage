@@ -339,7 +339,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmange requires `>=python3.6`, `lnd >=v0.10.0-beta`, `python3-venv`
+Installation of lndmange requires `>=python3.6`, `lnd v0.11.0-beta`, `python3-venv`
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
