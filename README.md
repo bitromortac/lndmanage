@@ -1,5 +1,5 @@
 <p align="center">
-<img src="logo.png" style="max-width:100%;" width="400" />
+<img src="https://github.com/bitromortac/lndmanage/raw/master/logo.png" style="max-width:100%;" width="400" />
 </p>
 <hr />
 
