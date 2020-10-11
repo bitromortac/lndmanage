@@ -118,14 +118,14 @@ class Rebalancer(object):
             rate = r.total_fee_msat / r.total_amt_msat
             if rate > self.max_effective_fee_rate:
                 logger.info(
-                    f"   Channel is too expensive. Rate: {rate:.6f}, "
+                    f"   Channel is too expensive (rate too high). Rate: {rate:.6f}, "
                     f"requested max rate: {self.max_effective_fee_rate:.6f}")
                 raise TooExpensive
 
             if r.total_fee_msat > budget_sat * 1000:
                 logger.info(
-                    f"   Channel is too expensive. Fee: {r.total_fee_msat:.6f}"
-                    f" msat, requested max fee: {budget_sat:.6f} msat")
+                    f"   Channel is too expensive (budget exhausted). Total fee of route: "
+                    f"{r.total_fee_msat / 1000:.3f} sat, budget: {budget_sat:.3f} sat")
                 raise TooExpensive
 
             if not dry:
@@ -684,7 +684,7 @@ class Rebalancer(object):
             if total_fees_msat >= self.budget_sat * 1000:
                 raise TooExpensive(
                     f"Fee budget exhausted. "
-                    f"Total fees {total_fees_msat} msat.")
+                    f"Total fees {total_fees_msat / 1000:.3f} sat.")
 
             source_channel, target_channel = \
                 self._get_source_and_target_channels(
@@ -714,7 +714,7 @@ class Rebalancer(object):
                 f"Need to still change the local balance by "
                 f"{local_balance_change_left} sat to reach the goal "
                 f"of {initial_local_balance_change} sat. "
-                f"Fees paid up to now: {total_fees_msat} msat.")
+                f"Fees paid up to now: {total_fees_msat / 1000:.3f} sat.")
 
             # for each rebalance, get a new invoice
             invoice_r_hash = self.node.get_invoice(
@@ -739,7 +739,7 @@ class Rebalancer(object):
                 if relative_amt_to_go <= 0.10:
                     logger.info(
                         f"Goal is reached. Rebalancing done. "
-                        f"Total fees were {total_fees_msat} msat.")
+                        f"Total fees were {total_fees_msat / 1000:.3f} sat.")
                     return total_fees_msat
             except NoRoute:
                 logger.error(
