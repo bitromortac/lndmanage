@@ -3,7 +3,7 @@ Defines a general live test network class for integration testing.
 """
 from unittest import TestCase
 
-from lnregtest.lib.network import RegtestNetwork
+from lnregtest.lib.network import Network
 
 from lndmanage.lib.node import LndNode
 
@@ -35,7 +35,7 @@ class TestNetwork(TestCase):
             raise NotImplementedError("A network definition path needs to be "
                                       "given.")
 
-        self.testnet = RegtestNetwork(
+        self.testnet = Network(
             binary_folder=bin_dir,
             network_definition_location=self.network_definition,
             nodedata_folder=test_data_dir,
@@ -53,8 +53,8 @@ class TestNetwork(TestCase):
         # logger.info(format_dict(self.testnet.channel_mapping))
         # logger.info(format_dict(self.testnet.assemble_graph()))
 
-        master_node_data_dir = self.testnet.master_node.lnd_data_dir
-        master_node_port = self.testnet.master_node.grpc_port
+        master_node_data_dir = self.testnet.master_node.data_dir
+        master_node_port = self.testnet.master_node._grpc_port
         self.master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
 
         self.lndnode = LndNode(
