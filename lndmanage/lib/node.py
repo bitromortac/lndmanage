@@ -507,7 +507,7 @@ class LndNode(Node):
             'amt_out': f.amt_out,
             'amt_out_msat': f.amt_out_msat,
             'fee_msat': f.fee_msat,
-            'effective_fee': f.fee_msat / (f.amt_in * 1000)
+            'effective_fee': f.fee_msat / f.amt_in_msat
         } for f in forwardings.forwarding_events]
 
         return events
