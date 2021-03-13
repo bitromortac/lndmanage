@@ -11,7 +11,7 @@ ARG LNDMANAGE_HOST_SRC_PATH
 
 COPY "$LNDMANAGE_HOST_SRC_PATH/requirements.txt" .
 
-RUN pip install -r requirements.txt
+RUN pip install wheel && pip install -r requirements.txt
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
