@@ -34,7 +34,7 @@ setuptools.setup(
         'networkx==2.4',
         'numpy==1.19.1',
         'protobuf==3.12.4',
-        'Pygments==2.6.1',
+        'Pygments==2.7.4',
         'pyparsing==2.4.7',
         'python-dateutil==2.8.1',
         'six==1.15.0',
