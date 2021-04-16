@@ -1,10 +1,11 @@
 import os
 import codecs
+from collections import OrderedDict
 import time
+from typing import List
 import datetime
 import statistics
 
-from collections import OrderedDict
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -19,6 +20,7 @@ import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 from lndmanage.lib.network import Network
 from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, PolicyError, InsufficientBandwidth
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
+from lndmanage.lib.types import Payment, Invoice
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
     convert_short_channel_id_to_channel_id,
@@ -661,6 +663,24 @@ class LndNode(Node):
         node_info['addresses'] = addresses
 
         return node_info
+
+    def get_payments(self, max_payments=1000) -> List[Payment]:
+        response = self._rpc.ListPayments(lnd.ListPaymentsRequest(max_payments=max_payments))
+        payments = []
+        for p in response.payments:
+            # TODO: remove grpc data type
+            if p.status == p.SUCCEEDED:
+                payments.append(Payment.from_lnd_proto(p))
+        return payments
+
+    def get_invoices(self, max_invoices=1000) -> List[Invoice]:
+        response = self._rpc.ListInvoices(lnd.ListInvoiceRequest(num_max_invoices=max_invoices))
+        invoices = []
+        for i in response.invoices:
+            # TODO: remove grpc data type
+            if i.settled:
+                invoices.append(Invoice.from_lnd_proto(i))
+        return invoices
 
     def print_status(self):
         logger.info("-------- Node status --------")
