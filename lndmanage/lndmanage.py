@@ -7,13 +7,6 @@ import distutils.spawn as spawn
 # readline has a desired side effect on keyword input of enabling history
 import readline
 
-from lndmanage.lib.node import LndNode
-from lndmanage.lib.listchannels import ListChannels
-from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.recommend_nodes import RecommendNodes
-from lndmanage.lib.report import Report
-from lndmanage.lib.info import Info
-from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -21,6 +14,14 @@ from lndmanage.lib.exceptions import (
     RebalanceFailure,
     RebalancingTrialsExhausted,
 )
+from lndmanage.lib.info import Info
+from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.lncli import Lncli
+from lndmanage.lib.node import LndNode
+from lndmanage.lib.openchannels import ChannelOpener
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.recommend_nodes import RecommendNodes
+from lndmanage.lib.report import Report
 from lndmanage import settings
 
 import logging.config
@@ -329,6 +330,50 @@ class Parser(object):
             'lncli',
             help='execute lncli')
 
+        # cmd: openchannels
+        self.parser_openchannels = subparsers.add_parser(
+            'openchannels',
+            help='opens multiple channels with UTXO control',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_openchannels.add_argument(
+            '--utxos',
+            type=str,
+            help='Comma-separated list of utxos of format '
+                 'txid:output_index,txid:output_index which belong to the LND '
+                 'wallet (see lncli listunspent).')
+        self.parser_openchannels.add_argument(
+            '--amounts',
+            type=str,
+            help='Comma-separated list of channel amounts in sat 1000000,2000000,... '
+                 'A list of amounts with sum < 100 denotes relative amounts that are rescaled '
+                 'to the sum of all UTXOs provided, such that no change is created. '
+                 'If the amounts provided are larger than the funds available, '
+                 'they will automatically be reduced proportionally such that no change is created. '
+                 'Change is created if anchor reserve funds would be depleted.')
+        self.parser_openchannels.add_argument(
+            '--total-amount',
+            type=int,
+            help='Total amount in sat to open channels.'
+                 'Amounts and total amount flags are mutually exclusive. '
+                 'If none of the two amounts are given, all available UTXOs '
+                 'will be spent.')
+        self.parser_openchannels.add_argument(
+            '--sat-per-vbyte',
+            type=int,
+            default=1,
+            help='The fee rate in sat per vbyte that will be targeted.')
+        self.parser_openchannels.add_argument(
+            '--reckless',
+            help='If this flag is provided, the user will not be asked '
+                 'to agree to channel opening.', action='store_true')
+        self.parser_openchannels.add_argument(
+            '--private', help='The channels will not be announced to the network.',
+            action='store_true')
+        self.parser_openchannels.add_argument(
+            'pubkeys',
+            type=str,
+            help='Comma-separated list of node pubkeys.')
+
     def check_for_lncli(self):
         """
         Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
@@ -465,6 +510,21 @@ class Parser(object):
         elif args.cmd == 'info':
             info = Info(node)
             info.parse_and_print(args.info_string)
+
+        elif args.cmd == 'openchannels':
+            channel_opener = ChannelOpener(node)
+            try:
+                channel_opener.open_channels(
+                    pubkeys=args.pubkeys,
+                    amounts=args.amounts,
+                    utxos=args.utxos,
+                    sat_per_vbyte=args.sat_per_vbyte,
+                    total_amount=args.total_amount,
+                    reckless=args.reckless,
+                    private=args.private,
+                )
+            except Exception as e:
+                logger.info(e)
 
 
 def main():
