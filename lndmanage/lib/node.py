@@ -1,11 +1,9 @@
 import os
 import codecs
+from collections import OrderedDict
 import time
 import datetime
-import statistics
-from typing import List, TYPE_CHECKING
-
-from collections import OrderedDict
+from typing import Dict, List, Tuple, TYPE_CHECKING
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -13,9 +11,10 @@ from google.protobuf.json_format import MessageToDict
 
 import lndmanage.grpc_compiled.rpc_pb2 as lnd
 import lndmanage.grpc_compiled.rpc_pb2_grpc as lndrpc
-
 import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
+import lndmanage.grpc_compiled.walletkit_pb2 as lndwalletkit
+import lndmanage.grpc_compiled.walletkit_pb2_grpc as lndwalletkitrpc
 
 from lndmanage.lib.network import Network
 from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, OurNodeFailure
@@ -161,6 +160,7 @@ class LndNode(Node):
         # establish connections to rpc servers
         self._rpc = lndrpc.LightningStub(channel)
         self._routerrpc = lndrouterrpc.RouterStub(channel)
+        self._walletrpc = lndwalletkitrpc.WalletKitStub(channel)
 
     def update_blockheight(self):
         info = self._rpc.GetInfo(lnd.GetInfoRequest())
@@ -648,6 +648,17 @@ class LndNode(Node):
         node_info['addresses'] = addresses
 
         return node_info
+
+    def get_utxos(self) -> Dict[Tuple[str, int], int]:
+        utxos = self._walletrpc.ListUnspent(
+            lndwalletkit.ListUnspentRequest(
+                min_confs=1,
+                max_confs=100000
+            ))
+        utxos = {
+            (str(u.outpoint.txid_str), int(u.outpoint.output_index)):
+                int(u.amount_sat) for u in utxos.utxos}
+        return utxos
 
     def print_status(self):
         logger.info("-------- Node status --------")
