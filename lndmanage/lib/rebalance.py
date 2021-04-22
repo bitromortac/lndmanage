@@ -1,4 +1,3 @@
-import logging
 import math
 
 from lndmanage.lib.routing import Router
@@ -16,7 +15,8 @@ from lndmanage.lib.exceptions import (
 )
 from lndmanage import settings
 
-logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger('REBLNC')
 logger.addHandler(logging.NullHandler())
 
 
@@ -678,82 +678,86 @@ class Rebalancer(object):
 
         total_fees_msat = 0
 
-        # loop over the rebalancing candidates
-        for c in rebalance_candidates:
+        try:
+            # loop over the rebalancing candidates
+            for c in rebalance_candidates:
 
-            if total_fees_msat >= self.budget_sat * 1000:
-                raise TooExpensive(
-                    f"Fee budget exhausted. "
-                    f"Total fees {total_fees_msat / 1000:.3f} sat.")
+                if total_fees_msat >= self.budget_sat * 1000:
+                    raise TooExpensive(
+                        f"Fee budget exhausted. "
+                        f"Total fees {total_fees_msat / 1000:.3f} sat.")
 
-            source_channel, target_channel = \
-                self._get_source_and_target_channels(
-                    channel_id, c['chan_id'], rebalance_direction)
+                source_channel, target_channel = \
+                    self._get_source_and_target_channels(
+                        channel_id, c['chan_id'], rebalance_direction)
 
-            # counterparty channel affords less than total rebalance amount
-            if abs(local_balance_change_left) > abs(c['amt_affordable']):
-                sign = math.copysign(1, c['amt_affordable'])
-                minimal_amount = sign * min(
-                    abs(chunked_amount), abs(c['amt_affordable']))
-                amt = -int(rebalance_direction * minimal_amount)
-            # counterparty channel affords more than total rebalance amount
-            else:
-                sign = math.copysign(1, local_balance_change_left)
-                minimal_amount = sign * min(
-                    abs(local_balance_change_left), abs(chunked_amount))
-                amt = int(rebalance_direction * minimal_amount)
-            # amt must be always positive
-            if amt < 0:
-                raise RebalanceCandidatesExhausted(
-                    f"Amount should not be negative! amt:{amt} sat")
+                # counterparty channel affords less than total rebalance amount
+                if abs(local_balance_change_left) > abs(c['amt_affordable']):
+                    sign = math.copysign(1, c['amt_affordable'])
+                    minimal_amount = sign * min(
+                        abs(chunked_amount), abs(c['amt_affordable']))
+                    amt = -int(rebalance_direction * minimal_amount)
+                # counterparty channel affords more than total rebalance amount
+                else:
+                    sign = math.copysign(1, local_balance_change_left)
+                    minimal_amount = sign * min(
+                        abs(local_balance_change_left), abs(chunked_amount))
+                    amt = int(rebalance_direction * minimal_amount)
+                # amt must be always positive
+                if amt < 0:
+                    raise RebalanceCandidatesExhausted(
+                        f"Amount should not be negative! amt:{amt} sat")
 
-            logger.info(
-                f"-------- Rebalance from {source_channel} to {target_channel}"
-                f" with {amt} sat --------")
-            logger.info(
-                f"Need to still change the local balance by "
-                f"{local_balance_change_left} sat to reach the goal "
-                f"of {initial_local_balance_change} sat. "
-                f"Fees paid up to now: {total_fees_msat / 1000:.3f} sat.")
-
-            # for each rebalance, get a new invoice
-            invoice_r_hash = self.node.get_invoice(
-                amt_msat=amt*1000,
-                memo=f"lndmanage: Rebalance of channel {channel_id}.")
-
-            # attempt the rebalance
-            try:
-                # be up to date with the blockheight, otherwise could lead
-                # to cltv errors
-                self.node.update_blockheight()
-                total_fees_msat += self.rebalance_two_channels(
-                    source_channel, target_channel, amt, invoice_r_hash,
-                    self.budget_sat, dry=dry)
-                local_balance_change_left -= int(rebalance_direction * amt)
-
-                relative_amt_to_go = (local_balance_change_left /
-                                      initial_local_balance_change)
-
-                # perfect rebalancing is not always possible,
-                # so terminate if at least 90% of amount was reached
-                if relative_amt_to_go <= 0.10:
-                    logger.info(
-                        f"Goal is reached. Rebalancing done. "
-                        f"Total fees were {total_fees_msat / 1000:.3f} sat.")
-                    return total_fees_msat
-            except NoRoute:
-                logger.error(
-                    "There was no reliable route with enough capacity.\n")
-            except DryRun:
                 logger.info(
-                    "Would have tried this route now, but it was a dry run.\n")
-            except TooExpensive:
-                logger.error(
-                    "Too expensive, check --max-fee-rate and --max-fee-sat.\n")
-            except RebalanceFailure:
-                logger.error(
-                    "Failed to rebalance with this channel.\n")
+                    f"-------- Rebalance from {source_channel} to {target_channel}"
+                    f" with {amt} sat --------")
+                logger.info(
+                    f"Need to still change the local balance by "
+                    f"{local_balance_change_left} sat to reach the goal "
+                    f"of {initial_local_balance_change} sat. "
+                    f"Fees paid up to now: {total_fees_msat / 1000:.3f} sat.")
 
-        raise RebalanceCandidatesExhausted(
-            "There are no further counterparty rebalance channel candidates "
-            "for this channel.\n")
+                # for each rebalance, get a new invoice
+                invoice_r_hash = self.node.get_invoice(
+                    amt_msat=amt*1000,
+                    memo=f"lndmanage: Rebalance of channel {channel_id}.")
+
+                # attempt the rebalance
+                try:
+                    # be up to date with the blockheight, otherwise could lead
+                    # to cltv errors
+                    self.node.update_blockheight()
+                    total_fees_msat += self.rebalance_two_channels(
+                        source_channel, target_channel, amt, invoice_r_hash,
+                        self.budget_sat, dry=dry)
+                    local_balance_change_left -= int(rebalance_direction * amt)
+
+                    relative_amt_to_go = (local_balance_change_left /
+                                          initial_local_balance_change)
+
+                    # perfect rebalancing is not always possible,
+                    # so terminate if at least 90% of amount was reached
+                    if relative_amt_to_go <= 0.10:
+                        logger.info(
+                            f"Goal is reached. Rebalancing done. "
+                            f"Total fees were {total_fees_msat / 1000:.3f} sat.")
+                        return total_fees_msat
+                except NoRoute:
+                    logger.error(
+                        "There was no reliable route with enough capacity.\n")
+                except DryRun:
+                    logger.info(
+                        "Would have tried this route now, but it was a dry run.\n")
+                except TooExpensive:
+                    logger.error(
+                        "Too expensive, check --max-fee-rate and --max-fee-sat.\n")
+                except RebalanceFailure:
+                    logger.error(
+                        "Failed to rebalance with this channel.\n")
+
+            raise RebalanceCandidatesExhausted(
+                "There are no further counterparty rebalance channel candidates "
+                "for this channel.\n")
+
+        except KeyboardInterrupt:
+            return

@@ -9,9 +9,9 @@ from lndmanage.lib.forwardings import ForwardingAnalyzer
 from lndmanage.lib.network_info import NetworkAnalysis
 from lndmanage import settings
 
-import logging.config
-logging.config.dictConfig(settings.logger_config)
-logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger('RECMND')
+logger.addHandler(logging.NullHandler())
 
 # define printing shortcuts, alignments, and cutoffs
 print_node_format = {
@@ -544,9 +544,3 @@ class RecommendNodes(object):
                     logger.info('   ' + v['address'])
                 else:
                     logger.info('   no address available')
-
-
-if __name__ == '__main__':
-    from lndmanage.lib.node import LndNode
-    nd = LndNode()
-    rn = RecommendNodes(nd)

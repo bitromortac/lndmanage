@@ -1,14 +1,14 @@
 """
 Creates reports for forwardings, channel opens/closings, onchain activity.
 """
-import logging
 from datetime import datetime
 from lndmanage.lib.ln_utilities import (
     convert_channel_id_to_short_channel_id,
     height_to_timestamp
 )
 
-logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger('REPORT')
 logger.addHandler(logging.NullHandler())
 
 # number of bins for histograms

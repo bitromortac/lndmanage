@@ -8,7 +8,7 @@ from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('NETWRK')
 logger.addHandler(logging.NullHandler())
 
 
@@ -247,13 +247,3 @@ class Network(object):
 
         sorted_neighboring_nodes = sorted(neighboring_nodes, key=lambda x: x[1], reverse=True)
         return sorted_neighboring_nodes[:nnodes]
-
-
-if __name__ == '__main__':
-    import logging.config
-    logging.config.dictConfig(settings.logger_config)
-
-    from lndmanage.lib.node import LndNode
-    nd = LndNode()
-    print(f"Graph size: {nd.network.graph.size()}")
-    print(f"Number of channels: {len(nd.network.edges.keys())}")

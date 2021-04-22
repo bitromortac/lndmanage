@@ -5,7 +5,7 @@ import networkx as nx
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('PTHFND')
 logger.addHandler(logging.NullHandler())
 
 

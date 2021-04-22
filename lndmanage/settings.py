@@ -3,6 +3,7 @@ import configparser
 from lndmanage.lib.configure import check_or_create_configuration
 from pathlib import Path
 
+# ======== LNDMANAGE =========
 # -------- graph settings --------
 # accepted age of the network graph
 CACHING_RETENTION_MINUTES = 30
@@ -19,8 +20,8 @@ LONG_PATH_PENALTY_MSAT = 2000
 MIN_REL_CHANNEL_CAPACITY = 0.75
 
 # -------- network analysis --------
-# a user typically has a low number of channels, this number
 NUMBER_CHANNELS_DEFINING_USER_NODE = 3
+NUMBER_CHANNELS_DEFINING_ROUTING_NODE = 10
 NUMBER_CHANNELS_DEFINING_HUB = 200
 
 # -------- rebalancing --------
@@ -31,8 +32,16 @@ UNBALANCED_CHANNEL = 0.2
 CHUNK_SIZE = 1.0
 REBALANCING_TRIALS = 30
 
+# ======== LNDMANAGED =========
+# -------- channel acceptor --------
+CHACC_MIN_CHANNEL_SIZE_PRIVATE = 0
+CHACC_MAX_CHANNEL_SIZE_PRIVATE = 16777215
+CHACC_MIN_CHANNEL_SIZE_PUBLIC = 0
+CHACC_MAX_CHANNEL_SIZE_PUBLIC = 16777215
 
-logger_config = None
+
+lndm_logger_config = None
+lndmd_logger_config = None
 home_dir = None
 
 
@@ -43,7 +52,7 @@ def set_lndmanage_home_dir(directory=None):
     :param directory: home folder, overwrites default
     :type directory: str
     """
-    global home_dir, logger_config
+    global home_dir, lndm_logger_config, lndmd_logger_config
 
     if directory:
         home_dir = directory
@@ -66,16 +75,13 @@ def set_lndmanage_home_dir(directory=None):
         # we need to create the configuration
         check_or_create_configuration(home_dir)
 
-    # logger settings
-    logfile_path = os.path.join(home_dir, 'lndmanage.log')
-
-    logger_config = {
+    # logging for lndmanage
+    lndm_logger_config = {
         'version': 1,
         'disable_existing_loggers': False,
         'formatters': {
             'file': {
-                'format': '[%(asctime)s %(levelname)s] %(message)s',
-                #'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
+                'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
                 'datefmt': '%Y-%m-%d %H:%M:%S'
             },
             'standard': {
@@ -93,7 +99,45 @@ def set_lndmanage_home_dir(directory=None):
                 'level': 'DEBUG',
                 'formatter': 'file',
                 'class': 'logging.FileHandler',
-                'filename': logfile_path,
+                'filename': os.path.join(home_dir, 'lndmanage.log'),
+                'encoding': 'utf-8',
+            },
+        },
+        'loggers': {
+            '': {  # root logger
+                'handlers': ['default', 'file'],
+                'level': 'DEBUG',
+                'propagate': True
+            },
+        }
+    }
+
+    # logging config for lndmanaged
+    lndmd_logger_config = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'file': {
+                'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S'
+            },
+            'standard': {
+                'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S'
+            },
+        },
+        'handlers': {
+            'default': {
+                'level': 'INFO',
+                'formatter': 'standard',
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout',  # Default is stderr
+            },
+            'file': {
+                'level': 'DEBUG',
+                'formatter': 'file',
+                'class': 'logging.FileHandler',
+                'filename': os.path.join(home_dir, 'lndmanaged.log'),
                 'encoding': 'utf-8',
             },
         },

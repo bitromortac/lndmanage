@@ -1,16 +1,14 @@
 import os
 import configparser
 
-from lndmanage.lib.user import yes_no_question, get_user_input
-
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('CONFIG')
 logger.addHandler(logging.NullHandler())
 
 this_file_path = os.path.dirname(os.path.realpath(__file__))
 
 
-def valid_path(path):
+def valid_path(path: str):
     path = os.path.expanduser(path)
     if os.path.exists(path):
         return path
@@ -19,16 +17,29 @@ def valid_path(path):
         return False
 
 
-def valid_host(host):
+def valid_host(host: str):
     try:
-        ip, port = host.split(':')
+        _, _ = host.split(':')
     except ValueError:
         print("Error: Host is not of format '127.0.0.1:10009'")
         return False
     return host
 
 
-def check_or_create_configuration(home_dir):
+def create_lndmanaged_config(home_dir: str):
+    config = configparser.ConfigParser()
+    config_template_path = os.path.join(
+        this_file_path, '../templates/lndmanaged_sample.ini')
+    config.read(config_template_path)
+
+    lndmanaged_config_path = os.path.join(home_dir, 'lndmanaged.ini')
+
+    with open(lndmanaged_config_path, 'w') as configfile:
+        config.write(configfile)
+    print(f'Lndmanage daemon config was written to {lndmanaged_config_path}.')
+
+
+def check_or_create_configuration(home_dir: str):
     """
     Checks if lndmanage configuration exists, otherwise creates configuration.
 
@@ -54,9 +65,10 @@ def check_or_create_configuration(home_dir):
             print("Will use admin.macaroon and tls.cert from this directory.")
         else:
             remote = True
-            print(f"IF LND RUNS ON A REMOTE HOST, CONFIGURE {home_dir}/config.ini.")
+            print(f"IF LND RUNS ON A REMOTE HOST, CONFIGURE "
+                  f"{home_dir}/config.ini.")
 
-        # build config file
+        # create lndmanage config file
         config = configparser.ConfigParser()
         os.mkdir(home_dir)
         config_template_path = os.path.join(
@@ -67,17 +79,28 @@ def check_or_create_configuration(home_dir):
         config['network']['admin_macaroon_file'] = str(admin_macaroon_path)
         config['network']['tls_cert_file'] = str(tls_cert_path)
 
-        config_path = os.path.join(home_dir, 'config.ini')
+        lndmanage_config_path = os.path.join(home_dir, 'config.ini')
 
-        with open(config_path, 'w') as configfile:
+        with open(lndmanage_config_path, 'w') as configfile:
             config.write(configfile)
-        print(f'Config file was written to {config_path}.')
+        print(f'Config file was written to {lndmanage_config_path}.')
+
+        # lndmanaged config
+        create_lndmanaged_config(home_dir)
+
+        # leave the interactive mode for the user to update configuration
         if remote:
             exit(0)
 
     else:
-        config_path = os.path.join(home_dir, 'config.ini')
-        if not os.path.isfile(config_path):
+        lndmanage_config_path = os.path.join(home_dir, 'config.ini')
+        if not os.path.isfile(lndmanage_config_path):
             raise FileNotFoundError(
-                f"Configuration file does not exist. Filename: {config_path}. "
-                f"Delete .lndmanage folder and run again.")
+                f"Configuration file does not exist. Filename: "
+                f"{lndmanage_config_path}. Delete .lndmanage folder and "
+                f"run again.")
+
+        lndmanaged_config_path = os.path.join(home_dir, 'lndmanaged.ini')
+        if not os.path.isfile(lndmanaged_config_path):
+            # lndmanaged config
+            create_lndmanaged_config(home_dir)

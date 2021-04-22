@@ -3,7 +3,7 @@ from lndmanage.lib.node import LndNode
 from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(settings.logger_config)
+logging.config.dictConfig(settings.lndm_logger_config)
 
 if __name__ == '__main__':
     node = LndNode()

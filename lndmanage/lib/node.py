@@ -1,10 +1,11 @@
+import asyncio
 import os
 import codecs
 import time
 import datetime
-import statistics
 
 from collections import OrderedDict
+from typing import Optional, Callable
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -13,11 +14,12 @@ from google.protobuf.json_format import MessageToDict
 import lndmanage.grpc_compiled.rpc_pb2 as lnd
 import lndmanage.grpc_compiled.rpc_pb2_grpc as lndrpc
 
-import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, PolicyError, InsufficientBandwidth
+from lndmanage.lib.exceptions import (
+    PaymentTimeOut, NoRoute, PolicyError, InsufficientBandwidth
+)
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
@@ -28,7 +30,7 @@ from lndmanage.lib.ln_utilities import (
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('NODE')
 logger.addHandler(logging.NullHandler())
 
 NUM_MAX_FORWARDING_EVENTS = 100000
@@ -56,19 +58,25 @@ class Node(object):
 
 class LndNode(Node):
     """
-    Implements an interface to an lnd node.
+    Implements a synchronous/asynchronous interface to an lnd node.
     """
-    def __init__(self, config_file=None, lnd_home=None, lnd_host=None,
-                 regtest=False):
+    loop: asyncio.AbstractEventLoop
+    rpc: lndrpc.LightningStub
+    routerrpc: lndrouterrpc.RouterStub
+    async_rpc: lndrpc.LightningStub
+    async_routerrpc: lndrouterrpc.RouterStub
+    _async_channel: grpc.aio.Channel
+    _sync_channel: grpc.Channel
+
+    def __init__(self, config_file: Optional[str] = None,
+                 lnd_home: Optional[str] = None,
+                 lnd_host: Optional[str] = None,
+                 regtest: bool = False):
         """
         :param config_file: path to the config file
-        :type config_file: str
         :param lnd_home: path to lnd home folder
-        :type lnd_home: str
         :param lnd_host: lnd host of format "127.0.0.1:9735"
-        :type lnd_host: str
         :param regtest: if the node is representing a regtest node
-        :type regtest: bool
         """
         super().__init__()
         self.config_file = config_file
@@ -76,8 +84,6 @@ class LndNode(Node):
         self.lnd_host = lnd_host
         self.regtest = regtest
 
-        self._rpc = None
-        self._routerrpc = None
         self.connect_rpcs()
 
         self.network = Network(self)
@@ -149,20 +155,38 @@ class LndNode(Node):
             creds = grpc.ssl_channel_credentials(cert)
 
         # necessary to circumvent standard size limitation
-        channel = grpc.secure_channel(lnd_host, creds, options=[
-            ('grpc.max_receive_message_length', 50 * 1024 * 1024)
+        self._sync_channel = grpc.secure_channel(
+            lnd_host, creds,
+            options=[('grpc.max_receive_message_length', 50 * 1024 * 1024)
         ])
 
+        # necessary to circumvent standard size limitation
+        self._async_channel = grpc.aio.secure_channel(
+            lnd_host, creds,
+            options=[('grpc.max_receive_message_length', 50 * 1024 * 1024)
+        ])
+        self.loop = self._async_channel._loop
+
+        # TODO: unify connections, use async only
         # establish connections to rpc servers
-        self._rpc = lndrpc.LightningStub(channel)
-        self._routerrpc = lndrouterrpc.RouterStub(channel)
+        self.rpc = lndrpc.LightningStub(self._sync_channel)
+        self.routerrpc = lndrouterrpc.RouterStub(self._sync_channel)
+
+        # establish async connections to rpc servers
+        self.async_rpc = lndrpc.LightningStub(self._async_channel)
+        self.async_routerrpc = lndrouterrpc.RouterStub(self._async_channel)
+
+    def disconnect_rpcs(self):
+        logger.debug("disconnecting rpcs")
+        self._sync_channel.close()
+        asyncio.run_coroutine_threadsafe(self._async_channel.close(), self.loop)
 
     def update_blockheight(self):
-        info = self._rpc.GetInfo(lnd.GetInfoRequest())
+        info = self.rpc.GetInfo(lnd.GetInfoRequest())
         self.blockheight = int(info.block_height)
 
     def get_channel_info(self, channel_id):
-        channel = self._rpc.GetChanInfo(
+        channel = self.rpc.GetChanInfo(
             lnd.ChanInfoRequest(chan_id=channel_id))
         channel_dict = MessageToDict(
             channel, including_default_value_fields=True)
@@ -198,7 +222,7 @@ class LndNode(Node):
         :param amt_msat:
         :return: payment result
         """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=amt_msat // 1000))
+        invoice = self.rpc.AddInvoice(lnd.Invoice(value=amt_msat // 1000))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -213,7 +237,7 @@ class LndNode(Node):
         :param memo: str, Comment field for an invoice.
         :return: payment result
         """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
+        invoice = self.rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
         result = self.send_to_route(routes, invoice.r_hash)
         logger.debug(result)
         return result
@@ -226,7 +250,7 @@ class LndNode(Node):
         :param memo: str
         :return: Hash of invoice preimage.
         """
-        invoice = self._rpc.AddInvoice(
+        invoice = self.rpc.AddInvoice(
             lnd.Invoice(value=amt_msat // 1000, memo=memo))
         return invoice.r_hash
 
@@ -237,7 +261,7 @@ class LndNode(Node):
         :param memo: Comment for the invoice.
         :return: Hash of the invoice preimage.
         """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
+        invoice = self.rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
         return invoice.r_hash
 
     def send_to_route(self, route, r_hash_bytes):
@@ -256,7 +280,7 @@ class LndNode(Node):
         )
         try:
             # timeout after 5 minutes
-            payment = self._rpc.SendToRouteSync(request, timeout=5 * 60)
+            payment = self.rpc.SendToRouteSync(request, timeout=5 * 60)
         except _Rendezvous:
             raise PaymentTimeOut
 
@@ -272,14 +296,14 @@ class LndNode(Node):
 
     def get_raw_network_graph(self):
         try:
-            graph = self._rpc.DescribeGraph(lnd.ChannelGraphRequest())
+            graph = self.rpc.DescribeGraph(lnd.ChannelGraphRequest())
+            return graph
         except _Rendezvous:
             logger.error(
                 "Problem connecting to lnd. "
                 "Either %s is not configured correctly or lnd is not running.",
                 self.config_file)
             exit(1)
-        return graph
 
     def get_raw_info(self):
         """
@@ -287,7 +311,7 @@ class LndNode(Node):
 
         :return: node information
         """
-        return self._rpc.GetInfo(lnd.GetInfoRequest())
+        return self.rpc.GetInfo(lnd.GetInfoRequest())
 
     def set_info(self):
         """
@@ -335,7 +359,7 @@ class LndNode(Node):
         :rtype: OrderedDict
 
         """
-        raw_channels = self._rpc.ListChannels(lnd.ListChannelsRequest(
+        raw_channels = self.rpc.ListChannels(lnd.ListChannelsRequest(
             active_only=active_only, public_only=public_only))
         try:
             channels_data = raw_channels.ListFields()[0][1]
@@ -493,7 +517,7 @@ class LndNode(Node):
         now = self.timestamp_from_now()
         then = self.timestamp_from_now(offset_days)
 
-        forwardings = self._rpc.ForwardingHistory(lnd.ForwardingHistoryRequest(
+        forwardings = self.rpc.ForwardingHistory(lnd.ForwardingHistoryRequest(
             start_time=then,
             end_time=now,
             num_max_events=NUM_MAX_FORWARDING_EVENTS))
@@ -519,7 +543,7 @@ class LndNode(Node):
         :return: dict, channel list
         """
         request = lnd.ClosedChannelsRequest()
-        closed_channels = self._rpc.ClosedChannels(request)
+        closed_channels = self.rpc.ClosedChannels(request)
         closed_channels_dict = {}
         for c in closed_channels.channels:
             closed_channels_dict[c.chan_id] = {
@@ -616,7 +640,7 @@ class LndNode(Node):
             use_mission_control=use_mc,
         )
         try:
-            response = self._rpc.QueryRoutes(request)
+            response = self.rpc.QueryRoutes(request)
         except Exception as e:
             if "unable to find a path" in e.details():
                 raise NoRoute
@@ -639,7 +663,7 @@ class LndNode(Node):
         """
         request = lnd.NodeInfoRequest(pub_key=pub_key, include_channels=True)
         try:
-            response = self._rpc.GetNodeInfo(request)
+            response = self.rpc.GetNodeInfo(request)
         except _Rendezvous as e:
             if e.details() == "unable to find node":
                 logger.info(
@@ -681,8 +705,3 @@ class LndNode(Node):
         logger.info(f"balancedness: l:{balancedness_local:.2%} r:{balancedness_remote:.2%}")
         logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
         logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
-
-
-if __name__ == '__main__':
-    node = LndNode()
-    print(node.get_closed_channels().keys())

@@ -4,7 +4,7 @@ from lndmanage.lib.pathfinding import ksp_discard_high_cost_paths
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('ROUTNG')
 logger.addHandler(logging.NullHandler())
 
 
@@ -316,10 +316,3 @@ class Router(object):
             except RouteWithTooSmallCapacity:
                 continue
         return routes
-
-
-if __name__ == '__main__':
-    import logging.config
-    logging.config.dictConfig(settings.logger_config)
-    from lndmanage.lib.node import LndNode
-    nd = LndNode()

@@ -3,10 +3,9 @@ import datetime
 
 from lndmanage.lib.network_info import NetworkAnalysis
 from lndmanage.lib import ln_utilities
-from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('INFORM')
 logger.addHandler(logging.NullHandler())
 
 # width of a column in the ouptput in characters

@@ -1,7 +1,7 @@
 import lndmanage.grpc_compiled.rpc_pb2 as ln
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('FEESET')
 logger.addHandler(logging.NullHandler())
 
 CLTV = 40
@@ -52,19 +52,3 @@ def set_fees_by_balancedness(
             time_lock_delta=CLTV,
         )
         logger.debug(update_request)
-        # node._stub.UpdateChannelPolicy(request=update_request)
-
-
-if __name__ == '__main__':
-    from lndmanage.lib.node import LndNode
-    import logging.config
-    from lndmanage import settings
-
-    logging.config.dictConfig(settings.logger_config)
-
-    nd = LndNode()
-
-    set_fees_by_balancedness(
-        nd, base_unbalanced_msat=0, rate_unbalanced_decimal=0.000001,
-        base_balanced_msat=40, rate_balanced_decimal=0.000050)
-

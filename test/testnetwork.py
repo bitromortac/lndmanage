@@ -1,6 +1,7 @@
 """
 Defines a general live test network class for integration testing.
 """
+import os
 from unittest import TestCase
 
 from lnregtest.lib.network import Network
@@ -66,6 +67,7 @@ class TestNetwork(TestCase):
 
     def tearDown(self):
         self.testnet.cleanup()
+        self.lndnode.disconnect_rpcs()
 
     def graph_test(self):
         """

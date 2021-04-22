@@ -3,14 +3,14 @@ Module for printing lightning channels.
 """
 
 import math
-import logging
 import time
 from collections import OrderedDict
 
 from lndmanage.lib.forwardings import get_forwarding_statistics_channels
 from lndmanage import settings
 
-logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger('LSTCHN')
 logger.addHandler(logging.NullHandler())
 
 # define symbols for bool to string conversion

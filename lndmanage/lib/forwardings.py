@@ -3,10 +3,9 @@ from collections import OrderedDict, defaultdict
 
 import numpy as np
 
-from lndmanage.lib.node import LndNode
 from lndmanage import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('FWDING')
 logger.addHandler(logging.NullHandler())
 
 np.warnings.filterwarnings('ignore')
@@ -614,15 +613,3 @@ def get_forwarding_statistics_channels(node, time_interval_start,
             if c['bandwidth_demand'] > 0.5:
                 c['action_required'] = True
     return channels
-
-
-if __name__ == '__main__':
-    import time
-    import logging.config
-    logging.config.dictConfig(settings.logger_config)
-    logger = logging.getLogger()
-
-    nd = LndNode()
-    fa = ForwardingAnalyzer(nd)
-    fa.initialize_forwarding_data(time_start=0, time_end=time.time())
-    print(fa.simple_flow_analysis())

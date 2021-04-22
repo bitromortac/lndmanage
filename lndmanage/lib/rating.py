@@ -1,7 +1,7 @@
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('RATING')
 logger.addHandler(logging.NullHandler())
 
 

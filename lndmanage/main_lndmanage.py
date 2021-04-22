@@ -24,7 +24,7 @@ from lndmanage.lib.exceptions import (
 from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(settings.logger_config)
+logging.config.dictConfig(settings.lndm_logger_config)
 logger = logging.getLogger()
 
 
@@ -65,7 +65,7 @@ class Parser(object):
 
         # setup the command line parser
         self.parser = argparse.ArgumentParser(
-            prog='lndmanage.py',
+            prog='run_lndmanage.py',
             description='Lightning network daemon channel management tool.')
         self.parser.add_argument(
             '--loglevel', default='INFO', choices=['INFO', 'DEBUG'])
@@ -471,64 +471,66 @@ def main():
 
     # config.ini is expected to be in home/.lndmanage directory
     config_file = os.path.join(settings.home_dir, 'config.ini')
+    node = LndNode(config_file=config_file)
 
-    # if lndmanage is run with arguments, run once
-    if len(sys.argv) > 1:
-        # take arguments from sys.argv
-        args = parser.parse_arguments()
-        node = LndNode(config_file=config_file)
-        parser.run_commands(node, args)
+    try:
+        # if lndmanage is run with arguments, run once
+        if len(sys.argv) > 1:
+            # take arguments from sys.argv
+            args = parser.parse_arguments()
+            parser.run_commands(node, args)
 
-    # otherwise enter an interactive mode
-    else:
-        history_file = os.path.join(settings.home_dir, "command_history")
-        try:
-            readline.read_history_file(history_file)
-        except FileNotFoundError:
-            # history will be written later
-            pass
-
-        logger.info("Running in interactive mode. "
-                    "You can type 'help' or 'exit'.")
-        node = LndNode(config_file=config_file)
-
-        if parser.lncli:
-            logger.info("Enabled lncli: using " + parser.lncli_path)
-
-        while True:
+        # otherwise enter an interactive mode
+        else:
+            history_file = os.path.join(settings.home_dir, "command_history")
             try:
-                user_input = input("$ lndmanage ")
-            except KeyboardInterrupt:
-                logger.info("")
-                continue
-            except EOFError:
-                readline.write_history_file(history_file)
-                logger.info("exit")
-                return 0
+                readline.read_history_file(history_file)
+            except FileNotFoundError:
+                # history will be written later
+                pass
 
-            if not user_input or user_input in ['help', '-h', '--help']:
-                parser.parser.print_help()
-                continue
-            elif user_input == 'exit':
-                readline.write_history_file(history_file)
-                return 0
+            logger.info("Running in interactive mode. "
+                        "You can type 'help' or 'exit'.")
 
-            args_list = user_input.split(" ")
+            if parser.lncli:
+                logger.info("Enabled lncli: using " + parser.lncli_path)
 
-            # lncli execution
-            if args_list[0] == 'lncli':
-                lncli = Lncli(parser.lncli_path, config_file)
-                lncli.lncli(args_list[1:])
-                continue
-            try:
-                # need to run with parse_known_args to get an exception
-                args = parser.parser.parse_args(args_list)
-                parser.run_commands(node, args)
-            except SystemExit:
-                # argparse may raise SystemExit on incorrect user input,
-                # which is a graceful exit. The user gets the standard output
-                # from argparse of what went wrong.
-                continue
+            while True:
+                try:
+                    user_input = input("$ lndmanage ")
+                except KeyboardInterrupt:
+                    logger.info("")
+                    continue
+                except EOFError:
+                    readline.write_history_file(history_file)
+                    logger.info("exit")
+                    return 0
+
+                if not user_input or user_input in ['help', '-h', '--help']:
+                    parser.parser.print_help()
+                    continue
+                elif user_input == 'exit':
+                    readline.write_history_file(history_file)
+                    return 0
+
+                args_list = user_input.split(" ")
+
+                # lncli execution
+                if args_list[0] == 'lncli':
+                    lncli = Lncli(parser.lncli_path, config_file)
+                    lncli.lncli(args_list[1:])
+                    continue
+                try:
+                    # need to run with parse_known_args to get an exception
+                    args = parser.parser.parse_args(args_list)
+                    parser.run_commands(node, args)
+                except SystemExit:
+                    # argparse may raise SystemExit on incorrect user input,
+                    # which is a graceful exit. The user gets the standard output
+                    # from argparse of what went wrong.
+                    continue
+    finally:
+        node.disconnect_rpcs()
 
 
 if __name__ == '__main__':

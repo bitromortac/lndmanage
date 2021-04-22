@@ -9,7 +9,7 @@ from pygments import highlight, lexers, formatters
 from lndmanage import settings
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('LNCLI')
 logger.addHandler(logging.NullHandler())
 
 

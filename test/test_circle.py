@@ -25,7 +25,7 @@ from test.testing_common import (
 
 import logging.config
 settings.set_lndmanage_home_dir(lndmanage_home)
-logging.config.dictConfig(settings.logger_config)
+logging.config.dictConfig(settings.lndm_logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.handlers[0].setLevel(logging.DEBUG)

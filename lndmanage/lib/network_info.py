@@ -1,5 +1,6 @@
 from collections import defaultdict
 from statistics import median, mean
+from typing import TYPE_CHECKING
 
 import numpy as np
 import networkx as nx
@@ -7,8 +8,11 @@ import networkx as nx
 from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
 from lndmanage import settings
 
+if TYPE_CHECKING:
+    from lndmanage.lib.node import LndNode
+
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('NETINF')
 logger.addHandler(logging.NullHandler())
 
 
@@ -18,9 +22,9 @@ class NetworkAnalysis(object):
 
     """
 
-    def __init__(self, node):
+    def __init__(self, node: 'LndNode'):
         """
-        :param node: :class:`lib.node.LndNode`
+        :param node: node interface
         """
 
         self.node = node
@@ -385,15 +389,13 @@ class NetworkAnalysis(object):
 
         return distance
 
+    def is_private(self, node_id: str) -> bool:
+        """Find out whether node is a private node.
 
-if __name__ == '__main__':
-    from lndmanage.lib.node import LndNode
-
-    import logging.config
-    logging.config.dictConfig(settings.logger_config)
-
-    nd = LndNode()
-    network_analysis = NetworkAnalysis(nd)
-
-    nodes_capacities = network_analysis.find_nodes_with_highest_total_capacities()
-    network_analysis.print_find_nodes_giving_most_secondary_hops(nd.pub_key)
+        A private node is defined to not be a routing node, a node that has only
+        a few channels."""
+        node_info = self.node_information(node_id)
+        if node_info['degree'] < settings.NUMBER_CHANNELS_DEFINING_ROUTING_NODE:
+            return True
+        else:
+            return False
