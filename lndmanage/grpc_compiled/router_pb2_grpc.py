@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from lndmanage.grpc_compiled import router_pb2 as router__pb2
-from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
+import lndmanage.grpc_compiled.router_pb2 as router__pb2
+import lndmanage.grpc_compiled.rpc_pb2 as rpc__pb2
 
 
 class RouterStub(object):

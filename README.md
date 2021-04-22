@@ -339,16 +339,17 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmange requires `>=python3.6`, `lnd v0.11.0-beta`, `python3-venv`
+Installation of lndmange requires `>=python3.6`, `lnd v0.12.1-beta`, `python3-venv`
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
 need `gcc`, `g++`, `python3-dev(el)`.
 
-#### LND Requirements
+#### LND Build Requirements
 Some commands will only work correctly if lnd is built with the `routerrpc`.
-This can be done when compiling with `make install tags="routerrpc"`. If you
-use precompiled binaries, you can ignore this.
+This can be done when compiling with minimal build tags of `make && make install 
+tags="routerrpc signrpc walletrpc"`. If you use precompiled binaries, you can 
+ignore this.
 
 #### Admin Macaroon and TLS cert needed
 If you run this tool from a different host than the lnd host, 
@@ -462,9 +463,14 @@ $ git clone https://github.com/googleapis/googleapis.git
 
 $ curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto
 $ curl -o router.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/routerrpc/router.proto
+$ curl -o signer.proto https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/signrpc/signer.proto
+$ curl -o walletkit.proto https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/walletrpc/walletkit.proto
 
 $ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. rpc.proto
-$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. routerrpc.proto
+$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. router.proto
+$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. signer.proto
+# adjust signer.proto location in walletkit.proto
+$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. walletkit.proto
 ```
 Then correct to absolute import paths, for instance change `import rpc_pb2 as rpc__pb2`
  to `from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2`.
