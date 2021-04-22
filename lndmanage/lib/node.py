@@ -1,12 +1,14 @@
-import os
+import binascii
 import codecs
 from collections import OrderedDict
-import time
 import datetime
+import os
+import time
 from typing import Dict, List, Tuple, TYPE_CHECKING
 
 import grpc
 from grpc._channel import _Rendezvous
+from grpc._channel import _InactiveRpcError
 from google.protobuf.json_format import MessageToDict
 
 import lndmanage.grpc_compiled.rpc_pb2 as lnd
@@ -19,13 +21,14 @@ import lndmanage.grpc_compiled.walletkit_pb2_grpc as lndwalletkitrpc
 from lndmanage.lib.network import Network
 from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, OurNodeFailure
 from lndmanage.lib import exceptions
-from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
     convert_short_channel_id_to_channel_id,
     convert_channel_id_to_short_channel_id,
     channel_unbalancedness_and_commit_fee
 )
+from lndmanage.lib.user import yes_no_question
+from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage import settings
 
 if TYPE_CHECKING:
@@ -36,6 +39,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 NUM_MAX_FORWARDING_EVENTS = 100000
+OPEN_EXPIRY_TIME_MINUTES = 8
 
 
 class Node(object):
@@ -679,6 +683,212 @@ class LndNode(Node):
         logger.info(f"balancedness: l:{balancedness_local:.2%} r:{balancedness_remote:.2%}")
         logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
         logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
+
+    def _open_channels(self, pubkeys: List[bytes],
+                       amounts: List[int],
+                       change_amount: int,
+                       utxos: Dict[Tuple[str, int], int],
+                       sat_per_byte=1, reckless=False,
+                       private=False):
+        """
+        Batch opens channels to other nodes.
+        Needs lnd compiled with walletrpc.
+
+        1. Iteratively construct PSBT for funding.
+        2. Verify PSBT integrity by server.
+        3. Sign PSBT.
+        4. Tell server about signed PSBT.
+        5. Wait for channels to be pending.
+        6. Publish funding transaction.
+        7. Optionally free locked utxos if funding failed.
+        """
+
+        # we assume that we are connected already to the nodes
+
+        utxo_unlocking_needed = True
+        psbt_unfunded = None
+
+        open_channel_streams = []
+        pending_chan_ids = []
+        addresses = []
+
+        # 1. Initialize channel openings for all nodes.
+        logger.info(">>> Starting to ask peers for channel opening.")
+        time_start = time.time()
+        try:
+            for n, (pk, amt) in enumerate(zip(pubkeys, amounts)):
+                # create psbt shim creating a random pending_channel_id and signal
+                # batch opening via nopublish
+                pending_chan_id = os.urandom(32)
+                pending_chan_ids.append(pending_chan_id)
+
+                # 2. Iteratively construct PSBT for funding.
+                if n == 0:
+                    # Not necessary if we start with our own PSBT
+                    psbt_shim = lnd.PsbtShim(pending_chan_id=pending_chan_id, no_publish=True)
+                    shim = lnd.FundingShim(psbt_shim=psbt_shim)
+                else:
+                    psbt_shim = lnd.PsbtShim(pending_chan_id=pending_chan_id, base_psbt=psbt_unfunded, no_publish=True)
+                    shim = lnd.FundingShim(psbt_shim=psbt_shim)
+                request = lnd.OpenChannelRequest(
+                    node_pubkey=pk,
+                    local_funding_amount=amt,
+                    funding_shim=shim,
+                    private=private,
+                )
+                stream = self._rpc.OpenChannel(request)
+                open_channel_streams.append(stream)
+
+                # read from openchannel stream (nopublish)
+                for chan_response in stream:
+                    # logger.debug(f"OpenChannel response: {chan_response}")
+
+                    # first response should be that the funding psbt was created:
+                    if chan_response.HasField('psbt_fund'):
+                        logger.debug(f"   > got address: {chan_response.psbt_fund.funding_address}")
+                        addresses.append(chan_response.psbt_fund.funding_address)
+                        psbt_unfunded = chan_response.psbt_fund.psbt
+                        break
+
+            inputs = [
+                lnd.OutPoint(
+                    txid_str=u[0],
+                    output_index=u[1],
+                ) for u, a in utxos.items()
+            ]
+
+            outputs = [
+                (addr, amount) for addr, amount in zip(addresses, amounts)
+            ]
+            if change_amount:
+                change_address = self._rpc.NewAddress(lnd.NewAddressRequest(type=0)).address
+                outputs.append((change_address, change_amount))
+
+            logger.info(f">>> Fund PSBT.")
+            fund_psbt = self._walletrpc.FundPsbt(lndwalletkit.FundPsbtRequest(
+                raw=lndwalletkit.TxTemplate(
+                    inputs=inputs,
+                    outputs=outputs,
+                ),
+                sat_per_vbyte=sat_per_byte,
+            ))
+
+            if fund_psbt.change_output_index != -1:
+                raise Exception("We shouldn't have an internal change output, please report this.")
+
+            logger.info("\n>>> Do you want to open the channel(s) (y/n)?")
+            logger.info(f">>> WARNING: this is a relatively new feature, so please check the generated PSBT by the following command:")
+            logger.info(f'bitcoin-cli decodepsbt "{str(binascii.b2a_base64(fund_psbt.funded_psbt).strip(), "utf-8")}"')
+            logger.info(f">>> You have {OPEN_EXPIRY_TIME_MINUTES} minutes from now to decide.")
+            if not reckless and not yes_no_question('no'):
+                raise Exception("User canceled the process.")
+            time_end = time.time()
+            if time_end - time_start > OPEN_EXPIRY_TIME_MINUTES * 60:
+                raise Exception("Time expired.")
+
+            # 3. Verify PSBT integrity by server.
+            logger.info(f">>> Verifying PSBT.")
+            for p in pending_chan_ids:
+                # S: psbt verify
+                response = str(self._rpc.FundingStateStep(
+                    lnd.FundingTransitionMsg(
+                        psbt_verify=lnd.FundingPsbtVerify(
+                            funded_psbt=fund_psbt.funded_psbt,
+                            pending_chan_id=p,
+                        ),
+                    )
+                )).strip()
+                if response:
+                    logger.debug(response)
+
+            # 4. Sign PSBT.
+            logger.info(f">>> Signing PSBT.")
+            finalize = self._walletrpc.FinalizePsbt(
+                lndwalletkit.FinalizePsbtRequest(funded_psbt=fund_psbt.funded_psbt))
+            raw_final_tx = finalize.raw_final_tx
+            psbt_signed = finalize.signed_psbt
+            logger.info(f"    Signed transaction:\n    {raw_final_tx.hex()}")
+            logger.info(f"    Signed psbt:\n    {str(binascii.b2a_base64(psbt_signed).strip(), 'utf-8')}")
+            logger.info(f"    Final transaction size: {len(raw_final_tx)} bytes")
+
+            for p in pending_chan_ids:
+                # 5. Tell server about signed PSBT.
+                response = str(self._rpc.FundingStateStep(
+                    lnd.FundingTransitionMsg(
+                        psbt_finalize=lnd.FundingPsbtFinalize(
+                            signed_psbt=psbt_signed,
+                            pending_chan_id=p,
+                        ),
+                    )
+                )).strip()
+                if response:
+                    logger.debug(f"   > Funding step response: {response}")
+
+            # 7. Publish funding transaction.
+            # calculate txid
+            logger.info(f">>> Publishing transaction.")
+            self._walletrpc.PublishTransaction(lndwalletkit.Transaction(
+                tx_hex=raw_final_tx,
+                label='lndmanage: batch open'
+            ))
+            utxo_unlocking_needed = False
+
+        except grpc.RpcError as e:
+            logger.info(f"Error: {e}")
+        # cleanup on failed opening
+        finally:
+            if utxo_unlocking_needed:
+                logger.info(">>> Cleaning up.")
+                # cancel all funding reservations
+                for p in pending_chan_ids:
+                    self._rpc.FundingStateStep(
+                        lnd.FundingTransitionMsg(
+                            shim_cancel=lnd.FundingShimCancel(
+                                pending_chan_id=p,
+                            ),
+                        )
+                    )
+
+    def _connect_nodes(self, pubkeys: List[str]) -> List[str]:
+        succeeded_nodes = []
+        logger.info(">>> Checking node pubkeys and address information.")
+        for pubkey in pubkeys:
+            if len(pubkey) != 66:
+                raise ValueError(f"pubkey of unknown format {pubkey}")
+            info = self.get_node_info(pubkey)
+            if not info['addresses']:
+                raise ConnectionRefusedError(f"Could not find connection address for {pubkey}.")
+        logger.info(">>> Connecting to channel peer candidates.")
+        for pubkey in pubkeys:
+            info = self.get_node_info(pubkey)
+            for address in info['addresses']:
+                logger.info(f"    trying to connect to {pubkey}@{address}")
+                try:
+                    self._rpc.ConnectPeer(
+                        lnd.ConnectPeerRequest(
+                            addr=lnd.LightningAddress(
+                                pubkey=pubkey,
+                                host=address,
+                            ),
+                            perm=False,
+                            timeout=20,
+                        ))
+                    succeeded_nodes.append(pubkey)
+                    logger.info("    > connected")
+                    break
+                except _InactiveRpcError as e:
+                    if "already connected" in e.details():
+                        succeeded_nodes.append(pubkey)
+                        logger.info("    > already connected")
+                        break
+                    else:
+                        logger.info(f"    > error: {e.details()}")
+                except Exception as e:
+                    logger.info(e)
+                    continue
+            else:
+                raise ConnectionRefusedError
+        return succeeded_nodes
 
 
 if __name__ == '__main__':
