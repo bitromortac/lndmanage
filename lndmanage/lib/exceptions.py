@@ -50,7 +50,7 @@ class PolicyError(PaymentError):
     pass
 
 
-class InsufficientBandwidth(PaymentError):
+class OurNodeFailure(PaymentError):
     pass
 
 
@@ -68,3 +68,21 @@ class RPCError(Exception):
 
 class RouterRPCError(RPCError):
     pass
+
+
+class TemporaryChannelFailure(PaymentFailure):
+    def __init__(self, payment):
+        self.payment = payment
+        super().__init__()
+
+
+class UnknownNextPeer(PaymentFailure):
+    def __init__(self, payment):
+        self.payment = payment
+        super().__init__()
+
+
+class FeeInsufficient(PaymentFailure):
+    def __init__(self, payment):
+        self.payment = payment
+        super().__init__()

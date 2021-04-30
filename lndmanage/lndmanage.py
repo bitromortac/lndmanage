@@ -405,12 +405,13 @@ class Parser(object):
 
         elif args.cmd == 'circle':
             rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-            invoice_r_hash = node.get_rebalance_invoice(
-                memo='circular payment')
+            invoice = node.get_rebalance_invoice(memo='circular payment')
+            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
             try:
                 rebalancer.rebalance_two_channels(
                     args.channel_from, args.channel_to,
-                    args.amt_sat, invoice_r_hash, args.max_fee_sat,
+                    args.amt_sat, payment_hash, payment_address,
+                    args.max_fee_sat,
                     dry=not args.reckless)
             except DryRun:
                 logger.info("This was just a dry run.")

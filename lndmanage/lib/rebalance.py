@@ -1,7 +1,9 @@
 import logging
 import math
+from typing import TYPE_CHECKING, Optional, List, Tuple
 
 from lndmanage.lib.routing import Router
+from lndmanage.lib import exceptions
 from lndmanage.lib.exceptions import (
     RebalanceFailure,
     NoRoute,
@@ -16,29 +18,27 @@ from lndmanage.lib.exceptions import (
 )
 from lndmanage import settings
 
+if TYPE_CHECKING:
+    from lndmanage.lib.node import LndNode
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
 class Rebalancer(object):
     """
-    Implements methods of rebalancing.
+    Implements methods for rebalancing.
 
     A max_effective_fee_rate can be set, which limits the fee rate paid for
     a rebalance. The effective fee rate is (base_fee + fee_rate * amt)/amt.
     A fee cap can be defined by budget_sat. Individual and total rebalancing
     are not allowed to go over this amount.
     """
-    def __init__(self, node, max_effective_fee_rate, budget_sat):
+    def __init__(self, node: 'LndNode', max_effective_fee_rate: float, budget_sat: int):
         """
         :param node: node instance
-        :type node: lndmanage.lib.node.LndNode
-
         :param max_effective_fee_rate: maximum effective fee rate paid
-        :type max_effective_fee_rate: float
-
         :param budget_sat: rebalancing budget
-        :type budget_sat: int
         """
         self.node = node
         self.channel_list = {}
@@ -47,38 +47,30 @@ class Rebalancer(object):
         self.max_effective_fee_rate = max_effective_fee_rate
         self.budget_sat = budget_sat
 
-    def rebalance_two_channels(self, channel_id_from, channel_id_to, amt_sat,
-                               invoice_r_hash, budget_sat, dry=False):
+    def rebalance_two_channels(
+            self, channel_id_from: int, channel_id_to: int, amt_sat: int,
+            payment_hash: bytes, payment_address: bytes, budget_sat: int,
+            dry=False
+    ) -> int:
         """
         Rebalances from channel_id_from to channel_id_to with an amount of
         amt_sat.
 
-        A prior created `invoice_r_hash` has to be given. The budget_sat sets
+        A prior created payment_hash has to be given. The budget_sat sets
         the maxmimum fees in sat that will be paid. A dry run can be done.
 
         :param channel_id_from: channel sending
-        :type channel_id_from: int
-
         :param channel_id_to: channel receiving
-        :type channel_id_to: int
-
         :param amt_sat: amount to be sent in sat
-        :type amt_sat: int
-
-        :param invoice_r_hash: payment hash
-        :type invoice_r_hash: bytearray
-
+        :param payment_hash: payment hash
+        :param payment_address: payment hash
         :param budget_sat: budget for the rebalance
-        :type budget_sat: int
-
         :param dry: specifies if dry run
-        :type dry: bool
 
         :return: total fees for the whole rebalance in msat
-        :rtype: int
 
-        :raises RebalancingTrialsExhausted:
-            too many attempts to rebalance channels
+        :raises TemporarayChannelFailure: no liquidity along path
+        :raises UnknownNextPeer: a routing node didn't where to forward
         :raises DuplicateRoute: the same route was already tried
         :raises NoRoute: no route was found from source to destination
         :raises TooExpensive: the circular payment would exceed the fee limits
@@ -100,7 +92,7 @@ class Rebalancer(object):
             routes = self.router.get_routes_for_rebalancing(
                 channel_id_from, channel_id_to, amt_msat, method='external-mc')
 
-            if len(routes) == 0:
+            if not routes:
                 raise NoRoute
             else:
                 # take only the first route from routes
@@ -108,6 +100,7 @@ class Rebalancer(object):
 
             if previous_route_channel_hops == r.channel_hops:
                 raise DuplicateRoute("Have tried this route already.")
+            previous_route_channel_hops = r.channel_hops
 
             logger.info(
                 f"Next route: total fee: {r.total_fee_msat / 1000:3.3f} sat, "
@@ -128,85 +121,56 @@ class Rebalancer(object):
                     f"{r.total_fee_msat / 1000:.3f} sat, budget: {budget_sat:.3f} sat")
                 raise TooExpensive
 
+            result = None
+            failed_hop = None
             if not dry:
                 try:
-                    result = self.node.send_to_route(r, invoice_r_hash)
+                    result = self.node.send_to_route(r, payment_hash, payment_address)
                 except PaymentTimeOut:
-                    # TODO: handle payment timeout properly
                     raise PaymentTimeOut
-
-                previous_route_channel_hops = r.channel_hops
-
-                # handle expected payment errors
-                if result.payment_error:
-                    logger.debug(f"Payment error: {result.payment_error}.")
-
-                    # determine the channel/node that reported a failure
-                    reporting_channel_id = self.node.handle_payment_error(
-                        result.payment_error)
-
-                    if reporting_channel_id:
-                        try:
-                            index_failed_channel = \
-                                r.channel_hops.index(reporting_channel_id)
-                            failed_channel_id = \
-                                r.channel_hops[index_failed_channel]
-                        except ValueError:
-                            logger.error(
-                                "Failed channel not even in list of channel "
-                                "hops (lnd issue?).")
-                            continue
-                        # check if a failed channel was our own, which should,
-                        # in principle, not happen
-                        if failed_channel_id in [channel_id_from,
-                                                 channel_id_to]:
-                            raise RebalanceFailure(
-                                f"Own channel failed. Something is wrong. "
-                                f"This is likely due to a wrong accounting "
-                                f"for the channel reserve and will be fixed "
-                                f"in the future. "
-                                f"Try with smaller absolute target. "
-                                f"Failing channel: {failed_channel_id}")
-
-                        # determine the nodes involved in the channel
-                        failed_channel_source = r.node_hops[
-                            index_failed_channel]
-                        failed_channel_target = r.node_hops[
-                            index_failed_channel + 1]
-                        logger.info(f"   Failed channel: {failed_channel_id}")
-                        logger.debug(
-                            f"   Failed channel between nodes "
-                            f"{failed_channel_source} and "
-                            f"{failed_channel_target}")
-                        logger.debug(f"    Node hops {r.node_hops}")
-                        logger.debug(f"    Channel hops {r.channel_hops}")
-
-                        # remember the bad channel for next routing
-                        self.router.channel_rater.add_bad_channel(
-                            failed_channel_id, failed_channel_source,
-                            failed_channel_target)
-
-                    else:  # usually the case of UnknownNextPeer
-                        # add all the inner hops to the blacklist
-                        logger.error(
-                            "   Unknown next peer somewhere in route.")
-                        inner_hops = r.channel_hops[1:-1]
-                        for i_hop, hop in enumerate(inner_hops):
-                            failed_channel_source = r.node_hops[i_hop]
-                            failed_channel_target = r.node_hops[i_hop + 1]
-                            self.router.channel_rater.add_bad_channel(
-                                hop, failed_channel_source,
-                                failed_channel_target)
-                    continue
+                except exceptions.TemporaryChannelFailure as e:
+                    failed_hop = int(e.payment.failure.failure_source_index)
+                except exceptions.UnknownNextPeer as e:
+                    failed_hop = int(e.payment.failure.failure_source_index + 1)
+                except exceptions.FeeInsufficient as e:
+                    failed_hop = int(e.payment.failure.failure_source_index)
                 else:
-                    logger.debug(result.payment_preimage)
+                    logger.debug(f"Preimage: {result.preimage.hex()}")
                     logger.info("Success!\n")
                     return r.total_fee_msat
+
+                if failed_hop:
+                    failed_channel_id = r.hops[failed_hop]['chan_id']
+                    failed_node_source = r.node_hops[failed_hop]
+                    failed_node_target = r.node_hops[failed_hop + 1]
+
+                    if failed_channel_id in [channel_id_from, channel_id_to]:
+                        raise RebalanceFailure(
+                            f"Own channel failed. Something is wrong. "
+                            f"This is likely due to a wrong accounting "
+                            f"for the channel reserve and will be fixed "
+                            f"in the future. "
+                            f"Try with smaller absolute target. "
+                            f"Failing channel: {failed_channel_id}")
+
+                    # determine the nodes involved in the channel
+                    logger.info(f"   Failed channel: {failed_channel_id}")
+                    logger.debug(
+                        f"   Failed channel between nodes "
+                        f"{failed_node_source} and "
+                        f"{failed_node_target}")
+                    logger.debug(f"   Node hops {r.node_hops}")
+                    logger.debug(f"   Channel hops {r.channel_hops}")
+
+                    # remember the bad channel for next routing
+                    self.router.channel_rater.add_bad_channel(
+                        failed_channel_id, failed_node_source,
+                        failed_node_target)
             else:  # dry
                 raise DryRun
 
-    def _get_rebalance_candidates(self, channel_id, local_balance_change,
-                                  allow_unbalancing=False, strategy=None):
+    def _get_rebalance_candidates(self, channel_id: int, local_balance_change: int,
+                                  allow_unbalancing=False, strategy=Optional[str]):
         """
         Determines channels, which can be used to rebalance a channel.
 
@@ -219,15 +183,9 @@ class Rebalancer(object):
         which determines the order of channels of the rebalancing process.
 
         :param channel_id: the channel id of the to be rebalanced channel
-        :type channel_id: int
-
         :param local_balance_change: amount by which the local balance of
             channel should change in sat
-        :type local_balance_change: int
-
         :param allow_unbalancing: if unbalancing of channels should be allowed
-        :type allow_unbalancing: bool
-
         :param strategy:
             None: By default, counterparty channels are sorted such that the
                   ones unbalanced in the opposite direction are chosen first,
@@ -311,34 +269,27 @@ class Rebalancer(object):
         return rebalance_candidates
 
     @staticmethod
-    def _effective_fee_rate(amt_sat, base, rate):
+    def _effective_fee_rate(amt_sat: int, base_fee: float, fee_rate: float) -> float:
         """
         Calculates the effective fee rate: (base_fee + fee_rate * amt) / amt
 
         :param amt_sat: amount in sat
-        :type amt_sat: int
-
-        :param base: base fee in sat
-        :type base: float
-
-        :param rate: fee rate
-        :type rate: float
+        :param base_fee: base fee in sat
+        :param fee_rate: fee rate
 
         :return: effective fee rate
-        :rtype: float
         """
         amt_msat = amt_sat * 1000
         assert not (amt_msat == 0)
-        rate = (base + rate * amt_msat / 1000000) / amt_msat
-        return rate
+        fee_rate = (base_fee + fee_rate * amt_msat / 1000000) / amt_msat
+        return fee_rate
 
     @staticmethod
-    def _print_rebalance_candidates(rebalance_candidates):
+    def _print_rebalance_candidates(rebalance_candidates: List[dict]):
         """
         Prints rebalance candidates.
 
         :param rebalance_candidates:
-        :type rebalance_candidates: list[dict]
         """
         logger.debug(f"-------- Description --------")
         logger.debug(
@@ -367,14 +318,12 @@ class Rebalancer(object):
                 f"fr:{c['peer_fee_rate']/1E6: 1.6f} "
                 f"a:{c['alias']}")
 
-    def _extract_channel_info(self, chan_id):
+    def _extract_channel_info(self, chan_id: int) -> dict:
         """
         Gets the channel info (policy, capacity, nodes) from the graph.
         :param chan_id: channel id
-        :type chan_id: int
 
         :return: channel information
-        :rtype: dict
         """
         # TODO: make more pythonic
         channel_info = None
@@ -386,22 +335,15 @@ class Rebalancer(object):
         return channel_info
 
     @staticmethod
-    def _get_source_and_target_channels(channel_one, channel_two,
-                                        rebalance_direction):
+    def _get_source_and_target_channels(channel_one: int, channel_two: int,
+                                        rebalance_direction: float) -> Tuple[int, int]:
         """
         Determines what the sending and receiving channel ids are.
 
         :param channel_one: first channel
-        :type channel_one: int
-
         :param channel_two: second channel
-        :type channel_two: int
-
         :param rebalance_direction: positive, if receiving, negative if sending
-        :type rebalance_direction: float
-
         :return: sending and receiving channel
-        :rtype: (int, int)
         """
         if rebalance_direction < 0:
             source = channel_one
@@ -413,8 +355,8 @@ class Rebalancer(object):
         return source, target
 
     @staticmethod
-    def _maximal_local_balance_change(unbalancedness_target,
-                                      unbalanced_channel_info):
+    def _maximal_local_balance_change(unbalancedness_target: float,
+                                      unbalanced_channel_info: dict) -> int:
         """
         Tries to find out the amount to maximally send/receive given the
         relative target and channel reserve constraints for channel balance
@@ -427,14 +369,10 @@ class Rebalancer(object):
 
         :param unbalancedness_target:
             interpreted in terms of unbalancedness [-1...1]
-        :type unbalancedness_target: float
-
         :param unbalanced_channel_info: fees, capacity, initiator info
-        :type unbalanced_channel_info: dict
 
         :return: positive or negative amount in sat (encodes
             the decrease/increase in the local balance)
-        :rtype: int
         """
         # both parties need to maintain a channel reserve of 1%
         # according to BOLT 2
@@ -494,15 +432,13 @@ class Rebalancer(object):
 
         return amt_target_original
 
-    def _node_is_multiple_connected(self, pub_key):
+    def _node_is_multiple_connected(self, pub_key: str) -> bool:
         """
         Checks if the node is connected to us via several channels.
 
         :param pub_key: node public key
-        :type pub_key: str
 
         :return: true if number of channels to the node is larger than 1
-        :rtype: bool
         """
         n_channels = 0
         for pk, chan_info in self.channel_list.items():
@@ -513,8 +449,8 @@ class Rebalancer(object):
         else:
             return False
 
-    def rebalance(self, channel_id, dry=False, chunksize=1.0, target=None,
-                  allow_unbalancing=False, strategy=None):
+    def rebalance(self, channel_id: int, dry=False, chunksize=1.0, target=Optional[float],
+                  allow_unbalancing=False, strategy=Optional[str]):
         """
         Automatically rebalances a selected channel with a fee cap of
         self.budget_sat and self.max_effective_fee_rate.
@@ -533,26 +469,14 @@ class Rebalancer(object):
         cost increases.
 
         :param channel_id:
-        :type channel_id: int
-
         :param dry: if set, then there's a dry run
-        :type dry: bool
-
         :param chunksize: a number between 0 and 1
-        :type chunksize: float
-
         :param target: specifies unbalancedness after rebalancing in [-1, 1]
-        :type target: float
-
         :param allow_unbalancing: allows counterparty channels
             to get a little bit unbalanced
-        :type allow_unbalancing: bool
-
         :param strategy: lets you select a strategy for rebalancing order
-        :type strategy: str
 
         :return: fees in msat paid for rebalancing
-        :rtype: int
 
         :raises MultichannelInboundRebalanceFailure: can't rebalance channels
             with a node we are mutiply connected
@@ -716,18 +640,18 @@ class Rebalancer(object):
                 f"of {initial_local_balance_change} sat. "
                 f"Fees paid up to now: {total_fees_msat / 1000:.3f} sat.")
 
-            # for each rebalance, get a new invoice
-            invoice_r_hash = self.node.get_invoice(
+            # for each rebalance attempt, get a new invoice
+            invoice = self.node.get_invoice(
                 amt_msat=amt*1000,
                 memo=f"lndmanage: Rebalance of channel {channel_id}.")
-
+            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
             # attempt the rebalance
             try:
                 # be up to date with the blockheight, otherwise could lead
                 # to cltv errors
                 self.node.update_blockheight()
                 total_fees_msat += self.rebalance_two_channels(
-                    source_channel, target_channel, amt, invoice_r_hash,
+                    source_channel, target_channel, amt, payment_hash, payment_address,
                     self.budget_sat, dry=dry)
                 local_balance_change_left -= int(rebalance_direction * amt)
 
