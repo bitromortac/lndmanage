@@ -12,7 +12,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
+import lndmanage.grpc_compiled.rpc_pb2 as rpc__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z/github.com/lightningnetwork/lnd/lnrpc/routerrpc',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0crouter.proto\x12\trouterrpc\x1a\trpc.proto\"\xe4\x04\n\x12SendPaymentRequest\x12\x0c\n\x04\x64\x65st\x18\x01 \x01(\x0c\x12\x0b\n\x03\x61mt\x18\x02 \x01(\x03\x12\x10\n\x08\x61mt_msat\x18\x0c \x01(\x03\x12\x14\n\x0cpayment_hash\x18\x03 \x01(\x0c\x12\x18\n\x10\x66inal_cltv_delta\x18\x04 \x01(\x05\x12\x17\n\x0fpayment_request\x18\x05 \x01(\t\x12\x17\n\x0ftimeout_seconds\x18\x06 \x01(\x05\x12\x15\n\rfee_limit_sat\x18\x07 \x01(\x03\x12\x16\n\x0e\x66\x65\x65_limit_msat\x18\r \x01(\x03\x12\x1e\n\x10outgoing_chan_id\x18\x08 \x01(\x04\x42\x04\x18\x01\x30\x01\x12\x19\n\x11outgoing_chan_ids\x18\x13 \x03(\x04\x12\x17\n\x0flast_hop_pubkey\x18\x0e \x01(\x0c\x12\x12\n\ncltv_limit\x18\t \x01(\x05\x12%\n\x0broute_hints\x18\n \x03(\x0b\x32\x10.lnrpc.RouteHint\x12Q\n\x13\x64\x65st_custom_records\x18\x0b \x03(\x0b\x32\x34.routerrpc.SendPaymentRequest.DestCustomRecordsEntry\x12\x1a\n\x12\x61llow_self_payment\x18\x0f \x01(\x08\x12(\n\rdest_features\x18\x10 \x03(\x0e\x32\x11.lnrpc.FeatureBit\x12\x11\n\tmax_parts\x18\x11 \x01(\r\x12\x1b\n\x13no_inflight_updates\x18\x12 \x01(\x08\x1a\x38\n\x16\x44\x65stCustomRecordsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"H\n\x13TrackPaymentRequest\x12\x14\n\x0cpayment_hash\x18\x01 \x01(\x0c\x12\x1b\n\x13no_inflight_updates\x18\x02 \x01(\x08\"0\n\x0fRouteFeeRequest\x12\x0c\n\x04\x64\x65st\x18\x01 \x01(\x0c\x12\x0f\n\x07\x61mt_sat\x18\x02 \x01(\x03\"E\n\x10RouteFeeResponse\x12\x18\n\x10routing_fee_msat\x18\x01 \x01(\x03\x12\x17\n\x0ftime_lock_delay\x18\x02 \x01(\x03\"G\n\x12SendToRouteRequest\x12\x14\n\x0cpayment_hash\x18\x01 \x01(\x0c\x12\x1b\n\x05route\x18\x02 \x01(\x0b\x32\x0c.lnrpc.Route\"H\n\x13SendToRouteResponse\x12\x10\n\x08preimage\x18\x01 \x01(\x0c\x12\x1f\n\x07\x66\x61ilure\x18\x02 \x01(\x0b\x32\x0e.lnrpc.Failure\"\x1c\n\x1aResetMissionControlRequest\"\x1d\n\x1bResetMissionControlResponse\"\x1c\n\x1aQueryMissionControlRequest\"J\n\x1bQueryMissionControlResponse\x12%\n\x05pairs\x18\x02 \x03(\x0b\x32\x16.routerrpc.PairHistoryJ\x04\x08\x01\x10\x02\"o\n\x0bPairHistory\x12\x11\n\tnode_from\x18\x01 \x01(\x0c\x12\x0f\n\x07node_to\x18\x02 \x01(\x0c\x12$\n\x07history\x18\x07 \x01(\x0b\x32\x13.routerrpc.PairDataJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05J\x04\x08\x05\x10\x06J\x04\x08\x06\x10\x07\"\x99\x01\n\x08PairData\x12\x11\n\tfail_time\x18\x01 \x01(\x03\x12\x14\n\x0c\x66\x61il_amt_sat\x18\x02 \x01(\x03\x12\x15\n\rfail_amt_msat\x18\x04 \x01(\x03\x12\x14\n\x0csuccess_time\x18\x05 \x01(\x03\x12\x17\n\x0fsuccess_amt_sat\x18\x06 \x01(\x03\x12\x18\n\x10success_amt_msat\x18\x07 \x01(\x03J\x04\x08\x03\x10\x04\"O\n\x17QueryProbabilityRequest\x12\x11\n\tfrom_node\x18\x01 \x01(\x0c\x12\x0f\n\x07to_node\x18\x02 \x01(\x0c\x12\x10\n\x08\x61mt_msat\x18\x03 \x01(\x03\"U\n\x18QueryProbabilityResponse\x12\x13\n\x0bprobability\x18\x01 \x01(\x01\x12$\n\x07history\x18\x02 \x01(\x0b\x32\x13.routerrpc.PairData\"r\n\x11\x42uildRouteRequest\x12\x10\n\x08\x61mt_msat\x18\x01 \x01(\x03\x12\x18\n\x10\x66inal_cltv_delta\x18\x02 \x01(\x05\x12\x1c\n\x10outgoing_chan_id\x18\x03 \x01(\x04\x42\x02\x30\x01\x12\x13\n\x0bhop_pubkeys\x18\x04 \x03(\x0c\"1\n\x12\x42uildRouteResponse\x12\x1b\n\x05route\x18\x01 \x01(\x0b\x32\x0c.lnrpc.Route\"\x1c\n\x1aSubscribeHtlcEventsRequest\"\xdc\x03\n\tHtlcEvent\x12\x1b\n\x13incoming_channel_id\x18\x01 \x01(\x04\x12\x1b\n\x13outgoing_channel_id\x18\x02 \x01(\x04\x12\x18\n\x10incoming_htlc_id\x18\x03 \x01(\x04\x12\x18\n\x10outgoing_htlc_id\x18\x04 \x01(\x04\x12\x14\n\x0ctimestamp_ns\x18\x05 \x01(\x04\x12\x32\n\nevent_type\x18\x06 \x01(\x0e\x32\x1e.routerrpc.HtlcEvent.EventType\x12\x30\n\rforward_event\x18\x07 \x01(\x0b\x32\x17.routerrpc.ForwardEventH\x00\x12\x39\n\x12\x66orward_fail_event\x18\x08 \x01(\x0b\x32\x1b.routerrpc.ForwardFailEventH\x00\x12.\n\x0csettle_event\x18\t \x01(\x0b\x32\x16.routerrpc.SettleEventH\x00\x12\x33\n\x0flink_fail_event\x18\n \x01(\x0b\x32\x18.routerrpc.LinkFailEventH\x00\"<\n\tEventType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x08\n\x04SEND\x10\x01\x12\x0b\n\x07RECEIVE\x10\x02\x12\x0b\n\x07\x46ORWARD\x10\x03\x42\x07\n\x05\x65vent\"v\n\x08HtlcInfo\x12\x19\n\x11incoming_timelock\x18\x01 \x01(\r\x12\x19\n\x11outgoing_timelock\x18\x02 \x01(\r\x12\x19\n\x11incoming_amt_msat\x18\x03 \x01(\x04\x12\x19\n\x11outgoing_amt_msat\x18\x04 \x01(\x04\"1\n\x0c\x46orwardEvent\x12!\n\x04info\x18\x01 \x01(\x0b\x32\x13.routerrpc.HtlcInfo\"\x12\n\x10\x46orwardFailEvent\"\r\n\x0bSettleEvent\"\xae\x01\n\rLinkFailEvent\x12!\n\x04info\x18\x01 \x01(\x0b\x32\x13.routerrpc.HtlcInfo\x12\x30\n\x0cwire_failure\x18\x02 \x01(\x0e\x32\x1a.lnrpc.Failure.FailureCode\x12\x30\n\x0e\x66\x61ilure_detail\x18\x03 \x01(\x0e\x32\x18.routerrpc.FailureDetail\x12\x16\n\x0e\x66\x61ilure_string\x18\x04 \x01(\t\"r\n\rPaymentStatus\x12&\n\x05state\x18\x01 \x01(\x0e\x32\x17.routerrpc.PaymentState\x12\x10\n\x08preimage\x18\x02 \x01(\x0c\x12!\n\x05htlcs\x18\x04 \x03(\x0b\x32\x12.lnrpc.HTLCAttemptJ\x04\x08\x03\x10\x04\".\n\nCircuitKey\x12\x0f\n\x07\x63han_id\x18\x01 \x01(\x04\x12\x0f\n\x07htlc_id\x18\x02 \x01(\x04\"\x83\x03\n\x1b\x46orwardHtlcInterceptRequest\x12\x33\n\x14incoming_circuit_key\x18\x01 \x01(\x0b\x32\x15.routerrpc.CircuitKey\x12\x1c\n\x14incoming_amount_msat\x18\x05 \x01(\x04\x12\x17\n\x0fincoming_expiry\x18\x06 \x01(\r\x12\x14\n\x0cpayment_hash\x18\x02 \x01(\x0c\x12\"\n\x1aoutgoing_requested_chan_id\x18\x07 \x01(\x04\x12\x1c\n\x14outgoing_amount_msat\x18\x03 \x01(\x04\x12\x17\n\x0foutgoing_expiry\x18\x04 \x01(\r\x12Q\n\x0e\x63ustom_records\x18\x08 \x03(\x0b\x32\x39.routerrpc.ForwardHtlcInterceptRequest.CustomRecordsEntry\x1a\x34\n\x12\x43ustomRecordsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"\x9a\x01\n\x1c\x46orwardHtlcInterceptResponse\x12\x33\n\x14incoming_circuit_key\x18\x01 \x01(\x0b\x32\x15.routerrpc.CircuitKey\x12\x33\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32#.routerrpc.ResolveHoldForwardAction\x12\x10\n\x08preimage\x18\x03 \x01(\x0c*\x81\x04\n\rFailureDetail\x12\x0b\n\x07UNKNOWN\x10\x00\x12\r\n\tNO_DETAIL\x10\x01\x12\x10\n\x0cONION_DECODE\x10\x02\x12\x15\n\x11LINK_NOT_ELIGIBLE\x10\x03\x12\x14\n\x10ON_CHAIN_TIMEOUT\x10\x04\x12\x14\n\x10HTLC_EXCEEDS_MAX\x10\x05\x12\x18\n\x14INSUFFICIENT_BALANCE\x10\x06\x12\x16\n\x12INCOMPLETE_FORWARD\x10\x07\x12\x13\n\x0fHTLC_ADD_FAILED\x10\x08\x12\x15\n\x11\x46ORWARDS_DISABLED\x10\t\x12\x14\n\x10INVOICE_CANCELED\x10\n\x12\x15\n\x11INVOICE_UNDERPAID\x10\x0b\x12\x1b\n\x17INVOICE_EXPIRY_TOO_SOON\x10\x0c\x12\x14\n\x10INVOICE_NOT_OPEN\x10\r\x12\x17\n\x13MPP_INVOICE_TIMEOUT\x10\x0e\x12\x14\n\x10\x41\x44\x44RESS_MISMATCH\x10\x0f\x12\x16\n\x12SET_TOTAL_MISMATCH\x10\x10\x12\x15\n\x11SET_TOTAL_TOO_LOW\x10\x11\x12\x10\n\x0cSET_OVERPAID\x10\x12\x12\x13\n\x0fUNKNOWN_INVOICE\x10\x13\x12\x13\n\x0fINVALID_KEYSEND\x10\x14\x12\x13\n\x0fMPP_IN_PROGRESS\x10\x15\x12\x12\n\x0e\x43IRCULAR_ROUTE\x10\x16*\xae\x01\n\x0cPaymentState\x12\r\n\tIN_FLIGHT\x10\x00\x12\r\n\tSUCCEEDED\x10\x01\x12\x12\n\x0e\x46\x41ILED_TIMEOUT\x10\x02\x12\x13\n\x0f\x46\x41ILED_NO_ROUTE\x10\x03\x12\x10\n\x0c\x46\x41ILED_ERROR\x10\x04\x12$\n FAILED_INCORRECT_PAYMENT_DETAILS\x10\x05\x12\x1f\n\x1b\x46\x41ILED_INSUFFICIENT_BALANCE\x10\x06*<\n\x18ResolveHoldForwardAction\x12\n\n\x06SETTLE\x10\x00\x12\x08\n\x04\x46\x41IL\x10\x01\x12\n\n\x06RESUME\x10\x02\x32\xc4\x08\n\x06Router\x12@\n\rSendPaymentV2\x12\x1d.routerrpc.SendPaymentRequest\x1a\x0e.lnrpc.Payment0\x01\x12\x42\n\x0eTrackPaymentV2\x12\x1e.routerrpc.TrackPaymentRequest\x1a\x0e.lnrpc.Payment0\x01\x12K\n\x10\x45stimateRouteFee\x12\x1a.routerrpc.RouteFeeRequest\x1a\x1b.routerrpc.RouteFeeResponse\x12Q\n\x0bSendToRoute\x12\x1d.routerrpc.SendToRouteRequest\x1a\x1e.routerrpc.SendToRouteResponse\"\x03\x88\x02\x01\x12\x42\n\rSendToRouteV2\x12\x1d.routerrpc.SendToRouteRequest\x1a\x12.lnrpc.HTLCAttempt\x12\x64\n\x13ResetMissionControl\x12%.routerrpc.ResetMissionControlRequest\x1a&.routerrpc.ResetMissionControlResponse\x12\x64\n\x13QueryMissionControl\x12%.routerrpc.QueryMissionControlRequest\x1a&.routerrpc.QueryMissionControlResponse\x12[\n\x10QueryProbability\x12\".routerrpc.QueryProbabilityRequest\x1a#.routerrpc.QueryProbabilityResponse\x12I\n\nBuildRoute\x12\x1c.routerrpc.BuildRouteRequest\x1a\x1d.routerrpc.BuildRouteResponse\x12T\n\x13SubscribeHtlcEvents\x12%.routerrpc.SubscribeHtlcEventsRequest\x1a\x14.routerrpc.HtlcEvent0\x01\x12M\n\x0bSendPayment\x12\x1d.routerrpc.SendPaymentRequest\x1a\x18.routerrpc.PaymentStatus\"\x03\x88\x02\x01\x30\x01\x12O\n\x0cTrackPayment\x12\x1e.routerrpc.TrackPaymentRequest\x1a\x18.routerrpc.PaymentStatus\"\x03\x88\x02\x01\x30\x01\x12\x66\n\x0fHtlcInterceptor\x12\'.routerrpc.ForwardHtlcInterceptResponse\x1a&.routerrpc.ForwardHtlcInterceptRequest(\x01\x30\x01\x42\x31Z/github.com/lightningnetwork/lnd/lnrpc/routerrpcb\x06proto3'
+  serialized_pb=b'\n\x0crouter.proto\x12\trouterrpc\x1a\trpc.proto\"\x97\x05\n\x12SendPaymentRequest\x12\x0c\n\x04\x64\x65st\x18\x01 \x01(\x0c\x12\x0b\n\x03\x61mt\x18\x02 \x01(\x03\x12\x10\n\x08\x61mt_msat\x18\x0c \x01(\x03\x12\x14\n\x0cpayment_hash\x18\x03 \x01(\x0c\x12\x18\n\x10\x66inal_cltv_delta\x18\x04 \x01(\x05\x12\x14\n\x0cpayment_addr\x18\x14 \x01(\x0c\x12\x17\n\x0fpayment_request\x18\x05 \x01(\t\x12\x17\n\x0ftimeout_seconds\x18\x06 \x01(\x05\x12\x15\n\rfee_limit_sat\x18\x07 \x01(\x03\x12\x16\n\x0e\x66\x65\x65_limit_msat\x18\r \x01(\x03\x12\x1e\n\x10outgoing_chan_id\x18\x08 \x01(\x04\x42\x04\x18\x01\x30\x01\x12\x19\n\x11outgoing_chan_ids\x18\x13 \x03(\x04\x12\x17\n\x0flast_hop_pubkey\x18\x0e \x01(\x0c\x12\x12\n\ncltv_limit\x18\t \x01(\x05\x12%\n\x0broute_hints\x18\n \x03(\x0b\x32\x10.lnrpc.RouteHint\x12Q\n\x13\x64\x65st_custom_records\x18\x0b \x03(\x0b\x32\x34.routerrpc.SendPaymentRequest.DestCustomRecordsEntry\x12\x1a\n\x12\x61llow_self_payment\x18\x0f \x01(\x08\x12(\n\rdest_features\x18\x10 \x03(\x0e\x32\x11.lnrpc.FeatureBit\x12\x11\n\tmax_parts\x18\x11 \x01(\r\x12\x1b\n\x13no_inflight_updates\x18\x12 \x01(\x08\x12\x1b\n\x13max_shard_size_msat\x18\x15 \x01(\x04\x1a\x38\n\x16\x44\x65stCustomRecordsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"H\n\x13TrackPaymentRequest\x12\x14\n\x0cpayment_hash\x18\x01 \x01(\x0c\x12\x1b\n\x13no_inflight_updates\x18\x02 \x01(\x08\"0\n\x0fRouteFeeRequest\x12\x0c\n\x04\x64\x65st\x18\x01 \x01(\x0c\x12\x0f\n\x07\x61mt_sat\x18\x02 \x01(\x03\"E\n\x10RouteFeeResponse\x12\x18\n\x10routing_fee_msat\x18\x01 \x01(\x03\x12\x17\n\x0ftime_lock_delay\x18\x02 \x01(\x03\"G\n\x12SendToRouteRequest\x12\x14\n\x0cpayment_hash\x18\x01 \x01(\x0c\x12\x1b\n\x05route\x18\x02 \x01(\x0b\x32\x0c.lnrpc.Route\"H\n\x13SendToRouteResponse\x12\x10\n\x08preimage\x18\x01 \x01(\x0c\x12\x1f\n\x07\x66\x61ilure\x18\x02 \x01(\x0b\x32\x0e.lnrpc.Failure\"\x1c\n\x1aResetMissionControlRequest\"\x1d\n\x1bResetMissionControlResponse\"\x1c\n\x1aQueryMissionControlRequest\"J\n\x1bQueryMissionControlResponse\x12%\n\x05pairs\x18\x02 \x03(\x0b\x32\x16.routerrpc.PairHistoryJ\x04\x08\x01\x10\x02\"o\n\x0bPairHistory\x12\x11\n\tnode_from\x18\x01 \x01(\x0c\x12\x0f\n\x07node_to\x18\x02 \x01(\x0c\x12$\n\x07history\x18\x07 \x01(\x0b\x32\x13.routerrpc.PairDataJ\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05J\x04\x08\x05\x10\x06J\x04\x08\x06\x10\x07\"\x99\x01\n\x08PairData\x12\x11\n\tfail_time\x18\x01 \x01(\x03\x12\x14\n\x0c\x66\x61il_amt_sat\x18\x02 \x01(\x03\x12\x15\n\rfail_amt_msat\x18\x04 \x01(\x03\x12\x14\n\x0csuccess_time\x18\x05 \x01(\x03\x12\x17\n\x0fsuccess_amt_sat\x18\x06 \x01(\x03\x12\x18\n\x10success_amt_msat\x18\x07 \x01(\x03J\x04\x08\x03\x10\x04\"O\n\x17QueryProbabilityRequest\x12\x11\n\tfrom_node\x18\x01 \x01(\x0c\x12\x0f\n\x07to_node\x18\x02 \x01(\x0c\x12\x10\n\x08\x61mt_msat\x18\x03 \x01(\x03\"U\n\x18QueryProbabilityResponse\x12\x13\n\x0bprobability\x18\x01 \x01(\x01\x12$\n\x07history\x18\x02 \x01(\x0b\x32\x13.routerrpc.PairData\"\x88\x01\n\x11\x42uildRouteRequest\x12\x10\n\x08\x61mt_msat\x18\x01 \x01(\x03\x12\x18\n\x10\x66inal_cltv_delta\x18\x02 \x01(\x05\x12\x1c\n\x10outgoing_chan_id\x18\x03 \x01(\x04\x42\x02\x30\x01\x12\x13\n\x0bhop_pubkeys\x18\x04 \x03(\x0c\x12\x14\n\x0cpayment_addr\x18\x05 \x01(\x0c\"1\n\x12\x42uildRouteResponse\x12\x1b\n\x05route\x18\x01 \x01(\x0b\x32\x0c.lnrpc.Route\"\x1c\n\x1aSubscribeHtlcEventsRequest\"\xdc\x03\n\tHtlcEvent\x12\x1b\n\x13incoming_channel_id\x18\x01 \x01(\x04\x12\x1b\n\x13outgoing_channel_id\x18\x02 \x01(\x04\x12\x18\n\x10incoming_htlc_id\x18\x03 \x01(\x04\x12\x18\n\x10outgoing_htlc_id\x18\x04 \x01(\x04\x12\x14\n\x0ctimestamp_ns\x18\x05 \x01(\x04\x12\x32\n\nevent_type\x18\x06 \x01(\x0e\x32\x1e.routerrpc.HtlcEvent.EventType\x12\x30\n\rforward_event\x18\x07 \x01(\x0b\x32\x17.routerrpc.ForwardEventH\x00\x12\x39\n\x12\x66orward_fail_event\x18\x08 \x01(\x0b\x32\x1b.routerrpc.ForwardFailEventH\x00\x12.\n\x0csettle_event\x18\t \x01(\x0b\x32\x16.routerrpc.SettleEventH\x00\x12\x33\n\x0flink_fail_event\x18\n \x01(\x0b\x32\x18.routerrpc.LinkFailEventH\x00\"<\n\tEventType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x08\n\x04SEND\x10\x01\x12\x0b\n\x07RECEIVE\x10\x02\x12\x0b\n\x07\x46ORWARD\x10\x03\x42\x07\n\x05\x65vent\"v\n\x08HtlcInfo\x12\x19\n\x11incoming_timelock\x18\x01 \x01(\r\x12\x19\n\x11outgoing_timelock\x18\x02 \x01(\r\x12\x19\n\x11incoming_amt_msat\x18\x03 \x01(\x04\x12\x19\n\x11outgoing_amt_msat\x18\x04 \x01(\x04\"1\n\x0c\x46orwardEvent\x12!\n\x04info\x18\x01 \x01(\x0b\x32\x13.routerrpc.HtlcInfo\"\x12\n\x10\x46orwardFailEvent\"\r\n\x0bSettleEvent\"\xae\x01\n\rLinkFailEvent\x12!\n\x04info\x18\x01 \x01(\x0b\x32\x13.routerrpc.HtlcInfo\x12\x30\n\x0cwire_failure\x18\x02 \x01(\x0e\x32\x1a.lnrpc.Failure.FailureCode\x12\x30\n\x0e\x66\x61ilure_detail\x18\x03 \x01(\x0e\x32\x18.routerrpc.FailureDetail\x12\x16\n\x0e\x66\x61ilure_string\x18\x04 \x01(\t\"r\n\rPaymentStatus\x12&\n\x05state\x18\x01 \x01(\x0e\x32\x17.routerrpc.PaymentState\x12\x10\n\x08preimage\x18\x02 \x01(\x0c\x12!\n\x05htlcs\x18\x04 \x03(\x0b\x32\x12.lnrpc.HTLCAttemptJ\x04\x08\x03\x10\x04\".\n\nCircuitKey\x12\x0f\n\x07\x63han_id\x18\x01 \x01(\x04\x12\x0f\n\x07htlc_id\x18\x02 \x01(\x04\"\x97\x03\n\x1b\x46orwardHtlcInterceptRequest\x12\x33\n\x14incoming_circuit_key\x18\x01 \x01(\x0b\x32\x15.routerrpc.CircuitKey\x12\x1c\n\x14incoming_amount_msat\x18\x05 \x01(\x04\x12\x17\n\x0fincoming_expiry\x18\x06 \x01(\r\x12\x14\n\x0cpayment_hash\x18\x02 \x01(\x0c\x12\"\n\x1aoutgoing_requested_chan_id\x18\x07 \x01(\x04\x12\x1c\n\x14outgoing_amount_msat\x18\x03 \x01(\x04\x12\x17\n\x0foutgoing_expiry\x18\x04 \x01(\r\x12Q\n\x0e\x63ustom_records\x18\x08 \x03(\x0b\x32\x39.routerrpc.ForwardHtlcInterceptRequest.CustomRecordsEntry\x12\x12\n\nonion_blob\x18\t \x01(\x0c\x1a\x34\n\x12\x43ustomRecordsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"\x9a\x01\n\x1c\x46orwardHtlcInterceptResponse\x12\x33\n\x14incoming_circuit_key\x18\x01 \x01(\x0b\x32\x15.routerrpc.CircuitKey\x12\x33\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32#.routerrpc.ResolveHoldForwardAction\x12\x10\n\x08preimage\x18\x03 \x01(\x0c*\x81\x04\n\rFailureDetail\x12\x0b\n\x07UNKNOWN\x10\x00\x12\r\n\tNO_DETAIL\x10\x01\x12\x10\n\x0cONION_DECODE\x10\x02\x12\x15\n\x11LINK_NOT_ELIGIBLE\x10\x03\x12\x14\n\x10ON_CHAIN_TIMEOUT\x10\x04\x12\x14\n\x10HTLC_EXCEEDS_MAX\x10\x05\x12\x18\n\x14INSUFFICIENT_BALANCE\x10\x06\x12\x16\n\x12INCOMPLETE_FORWARD\x10\x07\x12\x13\n\x0fHTLC_ADD_FAILED\x10\x08\x12\x15\n\x11\x46ORWARDS_DISABLED\x10\t\x12\x14\n\x10INVOICE_CANCELED\x10\n\x12\x15\n\x11INVOICE_UNDERPAID\x10\x0b\x12\x1b\n\x17INVOICE_EXPIRY_TOO_SOON\x10\x0c\x12\x14\n\x10INVOICE_NOT_OPEN\x10\r\x12\x17\n\x13MPP_INVOICE_TIMEOUT\x10\x0e\x12\x14\n\x10\x41\x44\x44RESS_MISMATCH\x10\x0f\x12\x16\n\x12SET_TOTAL_MISMATCH\x10\x10\x12\x15\n\x11SET_TOTAL_TOO_LOW\x10\x11\x12\x10\n\x0cSET_OVERPAID\x10\x12\x12\x13\n\x0fUNKNOWN_INVOICE\x10\x13\x12\x13\n\x0fINVALID_KEYSEND\x10\x14\x12\x13\n\x0fMPP_IN_PROGRESS\x10\x15\x12\x12\n\x0e\x43IRCULAR_ROUTE\x10\x16*\xae\x01\n\x0cPaymentState\x12\r\n\tIN_FLIGHT\x10\x00\x12\r\n\tSUCCEEDED\x10\x01\x12\x12\n\x0e\x46\x41ILED_TIMEOUT\x10\x02\x12\x13\n\x0f\x46\x41ILED_NO_ROUTE\x10\x03\x12\x10\n\x0c\x46\x41ILED_ERROR\x10\x04\x12$\n FAILED_INCORRECT_PAYMENT_DETAILS\x10\x05\x12\x1f\n\x1b\x46\x41ILED_INSUFFICIENT_BALANCE\x10\x06*<\n\x18ResolveHoldForwardAction\x12\n\n\x06SETTLE\x10\x00\x12\x08\n\x04\x46\x41IL\x10\x01\x12\n\n\x06RESUME\x10\x02\x32\xc4\x08\n\x06Router\x12@\n\rSendPaymentV2\x12\x1d.routerrpc.SendPaymentRequest\x1a\x0e.lnrpc.Payment0\x01\x12\x42\n\x0eTrackPaymentV2\x12\x1e.routerrpc.TrackPaymentRequest\x1a\x0e.lnrpc.Payment0\x01\x12K\n\x10\x45stimateRouteFee\x12\x1a.routerrpc.RouteFeeRequest\x1a\x1b.routerrpc.RouteFeeResponse\x12Q\n\x0bSendToRoute\x12\x1d.routerrpc.SendToRouteRequest\x1a\x1e.routerrpc.SendToRouteResponse\"\x03\x88\x02\x01\x12\x42\n\rSendToRouteV2\x12\x1d.routerrpc.SendToRouteRequest\x1a\x12.lnrpc.HTLCAttempt\x12\x64\n\x13ResetMissionControl\x12%.routerrpc.ResetMissionControlRequest\x1a&.routerrpc.ResetMissionControlResponse\x12\x64\n\x13QueryMissionControl\x12%.routerrpc.QueryMissionControlRequest\x1a&.routerrpc.QueryMissionControlResponse\x12[\n\x10QueryProbability\x12\".routerrpc.QueryProbabilityRequest\x1a#.routerrpc.QueryProbabilityResponse\x12I\n\nBuildRoute\x12\x1c.routerrpc.BuildRouteRequest\x1a\x1d.routerrpc.BuildRouteResponse\x12T\n\x13SubscribeHtlcEvents\x12%.routerrpc.SubscribeHtlcEventsRequest\x1a\x14.routerrpc.HtlcEvent0\x01\x12M\n\x0bSendPayment\x12\x1d.routerrpc.SendPaymentRequest\x1a\x18.routerrpc.PaymentStatus\"\x03\x88\x02\x01\x30\x01\x12O\n\x0cTrackPayment\x12\x1e.routerrpc.TrackPaymentRequest\x1a\x18.routerrpc.PaymentStatus\"\x03\x88\x02\x01\x30\x01\x12\x66\n\x0fHtlcInterceptor\x12\'.routerrpc.ForwardHtlcInterceptResponse\x1a&.routerrpc.ForwardHtlcInterceptRequest(\x01\x30\x01\x42\x31Z/github.com/lightningnetwork/lnd/lnrpc/routerrpcb\x06proto3'
   ,
   dependencies=[rpc__pb2.DESCRIPTOR,])
 
@@ -150,8 +150,8 @@ _FAILUREDETAIL = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3370,
-  serialized_end=3883,
+  serialized_start=3464,
+  serialized_end=3977,
 )
 _sym_db.RegisterEnumDescriptor(_FAILUREDETAIL)
 
@@ -201,8 +201,8 @@ _PAYMENTSTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3886,
-  serialized_end=4060,
+  serialized_start=3980,
+  serialized_end=4154,
 )
 _sym_db.RegisterEnumDescriptor(_PAYMENTSTATE)
 
@@ -232,8 +232,8 @@ _RESOLVEHOLDFORWARDACTION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=4062,
-  serialized_end=4122,
+  serialized_start=4156,
+  serialized_end=4216,
 )
 _sym_db.RegisterEnumDescriptor(_RESOLVEHOLDFORWARDACTION)
 
@@ -303,8 +303,8 @@ _HTLCEVENT_EVENTTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2204,
-  serialized_end=2264,
+  serialized_start=2278,
+  serialized_end=2338,
 )
 _sym_db.RegisterEnumDescriptor(_HTLCEVENT_EVENTTYPE)
 
@@ -343,8 +343,8 @@ _SENDPAYMENTREQUEST_DESTCUSTOMRECORDSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=595,
-  serialized_end=651,
+  serialized_start=646,
+  serialized_end=702,
 )
 
 _SENDPAYMENTREQUEST = _descriptor.Descriptor(
@@ -391,100 +391,114 @@ _SENDPAYMENTREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='payment_request', full_name='routerrpc.SendPaymentRequest.payment_request', index=5,
+      name='payment_addr', full_name='routerrpc.SendPaymentRequest.payment_addr', index=5,
+      number=20, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='payment_request', full_name='routerrpc.SendPaymentRequest.payment_request', index=6,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='timeout_seconds', full_name='routerrpc.SendPaymentRequest.timeout_seconds', index=6,
+      name='timeout_seconds', full_name='routerrpc.SendPaymentRequest.timeout_seconds', index=7,
       number=6, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='fee_limit_sat', full_name='routerrpc.SendPaymentRequest.fee_limit_sat', index=7,
+      name='fee_limit_sat', full_name='routerrpc.SendPaymentRequest.fee_limit_sat', index=8,
       number=7, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='fee_limit_msat', full_name='routerrpc.SendPaymentRequest.fee_limit_msat', index=8,
+      name='fee_limit_msat', full_name='routerrpc.SendPaymentRequest.fee_limit_msat', index=9,
       number=13, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='outgoing_chan_id', full_name='routerrpc.SendPaymentRequest.outgoing_chan_id', index=9,
+      name='outgoing_chan_id', full_name='routerrpc.SendPaymentRequest.outgoing_chan_id', index=10,
       number=8, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=b'\030\0010\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='outgoing_chan_ids', full_name='routerrpc.SendPaymentRequest.outgoing_chan_ids', index=10,
+      name='outgoing_chan_ids', full_name='routerrpc.SendPaymentRequest.outgoing_chan_ids', index=11,
       number=19, type=4, cpp_type=4, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='last_hop_pubkey', full_name='routerrpc.SendPaymentRequest.last_hop_pubkey', index=11,
+      name='last_hop_pubkey', full_name='routerrpc.SendPaymentRequest.last_hop_pubkey', index=12,
       number=14, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='cltv_limit', full_name='routerrpc.SendPaymentRequest.cltv_limit', index=12,
+      name='cltv_limit', full_name='routerrpc.SendPaymentRequest.cltv_limit', index=13,
       number=9, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='route_hints', full_name='routerrpc.SendPaymentRequest.route_hints', index=13,
+      name='route_hints', full_name='routerrpc.SendPaymentRequest.route_hints', index=14,
       number=10, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='dest_custom_records', full_name='routerrpc.SendPaymentRequest.dest_custom_records', index=14,
+      name='dest_custom_records', full_name='routerrpc.SendPaymentRequest.dest_custom_records', index=15,
       number=11, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='allow_self_payment', full_name='routerrpc.SendPaymentRequest.allow_self_payment', index=15,
+      name='allow_self_payment', full_name='routerrpc.SendPaymentRequest.allow_self_payment', index=16,
       number=15, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='dest_features', full_name='routerrpc.SendPaymentRequest.dest_features', index=16,
+      name='dest_features', full_name='routerrpc.SendPaymentRequest.dest_features', index=17,
       number=16, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='max_parts', full_name='routerrpc.SendPaymentRequest.max_parts', index=17,
+      name='max_parts', full_name='routerrpc.SendPaymentRequest.max_parts', index=18,
       number=17, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='no_inflight_updates', full_name='routerrpc.SendPaymentRequest.no_inflight_updates', index=18,
+      name='no_inflight_updates', full_name='routerrpc.SendPaymentRequest.no_inflight_updates', index=19,
       number=18, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='max_shard_size_msat', full_name='routerrpc.SendPaymentRequest.max_shard_size_msat', index=20,
+      number=21, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -501,7 +515,7 @@ _SENDPAYMENTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=39,
-  serialized_end=651,
+  serialized_end=702,
 )
 
 
@@ -539,8 +553,8 @@ _TRACKPAYMENTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=653,
-  serialized_end=725,
+  serialized_start=704,
+  serialized_end=776,
 )
 
 
@@ -578,8 +592,8 @@ _ROUTEFEEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=727,
-  serialized_end=775,
+  serialized_start=778,
+  serialized_end=826,
 )
 
 
@@ -617,8 +631,8 @@ _ROUTEFEERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=777,
-  serialized_end=846,
+  serialized_start=828,
+  serialized_end=897,
 )
 
 
@@ -656,8 +670,8 @@ _SENDTOROUTEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=848,
-  serialized_end=919,
+  serialized_start=899,
+  serialized_end=970,
 )
 
 
@@ -695,8 +709,8 @@ _SENDTOROUTERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=921,
-  serialized_end=993,
+  serialized_start=972,
+  serialized_end=1044,
 )
 
 
@@ -720,8 +734,8 @@ _RESETMISSIONCONTROLREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=995,
-  serialized_end=1023,
+  serialized_start=1046,
+  serialized_end=1074,
 )
 
 
@@ -745,8 +759,8 @@ _RESETMISSIONCONTROLRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1025,
-  serialized_end=1054,
+  serialized_start=1076,
+  serialized_end=1105,
 )
 
 
@@ -770,8 +784,8 @@ _QUERYMISSIONCONTROLREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1056,
-  serialized_end=1084,
+  serialized_start=1107,
+  serialized_end=1135,
 )
 
 
@@ -802,8 +816,8 @@ _QUERYMISSIONCONTROLRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1086,
-  serialized_end=1160,
+  serialized_start=1137,
+  serialized_end=1211,
 )
 
 
@@ -848,8 +862,8 @@ _PAIRHISTORY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1162,
-  serialized_end=1273,
+  serialized_start=1213,
+  serialized_end=1324,
 )
 
 
@@ -915,8 +929,8 @@ _PAIRDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1276,
-  serialized_end=1429,
+  serialized_start=1327,
+  serialized_end=1480,
 )
 
 
@@ -961,8 +975,8 @@ _QUERYPROBABILITYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1431,
-  serialized_end=1510,
+  serialized_start=1482,
+  serialized_end=1561,
 )
 
 
@@ -1000,8 +1014,8 @@ _QUERYPROBABILITYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1512,
-  serialized_end=1597,
+  serialized_start=1563,
+  serialized_end=1648,
 )
 
 
@@ -1041,6 +1055,13 @@ _BUILDROUTEREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='payment_addr', full_name='routerrpc.BuildRouteRequest.payment_addr', index=4,
+      number=5, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1053,8 +1074,8 @@ _BUILDROUTEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1599,
-  serialized_end=1713,
+  serialized_start=1651,
+  serialized_end=1787,
 )
 
 
@@ -1085,8 +1106,8 @@ _BUILDROUTERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1715,
-  serialized_end=1764,
+  serialized_start=1789,
+  serialized_end=1838,
 )
 
 
@@ -1110,8 +1131,8 @@ _SUBSCRIBEHTLCEVENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1766,
-  serialized_end=1794,
+  serialized_start=1840,
+  serialized_end=1868,
 )
 
 
@@ -1211,8 +1232,8 @@ _HTLCEVENT = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1797,
-  serialized_end=2273,
+  serialized_start=1871,
+  serialized_end=2347,
 )
 
 
@@ -1264,8 +1285,8 @@ _HTLCINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2275,
-  serialized_end=2393,
+  serialized_start=2349,
+  serialized_end=2467,
 )
 
 
@@ -1296,8 +1317,8 @@ _FORWARDEVENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2395,
-  serialized_end=2444,
+  serialized_start=2469,
+  serialized_end=2518,
 )
 
 
@@ -1321,8 +1342,8 @@ _FORWARDFAILEVENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2446,
-  serialized_end=2464,
+  serialized_start=2520,
+  serialized_end=2538,
 )
 
 
@@ -1346,8 +1367,8 @@ _SETTLEEVENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2466,
-  serialized_end=2479,
+  serialized_start=2540,
+  serialized_end=2553,
 )
 
 
@@ -1399,8 +1420,8 @@ _LINKFAILEVENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2482,
-  serialized_end=2656,
+  serialized_start=2556,
+  serialized_end=2730,
 )
 
 
@@ -1445,8 +1466,8 @@ _PAYMENTSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2658,
-  serialized_end=2772,
+  serialized_start=2732,
+  serialized_end=2846,
 )
 
 
@@ -1484,8 +1505,8 @@ _CIRCUITKEY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2774,
-  serialized_end=2820,
+  serialized_start=2848,
+  serialized_end=2894,
 )
 
 
@@ -1523,8 +1544,8 @@ _FORWARDHTLCINTERCEPTREQUEST_CUSTOMRECORDSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3158,
-  serialized_end=3210,
+  serialized_start=3252,
+  serialized_end=3304,
 )
 
 _FORWARDHTLCINTERCEPTREQUEST = _descriptor.Descriptor(
@@ -1591,6 +1612,13 @@ _FORWARDHTLCINTERCEPTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='onion_blob', full_name='routerrpc.ForwardHtlcInterceptRequest.onion_blob', index=8,
+      number=9, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1603,8 +1631,8 @@ _FORWARDHTLCINTERCEPTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2823,
-  serialized_end=3210,
+  serialized_start=2897,
+  serialized_end=3304,
 )
 
 
@@ -1649,8 +1677,8 @@ _FORWARDHTLCINTERCEPTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3213,
-  serialized_end=3367,
+  serialized_start=3307,
+  serialized_end=3461,
 )
 
 _SENDPAYMENTREQUEST_DESTCUSTOMRECORDSENTRY.containing_type = _SENDPAYMENTREQUEST
@@ -1943,8 +1971,8 @@ _ROUTER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=4125,
-  serialized_end=5217,
+  serialized_start=4219,
+  serialized_end=5311,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendPaymentV2',

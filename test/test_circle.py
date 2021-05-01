@@ -12,7 +12,7 @@ from lndmanage.lib.exceptions import (
     RebalancingTrialsExhausted,
     NoRoute,
     PolicyError,
-    InsufficientBandwidth,
+    OurNodeFailure,
 )
 from lndmanage import settings
 from test.testnetwork import TestNetwork
@@ -37,34 +37,21 @@ class CircleTest(TestNetwork):
     """
     network_definition = None
 
-    def circle_and_check(self, channel_number_send,
-                         channel_number_receive, amount_sat,
-                         expected_fees_msat, budget_sat=20,
+    def circle_and_check(self, channel_number_send: int,
+                         channel_number_receive: int, amount_sat: int,
+                         expected_fees_msat: int, budget_sat=20,
                          max_effective_fee_rate=50, dry=False):
         """
         Helper function for testing a circular payment.
 
         :param channel_number_send: channel whose local balance is decreased
-        :type channel_number_send: int
-
         :param channel_number_receive: channel whose local balance is increased
-        :type channel_number_receive: int
-
         :param amount_sat: amount in satoshi to rebalance
-        :type amount_sat: int
-
         :param expected_fees_msat: expected fees in millisatoshi for
             the rebalance
-        :type expected_fees_msat: int
-
         :param budget_sat: budget for rebalancing
-        :type budget_sat: int
-
         :param max_effective_fee_rate: the maximal effective fee rate accepted
-        :type max_effective_fee_rate: int
-
         :param dry: if it should be a dry run
-        :type dry: bool
         """
 
         self.rebalancer = Rebalancer(
@@ -78,15 +65,16 @@ class CircleTest(TestNetwork):
             channel_number_send]['channel_id']
         channel_id_receive = self.testnet.channel_mapping[
             channel_number_receive]['channel_id']
-        invoice_r_hash = self.lndnode.get_invoice(amount_sat, '')
+        invoice = self.lndnode.get_invoice(amount_sat, '')
+        payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
 
-        # exercise
         try:
             fees_msat = self.rebalancer.rebalance_two_channels(
                 channel_id_send,
                 channel_id_receive,
                 amount_sat,
-                invoice_r_hash,
+                payment_hash,
+                payment_address,
                 budget_sat,
                 dry=dry
             )
@@ -94,7 +82,6 @@ class CircleTest(TestNetwork):
         except Exception as e:
             raise e
 
-        # check
         graph_after = self.testnet.assemble_graph()
         channel_data_send_before = graph_before['A'][channel_number_send]
         channel_data_receive_before = graph_before['A'][channel_number_receive]
@@ -180,7 +167,7 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 33
 
         self.assertRaises(
-            InsufficientBandwidth,
+            OurNodeFailure,
             self.circle_and_check,
             channel_number_from,
             channel_number_to,
@@ -230,25 +217,6 @@ class TestCircleLiquid(CircleTest):
             budget,
             max_effective_fee_rate,
 
-        )
-
-    def test_circle_1_6_fail_first_hop_insufficient_funds(self):
-        """
-        Tests failure when our channel fails because we didn't take into
-        account channel reserve. (Failing channel 1: 117:1:0)
-        """
-        channel_number_from = 1
-        channel_number_to = 6
-        amount_sat = 1000000
-        expected_fees_msat = 33
-
-        self.assertRaises(
-            PolicyError,
-            self.circle_and_check,
-            channel_number_from,
-            channel_number_to,
-            amount_sat,
-            expected_fees_msat,
         )
 
     def test_circle_1_6_success_channel_reserve(self):
@@ -341,24 +309,9 @@ class TestCircleIlliquid(CircleTest):
             expected_fees_msat
         )
 
-    # def test_circle_1_2_success_multi_trial(self):
-    #     """
-    #     Test if RebalancingTrialsExhausted is raised.
-    #     """
-    #     channel_number_from = 1
-    #     channel_number_to = 2
-    #     amount_sat = 200000
-    #     expected_fees_msat = 1207
-
-    #     self.circle_and_check(
-    #         channel_number_from,
-    #         channel_number_to,
-    #         amount_sat,
-    #         expected_fees_msat)
-
     def test_circle_1_2_fail_no_route_multi_trials(self):
         """
-        Test if NoRoute is raised.
+        Test if RebalancingTrialsExhausted is raised.
         """
         channel_number_from = 1
         channel_number_to = 2

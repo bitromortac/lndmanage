@@ -3,6 +3,7 @@ import codecs
 import time
 import datetime
 import statistics
+from typing import List, TYPE_CHECKING
 
 from collections import OrderedDict
 
@@ -17,7 +18,8 @@ import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, PolicyError, InsufficientBandwidth
+from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, OurNodeFailure
+from lndmanage.lib import exceptions
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
@@ -26,6 +28,9 @@ from lndmanage.lib.ln_utilities import (
     channel_unbalancedness_and_commit_fee
 )
 from lndmanage import settings
+
+if TYPE_CHECKING:
+    from lndmanage.lib.routing import Route
 
 import logging
 logger = logging.getLogger(__name__)
@@ -170,18 +175,15 @@ class LndNode(Node):
         return channel_dict
 
     @staticmethod
-    def lnd_hops(hops):
+    def lnd_hops(hops) -> List[lnd.Hop]:
         return [lnd.Hop(**hop) for hop in hops]
 
-    def lnd_route(self, route):
+    def _to_lnd_route(self, route: 'Route') -> lnd.Route:
         """
         Converts a cleartext route to an lnd route.
-
-        :param route: :class:`lib.route.Route`
-        :return:
         """
         hops = self.lnd_hops(route.hops)
-        return lnd.Route(
+        lnd_route = lnd.Route(
             total_time_lock=route.total_time_lock,
             total_fees=route.total_fee_msat // 1000,
             total_amt=route.total_amt_msat // 1000,
@@ -189,36 +191,9 @@ class LndNode(Node):
             total_fees_msat=route.total_fee_msat,
             total_amt_msat=route.total_amt_msat
         )
+        return lnd_route
 
-    def self_payment(self, routes, amt_msat):
-        """
-        Do a self-payment along routes with amt_msat.
-
-        :param routes: list of :class:`lib.route.Route` objects
-        :param amt_msat:
-        :return: payment result
-        """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=amt_msat // 1000))
-        result = self.send_to_route(routes, invoice.r_hash)
-        logger.debug(result)
-        return result
-
-    def self_payment_zero_invoice(self, routes, memo):
-        """
-        Do a self-payment along routes with an invoice of zero satoshis.
-        This helps to use one invoice for several rebalancing attempts.
-        Adds a memo to the invoice, which can later be parsed for bookkeeping.
-
-        :param routes: list of :class:`lib.route.Route` objects
-        :param memo: str, Comment field for an invoice.
-        :return: payment result
-        """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
-        result = self.send_to_route(routes, invoice.r_hash)
-        logger.debug(result)
-        return result
-
-    def get_invoice(self, amt_msat, memo):
+    def get_invoice(self, amt_msat: int, memo: str) -> lnd.Invoice:
         """
         Creates a new invoice with amt_msat and memo.
 
@@ -226,11 +201,11 @@ class LndNode(Node):
         :param memo: str
         :return: Hash of invoice preimage.
         """
-        invoice = self._rpc.AddInvoice(
-            lnd.Invoice(value=amt_msat // 1000, memo=memo))
-        return invoice.r_hash
+        invoice = self._rpc.AddInvoice(lnd.Invoice(
+            value=amt_msat // 1000, memo=memo))
+        return invoice
 
-    def get_rebalance_invoice(self, memo):
+    def get_rebalance_invoice(self, memo) -> lnd.Invoice:
         """
         Creates a zero amount invoice and gives back it's hash.
 
@@ -238,48 +213,60 @@ class LndNode(Node):
         :return: Hash of the invoice preimage.
         """
         invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
-        return invoice.r_hash
+        return invoice
 
-    def send_to_route(self, route, r_hash_bytes):
+    def send_to_route(self, route: 'Route', payment_hash: bytes,
+                      payment_address: bytes):
         """
         Takes bare route (list) and tries to send along it,
         trying to fulfill the invoice labeled by the given hash.
 
         :param route: (list) of :class:`lib.routes.Route`
-        :param r_hash_bytes: invoice identifier
+        :param payment_hash: invoice identifier
         :return:
         """
-        lnd_route = self.lnd_route(route)
-        request = lnd.SendToRouteRequest(
+        lnd_route = self._to_lnd_route(route)
+        # set payment address for last hop
+        lnd_route.hops[-1].tlv_payload = True
+        lnd_route.hops[-1].mpp_record.payment_addr = payment_address
+        lnd_route.hops[-1].mpp_record.total_amt_msat = lnd_route.hops[-1].amt_to_forward_msat
+        # set payment hash
+        request = lndrouter.SendToRouteRequest(
             route=lnd_route,
-            payment_hash_string=r_hash_bytes.hex(),
+            payment_hash=payment_hash,
         )
         try:
             # timeout after 5 minutes
-            payment = self._rpc.SendToRouteSync(request, timeout=5 * 60)
+            payment = self._routerrpc.SendToRouteV2(request, timeout=5 * 60)
         except _Rendezvous:
             raise PaymentTimeOut
-
-        # check for unexpected payment errors
-        if "htlc exceeds maximum policy" in payment.payment_error:
-            logger.error("   HTLC exceeds maximum policy amount (channel reserve).")
-            raise PolicyError
-        elif "insufficient bandwidth to route" in payment.payment_error:
-            logger.error("   Insufficient bandwidth to route HTLC.")
-            raise InsufficientBandwidth
+        if payment.HasField('failure'):
+            failure = payment.failure  # type: lnd.Failure.FailureCode
+            logger.debug(f"Routing failure: {failure}")
+            if failure.failure_source_index == 0:
+                raise OurNodeFailure("Not enough funds?")
+            if failure.code == 15:
+                raise exceptions.TemporaryChannelFailure(payment)
+            if failure.code == 18:
+                raise exceptions.UnknownNextPeer(payment)
+            if failure.code == 12:
+                raise exceptions.FeeInsufficient(payment)
+            else:
+                logger.info(failure)
+                raise Exception(f"Unknown error: code {failure.code}")
 
         return payment
 
     def get_raw_network_graph(self):
         try:
             graph = self._rpc.DescribeGraph(lnd.ChannelGraphRequest())
+            return graph
         except _Rendezvous:
             logger.error(
                 "Problem connecting to lnd. "
                 "Either %s is not configured correctly or lnd is not running.",
                 self.config_file)
             exit(1)
-        return graph
 
     def get_raw_info(self):
         """
@@ -396,7 +383,7 @@ class LndNode(Node):
                 channel_unbalancedness_and_commit_fee(
                     c.local_balance, c.capacity, c.commit_fee, c.initiator)
             try:
-                uptime_lifetime_ratio =  c.uptime / c.lifetime
+                uptime_lifetime_ratio = c.uptime / c.lifetime
             except ZeroDivisionError:
                 uptime_lifetime_ratio = 0
 
