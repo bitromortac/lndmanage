@@ -7,13 +7,6 @@ import distutils.spawn as spawn
 # readline has a desired side effect on keyword input of enabling history
 import readline
 
-from lndmanage.lib.node import LndNode
-from lndmanage.lib.listchannels import ListChannels
-from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.recommend_nodes import RecommendNodes
-from lndmanage.lib.report import Report
-from lndmanage.lib.info import Info
-from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.exceptions import (
     DryRun,
     PaymentTimeOut,
@@ -21,6 +14,14 @@ from lndmanage.lib.exceptions import (
     RebalanceFailure,
     RebalancingTrialsExhausted,
 )
+from lndmanage.lib.info import Info
+from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.lncli import Lncli
+from lndmanage.lib.node import LndNode
+from lndmanage.lib.openchannels import ChannelOpener
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.recommend_nodes import RecommendNodes
+from lndmanage.lib.report import Report
 from lndmanage import settings
 
 import logging.config
@@ -329,6 +330,39 @@ class Parser(object):
             'lncli',
             help='execute lncli')
 
+        # cmd: openchannels
+        self.parser_openchannels = subparsers.add_parser(
+            'openchannels',
+            help='opens multiple channels',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_openchannels.add_argument(
+            'pubkeys',
+            type=str,
+            help='comma-separated list of node pubkeys')
+        self.parser_openchannels.add_argument(
+            '--amounts',
+            type=str,
+            help='comma-separated list of channel amounts 1,2,...')
+        self.parser_openchannels.add_argument(
+            '--utxos',
+            type=str,
+            help='comma-separated list of utxos of format txid:output_index,txid:output_index')
+        self.parser_openchannels.add_argument(
+            '--total-amount',
+            type=int,
+            help='total amount to open channels')
+        self.parser_openchannels.add_argument(
+            '--sat-per-byte',
+            type=int,
+            default=1,
+            help='sat per byte that will be targeted')
+        self.parser_openchannels.add_argument(
+            '--reckless', help='Execute action in the network.',
+            action='store_true')
+        self.parser_openchannels.add_argument(
+            '--private', help='The channels will not be announced in the network.',
+            action='store_true')
+
     def check_for_lncli(self):
         """
         Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
@@ -465,6 +499,21 @@ class Parser(object):
         elif args.cmd == 'info':
             info = Info(node)
             info.parse_and_print(args.info_string)
+
+        elif args.cmd == 'openchannels':
+            channel_opener = ChannelOpener(node)
+            try:
+                channel_opener.open_channels(
+                    pubkeys=args.pubkeys,
+                    amounts=args.amounts,
+                    utxos=args.utxos,
+                    sat_per_byte=args.sat_per_byte,
+                    total_amount=args.total_amount,
+                    reckless=args.reckless,
+                    private=args.private,
+                )
+            except Exception as e:
+                logger.info(e)
 
 
 def main():
