@@ -132,6 +132,8 @@ class Rebalancer(object):
                     failed_hop = int(e.payment.failure.failure_source_index)
                 except exceptions.UnknownNextPeer as e:
                     failed_hop = int(e.payment.failure.failure_source_index + 1)
+                except exceptions.ChannelDisabled as e:
+                    failed_hop = int(e.payment.failure.failure_source_index + 1)
                 except exceptions.FeeInsufficient as e:
                     failed_hop = int(e.payment.failure.failure_source_index)
                 else:

@@ -247,9 +247,11 @@ class LndNode(Node):
                 raise OurNodeFailure("Not enough funds?")
             if failure.code == 15:
                 raise exceptions.TemporaryChannelFailure(payment)
-            if failure.code == 18:
+            elif failure.code == 14:
+                raise exceptions.ChannelDisabled(payment)
+            elif failure.code == 18:
                 raise exceptions.UnknownNextPeer(payment)
-            if failure.code == 12:
+            elif failure.code == 12:
                 raise exceptions.FeeInsufficient(payment)
             else:
                 logger.info(failure)

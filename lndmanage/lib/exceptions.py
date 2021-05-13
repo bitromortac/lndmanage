@@ -86,3 +86,9 @@ class FeeInsufficient(PaymentFailure):
     def __init__(self, payment):
         self.payment = payment
         super().__init__()
+
+
+class ChannelDisabled(PaymentFailure):
+    def __init__(self, payment):
+        self.payment = payment
+        super().__init__()
