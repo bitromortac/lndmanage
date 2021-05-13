@@ -453,24 +453,3 @@ from the root folder.
 
 If you prefer to run `lndmanage` from a docker container, `cd docker` 
 and follow the [`README`](docker/README.md) there.
-
-## Compiling grpc in python [development]
-```
-$ cd lndmanage/grpc_compiled
-$ pip install grpcio grpcio-tools googleapis-common-protos
-
-$ git clone https://github.com/googleapis/googleapis.git
-
-$ curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto
-$ curl -o router.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/routerrpc/router.proto
-$ curl -o signer.proto https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/signrpc/signer.proto
-$ curl -o walletkit.proto https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/walletrpc/walletkit.proto
-
-$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. rpc.proto
-$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. router.proto
-$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. signer.proto
-# adjust signer.proto location in walletkit.proto
-$ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. walletkit.proto
-```
-Then correct to absolute import paths, for instance change `import rpc_pb2 as rpc__pb2`
- to `from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2`.
