@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import lndmanage.grpc_compiled.signer_pb2 as signer__pb2
-import lndmanage.grpc_compiled.walletkit_pb2 as walletkit__pb2
+from lndmanage.grpc_compiled import signer_pb2 as signer__pb2
+from lndmanage.grpc_compiled import walletkit_pb2 as walletkit__pb2
 
 
 class WalletKitStub(object):
@@ -32,6 +32,11 @@ class WalletKitStub(object):
                 request_serializer=walletkit__pb2.ReleaseOutputRequest.SerializeToString,
                 response_deserializer=walletkit__pb2.ReleaseOutputResponse.FromString,
                 )
+        self.ListLeases = channel.unary_unary(
+                '/walletrpc.WalletKit/ListLeases',
+                request_serializer=walletkit__pb2.ListLeasesRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ListLeasesResponse.FromString,
+                )
         self.DeriveNextKey = channel.unary_unary(
                 '/walletrpc.WalletKit/DeriveNextKey',
                 request_serializer=walletkit__pb2.KeyReq.SerializeToString,
@@ -46,6 +51,21 @@ class WalletKitStub(object):
                 '/walletrpc.WalletKit/NextAddr',
                 request_serializer=walletkit__pb2.AddrRequest.SerializeToString,
                 response_deserializer=walletkit__pb2.AddrResponse.FromString,
+                )
+        self.ListAccounts = channel.unary_unary(
+                '/walletrpc.WalletKit/ListAccounts',
+                request_serializer=walletkit__pb2.ListAccountsRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ListAccountsResponse.FromString,
+                )
+        self.ImportAccount = channel.unary_unary(
+                '/walletrpc.WalletKit/ImportAccount',
+                request_serializer=walletkit__pb2.ImportAccountRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ImportAccountResponse.FromString,
+                )
+        self.ImportPublicKey = channel.unary_unary(
+                '/walletrpc.WalletKit/ImportPublicKey',
+                request_serializer=walletkit__pb2.ImportPublicKeyRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ImportPublicKeyResponse.FromString,
                 )
         self.PublishTransaction = channel.unary_unary(
                 '/walletrpc.WalletKit/PublishTransaction',
@@ -130,6 +150,14 @@ class WalletKitServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListLeases(self, request, context):
+        """
+        ListLeases lists all currently locked utxos.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def DeriveNextKey(self, request, context):
         """
         DeriveNextKey attempts to derive the *next* key within the key family
@@ -152,6 +180,58 @@ class WalletKitServicer(object):
     def NextAddr(self, request, context):
         """
         NextAddr returns the next unused address within the wallet.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListAccounts(self, request, context):
+        """
+        ListAccounts retrieves all accounts belonging to the wallet by default. A
+        name and key scope filter can be provided to filter through all of the
+        wallet accounts and return only those matching.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ImportAccount(self, request, context):
+        """
+        ImportAccount imports an account backed by an account extended public key.
+        The master key fingerprint denotes the fingerprint of the root key
+        corresponding to the account public key (also known as the key with
+        derivation path m/). This may be required by some hardware wallets for
+        proper identification and signing.
+
+        The address type can usually be inferred from the key's version, but may be
+        required for certain keys to map them into the proper scope.
+
+        For BIP-0044 keys, an address type must be specified as we intend to not
+        support importing BIP-0044 keys into the wallet using the legacy
+        pay-to-pubkey-hash (P2PKH) scheme. A nested witness address type will force
+        the standard BIP-0049 derivation scheme, while a witness address type will
+        force the standard BIP-0084 derivation scheme.
+
+        For BIP-0049 keys, an address type must also be specified to make a
+        distinction between the standard BIP-0049 address schema (nested witness
+        pubkeys everywhere) and our own BIP-0049Plus address schema (nested pubkeys
+        externally, witness pubkeys internally).
+
+        NOTE: Events (deposits/spends) for keys derived from an account will only be
+        detected by lnd if they happen after the import. Rescans to detect past
+        events will be supported later on.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ImportPublicKey(self, request, context):
+        """
+        ImportPublicKey imports a public key as watch-only into the wallet.
+
+        NOTE: Events (deposits/spends) for a key will only be detected by lnd if
+        they happen after the import. Rescans to detect past events will be
+        supported later on.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -317,6 +397,11 @@ def add_WalletKitServicer_to_server(servicer, server):
                     request_deserializer=walletkit__pb2.ReleaseOutputRequest.FromString,
                     response_serializer=walletkit__pb2.ReleaseOutputResponse.SerializeToString,
             ),
+            'ListLeases': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListLeases,
+                    request_deserializer=walletkit__pb2.ListLeasesRequest.FromString,
+                    response_serializer=walletkit__pb2.ListLeasesResponse.SerializeToString,
+            ),
             'DeriveNextKey': grpc.unary_unary_rpc_method_handler(
                     servicer.DeriveNextKey,
                     request_deserializer=walletkit__pb2.KeyReq.FromString,
@@ -331,6 +416,21 @@ def add_WalletKitServicer_to_server(servicer, server):
                     servicer.NextAddr,
                     request_deserializer=walletkit__pb2.AddrRequest.FromString,
                     response_serializer=walletkit__pb2.AddrResponse.SerializeToString,
+            ),
+            'ListAccounts': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListAccounts,
+                    request_deserializer=walletkit__pb2.ListAccountsRequest.FromString,
+                    response_serializer=walletkit__pb2.ListAccountsResponse.SerializeToString,
+            ),
+            'ImportAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.ImportAccount,
+                    request_deserializer=walletkit__pb2.ImportAccountRequest.FromString,
+                    response_serializer=walletkit__pb2.ImportAccountResponse.SerializeToString,
+            ),
+            'ImportPublicKey': grpc.unary_unary_rpc_method_handler(
+                    servicer.ImportPublicKey,
+                    request_deserializer=walletkit__pb2.ImportPublicKeyRequest.FromString,
+                    response_serializer=walletkit__pb2.ImportPublicKeyResponse.SerializeToString,
             ),
             'PublishTransaction': grpc.unary_unary_rpc_method_handler(
                     servicer.PublishTransaction,
@@ -441,6 +541,23 @@ class WalletKit(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def ListLeases(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ListLeases',
+            walletkit__pb2.ListLeasesRequest.SerializeToString,
+            walletkit__pb2.ListLeasesResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def DeriveNextKey(request,
             target,
             options=(),
@@ -488,6 +605,57 @@ class WalletKit(object):
         return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/NextAddr',
             walletkit__pb2.AddrRequest.SerializeToString,
             walletkit__pb2.AddrResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListAccounts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ListAccounts',
+            walletkit__pb2.ListAccountsRequest.SerializeToString,
+            walletkit__pb2.ListAccountsResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ImportAccount(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ImportAccount',
+            walletkit__pb2.ImportAccountRequest.SerializeToString,
+            walletkit__pb2.ImportAccountResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ImportPublicKey(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ImportPublicKey',
+            walletkit__pb2.ImportPublicKeyRequest.SerializeToString,
+            walletkit__pb2.ImportPublicKeyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
