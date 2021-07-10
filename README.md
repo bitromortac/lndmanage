@@ -472,6 +472,13 @@ Tests can be run with
 `python3 -m unittest discover test`
 from the root folder.
 
+## gRPC Reproducibility
+Note that this repository ships prebuilt gRPC interfaces to communicate with LND.
+These libraries (located in `lndmanage/grpc_compiled`) contain code that is hard
+to review and should not be trusted. In order to check that the libraries indeed
+can be reproduced from the LND repository, one can run the `build_grpc.sh`
+script and observe differences via git.
+
 ## Docker
 
 If you prefer to run `lndmanage` from a docker container, `cd docker` 
