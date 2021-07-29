@@ -4,7 +4,7 @@ from collections import OrderedDict, defaultdict
 import datetime
 import os
 import time
-from typing import List, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING, Optional, Dict
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -28,7 +28,7 @@ from lndmanage.lib.ln_utilities import (
     channel_unbalancedness_and_commit_fee
 )
 from lndmanage.lib.psbt import extract_psbt_inputs_outputs
-from lndmanage.lib.types import UTXO, AddressType
+from lndmanage.lib.data_types import UTXO, AddressType
 from lndmanage.lib.user import yes_no_question
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage import settings
@@ -311,7 +311,8 @@ class LndNode(Node):
             if c['private']:
                 self.total_private_channels += 1
 
-    def get_open_channels(self, active_only=False, public_only=False):
+    def get_open_channels(self, active_only=False, public_only=False) \
+            -> Dict[int, Dict]:
         """
         Fetches information (fee settings of the counterparty, channel
         capacity, balancedness) about this node's open channels and saves
@@ -428,6 +429,17 @@ class LndNode(Node):
         sorted_dict = OrderedDict(
             sorted(channels.items(), key=lambda x: x[1]['alias']))
         return sorted_dict
+
+    def get_channel_id_to_node_id(self, open_only=False) -> Dict[int, str]:
+        channel_id_to_node_id = {}
+        closed_channels = self.get_closed_channels()
+        open_channels = self.get_open_channels()
+        for cid, c in open_channels.items():
+            channel_id_to_node_id[cid] = c['remote_pubkey']
+        if not open_only:
+            for cid, c in closed_channels.items():
+                channel_id_to_node_id[cid] = c['remote_pubkey']
+        return channel_id_to_node_id
 
     def get_inactive_channels(self):
         """

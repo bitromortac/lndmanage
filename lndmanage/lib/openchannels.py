@@ -5,7 +5,7 @@ from math import ceil
 import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from lndmanage.lib.types import UTXO, AddressType
+from lndmanage.lib.data_types import UTXO, AddressType
 from lndmanage import settings
 
 if TYPE_CHECKING:

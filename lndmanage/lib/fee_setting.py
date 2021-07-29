@@ -131,7 +131,7 @@ class FeeSetter(object):
         self.time_end = time.time()
         self.time_start = self.time_end - from_days_ago * 24 * 60 * 60
         self.time_interval_days = from_days_ago
-        self.forwarding_analyzer.initialize_forwarding_data(
+        self.forwarding_analyzer.initialize_forwarding_stats(
             self.time_start, self.time_end
         )
 

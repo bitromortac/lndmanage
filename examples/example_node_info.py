@@ -1,4 +1,4 @@
-from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.node import LndNode
 from lndmanage import settings
 
