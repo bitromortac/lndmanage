@@ -197,7 +197,7 @@ class TestIlliquidRebalance(RebalanceTest):
         # TODO: find out why not exact rebalancing target is reached
         fees_msat = self.rebalance_and_check(
             test_channel_number, -0.05, False, places=1)
-        self.assertEqual(2575, fees_msat)
+        self.assertEqual(2623, fees_msat)
 
     def test_rebalance_channel_1_fail(self):
         """

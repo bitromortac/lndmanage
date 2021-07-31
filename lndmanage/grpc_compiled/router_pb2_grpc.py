@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import lndmanage.grpc_compiled.router_pb2 as router__pb2
-import lndmanage.grpc_compiled.rpc_pb2 as rpc__pb2
+from lndmanage.grpc_compiled import router_pb2 as router__pb2
+from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
 
 
 class RouterStub(object):
@@ -52,6 +52,21 @@ class RouterStub(object):
                 request_serializer=router__pb2.QueryMissionControlRequest.SerializeToString,
                 response_deserializer=router__pb2.QueryMissionControlResponse.FromString,
                 )
+        self.XImportMissionControl = channel.unary_unary(
+                '/routerrpc.Router/XImportMissionControl',
+                request_serializer=router__pb2.XImportMissionControlRequest.SerializeToString,
+                response_deserializer=router__pb2.XImportMissionControlResponse.FromString,
+                )
+        self.GetMissionControlConfig = channel.unary_unary(
+                '/routerrpc.Router/GetMissionControlConfig',
+                request_serializer=router__pb2.GetMissionControlConfigRequest.SerializeToString,
+                response_deserializer=router__pb2.GetMissionControlConfigResponse.FromString,
+                )
+        self.SetMissionControlConfig = channel.unary_unary(
+                '/routerrpc.Router/SetMissionControlConfig',
+                request_serializer=router__pb2.SetMissionControlConfigRequest.SerializeToString,
+                response_deserializer=router__pb2.SetMissionControlConfigResponse.FromString,
+                )
         self.QueryProbability = channel.unary_unary(
                 '/routerrpc.Router/QueryProbability',
                 request_serializer=router__pb2.QueryProbabilityRequest.SerializeToString,
@@ -81,6 +96,11 @@ class RouterStub(object):
                 '/routerrpc.Router/HtlcInterceptor',
                 request_serializer=router__pb2.ForwardHtlcInterceptResponse.SerializeToString,
                 response_deserializer=router__pb2.ForwardHtlcInterceptRequest.FromString,
+                )
+        self.UpdateChanStatus = channel.unary_unary(
+                '/routerrpc.Router/UpdateChanStatus',
+                request_serializer=router__pb2.UpdateChanStatusRequest.SerializeToString,
+                response_deserializer=router__pb2.UpdateChanStatusResponse.FromString,
                 )
 
 
@@ -158,6 +178,34 @@ class RouterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def XImportMissionControl(self, request, context):
+        """
+        XImportMissionControl is an experimental API that imports the state provided
+        to the internal mission control's state, using all results which are more
+        recent than our existing values. These values will only be imported
+        in-memory, and will not be persisted across restarts.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetMissionControlConfig(self, request, context):
+        """
+        GetMissionControlConfig returns mission control's current config.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetMissionControlConfig(self, request, context):
+        """
+        SetMissionControlConfig will set mission control's config, if the config
+        provided is valid.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def QueryProbability(self, request, context):
         """
         QueryProbability returns the current success probability estimate for a
@@ -217,6 +265,17 @@ class RouterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpdateChanStatus(self, request, context):
+        """
+        UpdateChanStatus attempts to manually set the state of a channel
+        (enabled, disabled, or auto). A manual "disable" request will cause the
+        channel to stay disabled until a subsequent manual request of either
+        "enable" or "auto".
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_RouterServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -255,6 +314,21 @@ def add_RouterServicer_to_server(servicer, server):
                     request_deserializer=router__pb2.QueryMissionControlRequest.FromString,
                     response_serializer=router__pb2.QueryMissionControlResponse.SerializeToString,
             ),
+            'XImportMissionControl': grpc.unary_unary_rpc_method_handler(
+                    servicer.XImportMissionControl,
+                    request_deserializer=router__pb2.XImportMissionControlRequest.FromString,
+                    response_serializer=router__pb2.XImportMissionControlResponse.SerializeToString,
+            ),
+            'GetMissionControlConfig': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetMissionControlConfig,
+                    request_deserializer=router__pb2.GetMissionControlConfigRequest.FromString,
+                    response_serializer=router__pb2.GetMissionControlConfigResponse.SerializeToString,
+            ),
+            'SetMissionControlConfig': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetMissionControlConfig,
+                    request_deserializer=router__pb2.SetMissionControlConfigRequest.FromString,
+                    response_serializer=router__pb2.SetMissionControlConfigResponse.SerializeToString,
+            ),
             'QueryProbability': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryProbability,
                     request_deserializer=router__pb2.QueryProbabilityRequest.FromString,
@@ -284,6 +358,11 @@ def add_RouterServicer_to_server(servicer, server):
                     servicer.HtlcInterceptor,
                     request_deserializer=router__pb2.ForwardHtlcInterceptResponse.FromString,
                     response_serializer=router__pb2.ForwardHtlcInterceptRequest.SerializeToString,
+            ),
+            'UpdateChanStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateChanStatus,
+                    request_deserializer=router__pb2.UpdateChanStatusRequest.FromString,
+                    response_serializer=router__pb2.UpdateChanStatusResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -417,6 +496,57 @@ class Router(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def XImportMissionControl(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/routerrpc.Router/XImportMissionControl',
+            router__pb2.XImportMissionControlRequest.SerializeToString,
+            router__pb2.XImportMissionControlResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetMissionControlConfig(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/routerrpc.Router/GetMissionControlConfig',
+            router__pb2.GetMissionControlConfigRequest.SerializeToString,
+            router__pb2.GetMissionControlConfigResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SetMissionControlConfig(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/routerrpc.Router/SetMissionControlConfig',
+            router__pb2.SetMissionControlConfigRequest.SerializeToString,
+            router__pb2.SetMissionControlConfigResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def QueryProbability(request,
             target,
             options=(),
@@ -515,5 +645,22 @@ class Router(object):
         return grpc.experimental.stream_stream(request_iterator, target, '/routerrpc.Router/HtlcInterceptor',
             router__pb2.ForwardHtlcInterceptResponse.SerializeToString,
             router__pb2.ForwardHtlcInterceptRequest.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UpdateChanStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/routerrpc.Router/UpdateChanStatus',
+            router__pb2.UpdateChanStatusRequest.SerializeToString,
+            router__pb2.UpdateChanStatusResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -362,7 +362,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmange requires `>=python3.6`, `lnd v0.12.1-beta`, `python3-venv`
+Installation of lndmanage requires `>=python3.6`, `lnd v0.13.0/v0.13.1`, `python3-venv`.
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
@@ -471,6 +471,13 @@ and links to bitcoind, bitcoin-cli, lnd, and lncli in the `test/bin` folder.
 Tests can be run with
 `python3 -m unittest discover test`
 from the root folder.
+
+## gRPC Reproducibility
+Note that this repository ships prebuilt gRPC interfaces to communicate with LND.
+These libraries (located in `lndmanage/grpc_compiled`) contain code that is hard
+to review and should not be trusted. In order to check that the libraries indeed
+can be reproduced from the LND repository, one can run the `build_grpc.sh`
+script and observe differences via git.
 
 ## Docker
 

@@ -12,8 +12,8 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import lndmanage.grpc_compiled.rpc_pb2 as rpc__pb2
-import lndmanage.grpc_compiled.signer_pb2 as signer__pb2
+from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
+from lndmanage.grpc_compiled import signer_pb2 as signer__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -22,10 +22,46 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z/github.com/lightningnetwork/lnd/lnrpc/walletrpc',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fwalletkit.proto\x12\twalletrpc\x1a\trpc.proto\x1a\x0csigner.proto\":\n\x12ListUnspentRequest\x12\x11\n\tmin_confs\x18\x01 \x01(\x05\x12\x11\n\tmax_confs\x18\x02 \x01(\x05\"1\n\x13ListUnspentResponse\x12\x1a\n\x05utxos\x18\x01 \x03(\x0b\x32\x0b.lnrpc.Utxo\"C\n\x12LeaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\")\n\x13LeaseOutputResponse\x12\x12\n\nexpiration\x18\x01 \x01(\x04\"E\n\x14ReleaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\"\x17\n\x15ReleaseOutputResponse\"6\n\x06KeyReq\x12\x18\n\x10key_finger_print\x18\x01 \x01(\x05\x12\x12\n\nkey_family\x18\x02 \x01(\x05\"\r\n\x0b\x41\x64\x64rRequest\"\x1c\n\x0c\x41\x64\x64rResponse\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\",\n\x0bTransaction\x12\x0e\n\x06tx_hex\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\"(\n\x0fPublishResponse\x12\x15\n\rpublish_error\x18\x01 \x01(\t\"\x86\x01\n\x12SendOutputsRequest\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\x12\x1f\n\x07outputs\x18\x02 \x03(\x0b\x32\x0e.signrpc.TxOut\x12\r\n\x05label\x18\x03 \x01(\t\x12\x11\n\tmin_confs\x18\x04 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x05 \x01(\x08\"%\n\x13SendOutputsResponse\x12\x0e\n\x06raw_tx\x18\x01 \x01(\x0c\")\n\x12\x45stimateFeeRequest\x12\x13\n\x0b\x63onf_target\x18\x01 \x01(\x05\")\n\x13\x45stimateFeeResponse\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\"\x92\x02\n\x0cPendingSweep\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12,\n\x0cwitness_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.WitnessType\x12\x12\n\namount_sat\x18\x03 \x01(\r\x12\x14\n\x0csat_per_byte\x18\x04 \x01(\r\x12\x1a\n\x12\x62roadcast_attempts\x18\x05 \x01(\r\x12\x1d\n\x15next_broadcast_height\x18\x06 \x01(\r\x12\x1d\n\x15requested_conf_target\x18\x08 \x01(\r\x12\x1e\n\x16requested_sat_per_byte\x18\t \x01(\r\x12\r\n\x05\x66orce\x18\x07 \x01(\x08\"\x16\n\x14PendingSweepsRequest\"H\n\x15PendingSweepsResponse\x12/\n\x0epending_sweeps\x18\x01 \x03(\x0b\x32\x17.walletrpc.PendingSweep\"m\n\x0e\x42umpFeeRequest\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x13\n\x0btarget_conf\x18\x02 \x01(\r\x12\x14\n\x0csat_per_byte\x18\x03 \x01(\r\x12\r\n\x05\x66orce\x18\x04 \x01(\x08\"\x11\n\x0f\x42umpFeeResponse\"$\n\x11ListSweepsRequest\x12\x0f\n\x07verbose\x18\x01 \x01(\x08\"\xcc\x01\n\x12ListSweepsResponse\x12\x38\n\x13transaction_details\x18\x01 \x01(\x0b\x32\x19.lnrpc.TransactionDetailsH\x00\x12G\n\x0ftransaction_ids\x18\x02 \x01(\x0b\x32,.walletrpc.ListSweepsResponse.TransactionIDsH\x00\x1a)\n\x0eTransactionIDs\x12\x17\n\x0ftransaction_ids\x18\x01 \x03(\tB\x08\n\x06sweeps\"I\n\x17LabelTransactionRequest\x12\x0c\n\x04txid\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\x12\x11\n\toverwrite\x18\x03 \x01(\x08\"\x1a\n\x18LabelTransactionResponse\"\x8b\x01\n\x0f\x46undPsbtRequest\x12\x0e\n\x04psbt\x18\x01 \x01(\x0cH\x00\x12$\n\x03raw\x18\x02 \x01(\x0b\x32\x15.walletrpc.TxTemplateH\x00\x12\x15\n\x0btarget_conf\x18\x03 \x01(\rH\x01\x12\x17\n\rsat_per_vbyte\x18\x04 \x01(\rH\x01\x42\n\n\x08templateB\x06\n\x04\x66\x65\x65s\"p\n\x10\x46undPsbtResponse\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x1b\n\x13\x63hange_output_index\x18\x02 \x01(\x05\x12*\n\x0clocked_utxos\x18\x03 \x03(\x0b\x32\x14.walletrpc.UtxoLease\"\x92\x01\n\nTxTemplate\x12\x1f\n\x06inputs\x18\x01 \x03(\x0b\x32\x0f.lnrpc.OutPoint\x12\x33\n\x07outputs\x18\x02 \x03(\x0b\x32\".walletrpc.TxTemplate.OutputsEntry\x1a.\n\x0cOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\"N\n\tUtxoLease\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x12\n\nexpiration\x18\x03 \x01(\x04\"*\n\x13\x46inalizePsbtRequest\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\"A\n\x14\x46inalizePsbtResponse\x12\x13\n\x0bsigned_psbt\x18\x01 \x01(\x0c\x12\x14\n\x0craw_final_tx\x18\x02 \x01(\x0c*\x99\x03\n\x0bWitnessType\x12\x13\n\x0fUNKNOWN_WITNESS\x10\x00\x12\x18\n\x14\x43OMMITMENT_TIME_LOCK\x10\x01\x12\x17\n\x13\x43OMMITMENT_NO_DELAY\x10\x02\x12\x15\n\x11\x43OMMITMENT_REVOKE\x10\x03\x12\x17\n\x13HTLC_OFFERED_REVOKE\x10\x04\x12\x18\n\x14HTLC_ACCEPTED_REVOKE\x10\x05\x12%\n!HTLC_OFFERED_TIMEOUT_SECOND_LEVEL\x10\x06\x12&\n\"HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL\x10\x07\x12\x1f\n\x1bHTLC_OFFERED_REMOTE_TIMEOUT\x10\x08\x12 \n\x1cHTLC_ACCEPTED_REMOTE_SUCCESS\x10\t\x12\x1c\n\x18HTLC_SECOND_LEVEL_REVOKE\x10\n\x12\x14\n\x10WITNESS_KEY_HASH\x10\x0b\x12\x1b\n\x17NESTED_WITNESS_KEY_HASH\x10\x0c\x12\x15\n\x11\x43OMMITMENT_ANCHOR\x10\r2\xe8\x08\n\tWalletKit\x12L\n\x0bListUnspent\x12\x1d.walletrpc.ListUnspentRequest\x1a\x1e.walletrpc.ListUnspentResponse\x12L\n\x0bLeaseOutput\x12\x1d.walletrpc.LeaseOutputRequest\x1a\x1e.walletrpc.LeaseOutputResponse\x12R\n\rReleaseOutput\x12\x1f.walletrpc.ReleaseOutputRequest\x1a .walletrpc.ReleaseOutputResponse\x12:\n\rDeriveNextKey\x12\x11.walletrpc.KeyReq\x1a\x16.signrpc.KeyDescriptor\x12\x38\n\tDeriveKey\x12\x13.signrpc.KeyLocator\x1a\x16.signrpc.KeyDescriptor\x12;\n\x08NextAddr\x12\x16.walletrpc.AddrRequest\x1a\x17.walletrpc.AddrResponse\x12H\n\x12PublishTransaction\x12\x16.walletrpc.Transaction\x1a\x1a.walletrpc.PublishResponse\x12L\n\x0bSendOutputs\x12\x1d.walletrpc.SendOutputsRequest\x1a\x1e.walletrpc.SendOutputsResponse\x12L\n\x0b\x45stimateFee\x12\x1d.walletrpc.EstimateFeeRequest\x1a\x1e.walletrpc.EstimateFeeResponse\x12R\n\rPendingSweeps\x12\x1f.walletrpc.PendingSweepsRequest\x1a .walletrpc.PendingSweepsResponse\x12@\n\x07\x42umpFee\x12\x19.walletrpc.BumpFeeRequest\x1a\x1a.walletrpc.BumpFeeResponse\x12I\n\nListSweeps\x12\x1c.walletrpc.ListSweepsRequest\x1a\x1d.walletrpc.ListSweepsResponse\x12[\n\x10LabelTransaction\x12\".walletrpc.LabelTransactionRequest\x1a#.walletrpc.LabelTransactionResponse\x12\x43\n\x08\x46undPsbt\x12\x1a.walletrpc.FundPsbtRequest\x1a\x1b.walletrpc.FundPsbtResponse\x12O\n\x0c\x46inalizePsbt\x12\x1e.walletrpc.FinalizePsbtRequest\x1a\x1f.walletrpc.FinalizePsbtResponseB1Z/github.com/lightningnetwork/lnd/lnrpc/walletrpcb\x06proto3'
+  serialized_pb=b'\n\x0fwalletkit.proto\x12\twalletrpc\x1a\trpc.proto\x1a\x0csigner.proto\"K\n\x12ListUnspentRequest\x12\x11\n\tmin_confs\x18\x01 \x01(\x05\x12\x11\n\tmax_confs\x18\x02 \x01(\x05\x12\x0f\n\x07\x61\x63\x63ount\x18\x03 \x01(\t\"1\n\x13ListUnspentResponse\x12\x1a\n\x05utxos\x18\x01 \x03(\x0b\x32\x0b.lnrpc.Utxo\"_\n\x12LeaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x1a\n\x12\x65xpiration_seconds\x18\x03 \x01(\x04\")\n\x13LeaseOutputResponse\x12\x12\n\nexpiration\x18\x01 \x01(\x04\"E\n\x14ReleaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\"\x17\n\x15ReleaseOutputResponse\"6\n\x06KeyReq\x12\x18\n\x10key_finger_print\x18\x01 \x01(\x05\x12\x12\n\nkey_family\x18\x02 \x01(\x05\"\x1e\n\x0b\x41\x64\x64rRequest\x12\x0f\n\x07\x61\x63\x63ount\x18\x01 \x01(\t\"\x1c\n\x0c\x41\x64\x64rResponse\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\"\xe7\x01\n\x07\x41\x63\x63ount\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x1b\n\x13\x65xtended_public_key\x18\x03 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x04 \x01(\x0c\x12\x17\n\x0f\x64\x65rivation_path\x18\x05 \x01(\t\x12\x1a\n\x12\x65xternal_key_count\x18\x06 \x01(\r\x12\x1a\n\x12internal_key_count\x18\x07 \x01(\r\x12\x12\n\nwatch_only\x18\x08 \x01(\x08\"Q\n\x13ListAccountsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"<\n\x14ListAccountsResponse\x12$\n\x08\x61\x63\x63ounts\x18\x01 \x03(\x0b\x32\x12.walletrpc.Account\"\xa0\x01\n\x14ImportAccountRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1b\n\x13\x65xtended_public_key\x18\x02 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x03 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x04 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x0f\n\x07\x64ry_run\x18\x05 \x01(\x08\"|\n\x15ImportAccountResponse\x12#\n\x07\x61\x63\x63ount\x18\x01 \x01(\x0b\x32\x12.walletrpc.Account\x12\x1e\n\x16\x64ry_run_external_addrs\x18\x02 \x03(\t\x12\x1e\n\x16\x64ry_run_internal_addrs\x18\x03 \x03(\t\"Z\n\x16ImportPublicKeyRequest\x12\x12\n\npublic_key\x18\x01 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"\x19\n\x17ImportPublicKeyResponse\",\n\x0bTransaction\x12\x0e\n\x06tx_hex\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\"(\n\x0fPublishResponse\x12\x15\n\rpublish_error\x18\x01 \x01(\t\"\x86\x01\n\x12SendOutputsRequest\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\x12\x1f\n\x07outputs\x18\x02 \x03(\x0b\x32\x0e.signrpc.TxOut\x12\r\n\x05label\x18\x03 \x01(\t\x12\x11\n\tmin_confs\x18\x04 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x05 \x01(\x08\"%\n\x13SendOutputsResponse\x12\x0e\n\x06raw_tx\x18\x01 \x01(\x0c\")\n\x12\x45stimateFeeRequest\x12\x13\n\x0b\x63onf_target\x18\x01 \x01(\x05\")\n\x13\x45stimateFeeResponse\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\"\xd2\x02\n\x0cPendingSweep\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12,\n\x0cwitness_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.WitnessType\x12\x12\n\namount_sat\x18\x03 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x04 \x01(\rB\x02\x18\x01\x12\x1a\n\x12\x62roadcast_attempts\x18\x05 \x01(\r\x12\x1d\n\x15next_broadcast_height\x18\x06 \x01(\r\x12\x1d\n\x15requested_conf_target\x18\x08 \x01(\r\x12\"\n\x16requested_sat_per_byte\x18\t \x01(\rB\x02\x18\x01\x12\x15\n\rsat_per_vbyte\x18\n \x01(\x04\x12\x1f\n\x17requested_sat_per_vbyte\x18\x0b \x01(\x04\x12\r\n\x05\x66orce\x18\x07 \x01(\x08\"\x16\n\x14PendingSweepsRequest\"H\n\x15PendingSweepsResponse\x12/\n\x0epending_sweeps\x18\x01 \x03(\x0b\x32\x17.walletrpc.PendingSweep\"\x88\x01\n\x0e\x42umpFeeRequest\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x13\n\x0btarget_conf\x18\x02 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x03 \x01(\rB\x02\x18\x01\x12\r\n\x05\x66orce\x18\x04 \x01(\x08\x12\x15\n\rsat_per_vbyte\x18\x05 \x01(\x04\"\x11\n\x0f\x42umpFeeResponse\"$\n\x11ListSweepsRequest\x12\x0f\n\x07verbose\x18\x01 \x01(\x08\"\xcc\x01\n\x12ListSweepsResponse\x12\x38\n\x13transaction_details\x18\x01 \x01(\x0b\x32\x19.lnrpc.TransactionDetailsH\x00\x12G\n\x0ftransaction_ids\x18\x02 \x01(\x0b\x32,.walletrpc.ListSweepsResponse.TransactionIDsH\x00\x1a)\n\x0eTransactionIDs\x12\x17\n\x0ftransaction_ids\x18\x01 \x03(\tB\x08\n\x06sweeps\"I\n\x17LabelTransactionRequest\x12\x0c\n\x04txid\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\x12\x11\n\toverwrite\x18\x03 \x01(\x08\"\x1a\n\x18LabelTransactionResponse\"\xca\x01\n\x0f\x46undPsbtRequest\x12\x0e\n\x04psbt\x18\x01 \x01(\x0cH\x00\x12$\n\x03raw\x18\x02 \x01(\x0b\x32\x15.walletrpc.TxTemplateH\x00\x12\x15\n\x0btarget_conf\x18\x03 \x01(\rH\x01\x12\x17\n\rsat_per_vbyte\x18\x04 \x01(\x04H\x01\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\x12\x11\n\tmin_confs\x18\x06 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x07 \x01(\x08\x42\n\n\x08templateB\x06\n\x04\x66\x65\x65s\"p\n\x10\x46undPsbtResponse\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x1b\n\x13\x63hange_output_index\x18\x02 \x01(\x05\x12*\n\x0clocked_utxos\x18\x03 \x03(\x0b\x32\x14.walletrpc.UtxoLease\"\x92\x01\n\nTxTemplate\x12\x1f\n\x06inputs\x18\x01 \x03(\x0b\x32\x0f.lnrpc.OutPoint\x12\x33\n\x07outputs\x18\x02 \x03(\x0b\x32\".walletrpc.TxTemplate.OutputsEntry\x1a.\n\x0cOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\"N\n\tUtxoLease\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x12\n\nexpiration\x18\x03 \x01(\x04\";\n\x13\x46inalizePsbtRequest\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\"A\n\x14\x46inalizePsbtResponse\x12\x13\n\x0bsigned_psbt\x18\x01 \x01(\x0c\x12\x14\n\x0craw_final_tx\x18\x02 \x01(\x0c\"\x13\n\x11ListLeasesRequest\"@\n\x12ListLeasesResponse\x12*\n\x0clocked_utxos\x18\x01 \x03(\x0b\x32\x14.walletrpc.UtxoLease*z\n\x0b\x41\x64\x64ressType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x17\n\x13WITNESS_PUBKEY_HASH\x10\x01\x12\x1e\n\x1aNESTED_WITNESS_PUBKEY_HASH\x10\x02\x12%\n!HYBRID_NESTED_WITNESS_PUBKEY_HASH\x10\x03*\x99\x03\n\x0bWitnessType\x12\x13\n\x0fUNKNOWN_WITNESS\x10\x00\x12\x18\n\x14\x43OMMITMENT_TIME_LOCK\x10\x01\x12\x17\n\x13\x43OMMITMENT_NO_DELAY\x10\x02\x12\x15\n\x11\x43OMMITMENT_REVOKE\x10\x03\x12\x17\n\x13HTLC_OFFERED_REVOKE\x10\x04\x12\x18\n\x14HTLC_ACCEPTED_REVOKE\x10\x05\x12%\n!HTLC_OFFERED_TIMEOUT_SECOND_LEVEL\x10\x06\x12&\n\"HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL\x10\x07\x12\x1f\n\x1bHTLC_OFFERED_REMOTE_TIMEOUT\x10\x08\x12 \n\x1cHTLC_ACCEPTED_REMOTE_SUCCESS\x10\t\x12\x1c\n\x18HTLC_SECOND_LEVEL_REVOKE\x10\n\x12\x14\n\x10WITNESS_KEY_HASH\x10\x0b\x12\x1b\n\x17NESTED_WITNESS_KEY_HASH\x10\x0c\x12\x15\n\x11\x43OMMITMENT_ANCHOR\x10\r2\xb2\x0b\n\tWalletKit\x12L\n\x0bListUnspent\x12\x1d.walletrpc.ListUnspentRequest\x1a\x1e.walletrpc.ListUnspentResponse\x12L\n\x0bLeaseOutput\x12\x1d.walletrpc.LeaseOutputRequest\x1a\x1e.walletrpc.LeaseOutputResponse\x12R\n\rReleaseOutput\x12\x1f.walletrpc.ReleaseOutputRequest\x1a .walletrpc.ReleaseOutputResponse\x12I\n\nListLeases\x12\x1c.walletrpc.ListLeasesRequest\x1a\x1d.walletrpc.ListLeasesResponse\x12:\n\rDeriveNextKey\x12\x11.walletrpc.KeyReq\x1a\x16.signrpc.KeyDescriptor\x12\x38\n\tDeriveKey\x12\x13.signrpc.KeyLocator\x1a\x16.signrpc.KeyDescriptor\x12;\n\x08NextAddr\x12\x16.walletrpc.AddrRequest\x1a\x17.walletrpc.AddrResponse\x12O\n\x0cListAccounts\x12\x1e.walletrpc.ListAccountsRequest\x1a\x1f.walletrpc.ListAccountsResponse\x12R\n\rImportAccount\x12\x1f.walletrpc.ImportAccountRequest\x1a .walletrpc.ImportAccountResponse\x12X\n\x0fImportPublicKey\x12!.walletrpc.ImportPublicKeyRequest\x1a\".walletrpc.ImportPublicKeyResponse\x12H\n\x12PublishTransaction\x12\x16.walletrpc.Transaction\x1a\x1a.walletrpc.PublishResponse\x12L\n\x0bSendOutputs\x12\x1d.walletrpc.SendOutputsRequest\x1a\x1e.walletrpc.SendOutputsResponse\x12L\n\x0b\x45stimateFee\x12\x1d.walletrpc.EstimateFeeRequest\x1a\x1e.walletrpc.EstimateFeeResponse\x12R\n\rPendingSweeps\x12\x1f.walletrpc.PendingSweepsRequest\x1a .walletrpc.PendingSweepsResponse\x12@\n\x07\x42umpFee\x12\x19.walletrpc.BumpFeeRequest\x1a\x1a.walletrpc.BumpFeeResponse\x12I\n\nListSweeps\x12\x1c.walletrpc.ListSweepsRequest\x1a\x1d.walletrpc.ListSweepsResponse\x12[\n\x10LabelTransaction\x12\".walletrpc.LabelTransactionRequest\x1a#.walletrpc.LabelTransactionResponse\x12\x43\n\x08\x46undPsbt\x12\x1a.walletrpc.FundPsbtRequest\x1a\x1b.walletrpc.FundPsbtResponse\x12O\n\x0c\x46inalizePsbt\x12\x1e.walletrpc.FinalizePsbtRequest\x1a\x1f.walletrpc.FinalizePsbtResponseB1Z/github.com/lightningnetwork/lnd/lnrpc/walletrpcb\x06proto3'
   ,
   dependencies=[rpc__pb2.DESCRIPTOR,signer__pb2.DESCRIPTOR,])
 
+_ADDRESSTYPE = _descriptor.EnumDescriptor(
+  name='AddressType',
+  full_name='walletrpc.AddressType',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='UNKNOWN', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='WITNESS_PUBKEY_HASH', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='NESTED_WITNESS_PUBKEY_HASH', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='HYBRID_NESTED_WITNESS_PUBKEY_HASH', index=3, number=3,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=3382,
+  serialized_end=3504,
+)
+_sym_db.RegisterEnumDescriptor(_ADDRESSTYPE)
+
+AddressType = enum_type_wrapper.EnumTypeWrapper(_ADDRESSTYPE)
 _WITNESSTYPE = _descriptor.EnumDescriptor(
   name='WitnessType',
   full_name='walletrpc.WitnessType',
@@ -106,12 +142,16 @@ _WITNESSTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2275,
-  serialized_end=2684,
+  serialized_start=3507,
+  serialized_end=3916,
 )
 _sym_db.RegisterEnumDescriptor(_WITNESSTYPE)
 
 WitnessType = enum_type_wrapper.EnumTypeWrapper(_WITNESSTYPE)
+UNKNOWN = 0
+WITNESS_PUBKEY_HASH = 1
+NESTED_WITNESS_PUBKEY_HASH = 2
+HYBRID_NESTED_WITNESS_PUBKEY_HASH = 3
 UNKNOWN_WITNESS = 0
 COMMITMENT_TIME_LOCK = 1
 COMMITMENT_NO_DELAY = 2
@@ -151,6 +191,13 @@ _LISTUNSPENTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='account', full_name='walletrpc.ListUnspentRequest.account', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -164,7 +211,7 @@ _LISTUNSPENTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=55,
-  serialized_end=113,
+  serialized_end=130,
 )
 
 
@@ -195,8 +242,8 @@ _LISTUNSPENTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=115,
-  serialized_end=164,
+  serialized_start=132,
+  serialized_end=181,
 )
 
 
@@ -222,6 +269,13 @@ _LEASEOUTPUTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='expiration_seconds', full_name='walletrpc.LeaseOutputRequest.expiration_seconds', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -234,8 +288,8 @@ _LEASEOUTPUTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=166,
-  serialized_end=233,
+  serialized_start=183,
+  serialized_end=278,
 )
 
 
@@ -266,8 +320,8 @@ _LEASEOUTPUTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=235,
-  serialized_end=276,
+  serialized_start=280,
+  serialized_end=321,
 )
 
 
@@ -305,8 +359,8 @@ _RELEASEOUTPUTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=278,
-  serialized_end=347,
+  serialized_start=323,
+  serialized_end=392,
 )
 
 
@@ -330,8 +384,8 @@ _RELEASEOUTPUTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=349,
-  serialized_end=372,
+  serialized_start=394,
+  serialized_end=417,
 )
 
 
@@ -369,8 +423,8 @@ _KEYREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=374,
-  serialized_end=428,
+  serialized_start=419,
+  serialized_end=473,
 )
 
 
@@ -382,6 +436,13 @@ _ADDRREQUEST = _descriptor.Descriptor(
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='account', full_name='walletrpc.AddrRequest.account', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -394,8 +455,8 @@ _ADDRREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=430,
-  serialized_end=443,
+  serialized_start=475,
+  serialized_end=505,
 )
 
 
@@ -426,8 +487,330 @@ _ADDRRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=445,
-  serialized_end=473,
+  serialized_start=507,
+  serialized_end=535,
+)
+
+
+_ACCOUNT = _descriptor.Descriptor(
+  name='Account',
+  full_name='walletrpc.Account',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='walletrpc.Account.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='address_type', full_name='walletrpc.Account.address_type', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='extended_public_key', full_name='walletrpc.Account.extended_public_key', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='master_key_fingerprint', full_name='walletrpc.Account.master_key_fingerprint', index=3,
+      number=4, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='derivation_path', full_name='walletrpc.Account.derivation_path', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='external_key_count', full_name='walletrpc.Account.external_key_count', index=5,
+      number=6, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='internal_key_count', full_name='walletrpc.Account.internal_key_count', index=6,
+      number=7, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='watch_only', full_name='walletrpc.Account.watch_only', index=7,
+      number=8, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=538,
+  serialized_end=769,
+)
+
+
+_LISTACCOUNTSREQUEST = _descriptor.Descriptor(
+  name='ListAccountsRequest',
+  full_name='walletrpc.ListAccountsRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='walletrpc.ListAccountsRequest.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='address_type', full_name='walletrpc.ListAccountsRequest.address_type', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=771,
+  serialized_end=852,
+)
+
+
+_LISTACCOUNTSRESPONSE = _descriptor.Descriptor(
+  name='ListAccountsResponse',
+  full_name='walletrpc.ListAccountsResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='accounts', full_name='walletrpc.ListAccountsResponse.accounts', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=854,
+  serialized_end=914,
+)
+
+
+_IMPORTACCOUNTREQUEST = _descriptor.Descriptor(
+  name='ImportAccountRequest',
+  full_name='walletrpc.ImportAccountRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='walletrpc.ImportAccountRequest.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='extended_public_key', full_name='walletrpc.ImportAccountRequest.extended_public_key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='master_key_fingerprint', full_name='walletrpc.ImportAccountRequest.master_key_fingerprint', index=2,
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='address_type', full_name='walletrpc.ImportAccountRequest.address_type', index=3,
+      number=4, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='dry_run', full_name='walletrpc.ImportAccountRequest.dry_run', index=4,
+      number=5, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=917,
+  serialized_end=1077,
+)
+
+
+_IMPORTACCOUNTRESPONSE = _descriptor.Descriptor(
+  name='ImportAccountResponse',
+  full_name='walletrpc.ImportAccountResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='account', full_name='walletrpc.ImportAccountResponse.account', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='dry_run_external_addrs', full_name='walletrpc.ImportAccountResponse.dry_run_external_addrs', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='dry_run_internal_addrs', full_name='walletrpc.ImportAccountResponse.dry_run_internal_addrs', index=2,
+      number=3, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1079,
+  serialized_end=1203,
+)
+
+
+_IMPORTPUBLICKEYREQUEST = _descriptor.Descriptor(
+  name='ImportPublicKeyRequest',
+  full_name='walletrpc.ImportPublicKeyRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='public_key', full_name='walletrpc.ImportPublicKeyRequest.public_key', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='address_type', full_name='walletrpc.ImportPublicKeyRequest.address_type', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1205,
+  serialized_end=1295,
+)
+
+
+_IMPORTPUBLICKEYRESPONSE = _descriptor.Descriptor(
+  name='ImportPublicKeyResponse',
+  full_name='walletrpc.ImportPublicKeyResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1297,
+  serialized_end=1322,
 )
 
 
@@ -465,8 +848,8 @@ _TRANSACTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=475,
-  serialized_end=519,
+  serialized_start=1324,
+  serialized_end=1368,
 )
 
 
@@ -497,8 +880,8 @@ _PUBLISHRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=521,
-  serialized_end=561,
+  serialized_start=1370,
+  serialized_end=1410,
 )
 
 
@@ -557,8 +940,8 @@ _SENDOUTPUTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=564,
-  serialized_end=698,
+  serialized_start=1413,
+  serialized_end=1547,
 )
 
 
@@ -589,8 +972,8 @@ _SENDOUTPUTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=700,
-  serialized_end=737,
+  serialized_start=1549,
+  serialized_end=1586,
 )
 
 
@@ -621,8 +1004,8 @@ _ESTIMATEFEEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=739,
-  serialized_end=780,
+  serialized_start=1588,
+  serialized_end=1629,
 )
 
 
@@ -653,8 +1036,8 @@ _ESTIMATEFEERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=782,
-  serialized_end=823,
+  serialized_start=1631,
+  serialized_end=1672,
 )
 
 
@@ -693,7 +1076,7 @@ _PENDINGSWEEP = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+      serialized_options=b'\030\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='broadcast_attempts', full_name='walletrpc.PendingSweep.broadcast_attempts', index=4,
       number=5, type=13, cpp_type=3, label=1,
@@ -721,9 +1104,23 @@ _PENDINGSWEEP = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
+      serialized_options=b'\030\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sat_per_vbyte', full_name='walletrpc.PendingSweep.sat_per_vbyte', index=8,
+      number=10, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='force', full_name='walletrpc.PendingSweep.force', index=8,
+      name='requested_sat_per_vbyte', full_name='walletrpc.PendingSweep.requested_sat_per_vbyte', index=9,
+      number=11, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='force', full_name='walletrpc.PendingSweep.force', index=10,
       number=7, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -741,8 +1138,8 @@ _PENDINGSWEEP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=826,
-  serialized_end=1100,
+  serialized_start=1675,
+  serialized_end=2013,
 )
 
 
@@ -766,8 +1163,8 @@ _PENDINGSWEEPSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1102,
-  serialized_end=1124,
+  serialized_start=2015,
+  serialized_end=2037,
 )
 
 
@@ -798,8 +1195,8 @@ _PENDINGSWEEPSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1126,
-  serialized_end=1198,
+  serialized_start=2039,
+  serialized_end=2111,
 )
 
 
@@ -831,11 +1228,18 @@ _BUMPFEEREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+      serialized_options=b'\030\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='force', full_name='walletrpc.BumpFeeRequest.force', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sat_per_vbyte', full_name='walletrpc.BumpFeeRequest.sat_per_vbyte', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -851,8 +1255,8 @@ _BUMPFEEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1200,
-  serialized_end=1309,
+  serialized_start=2114,
+  serialized_end=2250,
 )
 
 
@@ -876,8 +1280,8 @@ _BUMPFEERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1311,
-  serialized_end=1328,
+  serialized_start=2252,
+  serialized_end=2269,
 )
 
 
@@ -908,8 +1312,8 @@ _LISTSWEEPSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1330,
-  serialized_end=1366,
+  serialized_start=2271,
+  serialized_end=2307,
 )
 
 
@@ -940,8 +1344,8 @@ _LISTSWEEPSRESPONSE_TRANSACTIONIDS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1522,
-  serialized_end=1563,
+  serialized_start=2463,
+  serialized_end=2504,
 )
 
 _LISTSWEEPSRESPONSE = _descriptor.Descriptor(
@@ -983,8 +1387,8 @@ _LISTSWEEPSRESPONSE = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1369,
-  serialized_end=1573,
+  serialized_start=2310,
+  serialized_end=2514,
 )
 
 
@@ -1029,8 +1433,8 @@ _LABELTRANSACTIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1575,
-  serialized_end=1648,
+  serialized_start=2516,
+  serialized_end=2589,
 )
 
 
@@ -1054,8 +1458,8 @@ _LABELTRANSACTIONRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1650,
-  serialized_end=1676,
+  serialized_start=2591,
+  serialized_end=2617,
 )
 
 
@@ -1090,8 +1494,29 @@ _FUNDPSBTREQUEST = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='sat_per_vbyte', full_name='walletrpc.FundPsbtRequest.sat_per_vbyte', index=3,
-      number=4, type=13, cpp_type=3, label=1,
+      number=4, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='account', full_name='walletrpc.FundPsbtRequest.account', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='min_confs', full_name='walletrpc.FundPsbtRequest.min_confs', index=5,
+      number=6, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='spend_unconfirmed', full_name='walletrpc.FundPsbtRequest.spend_unconfirmed', index=6,
+      number=7, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -1117,8 +1542,8 @@ _FUNDPSBTREQUEST = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1679,
-  serialized_end=1818,
+  serialized_start=2620,
+  serialized_end=2822,
 )
 
 
@@ -1163,8 +1588,8 @@ _FUNDPSBTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1820,
-  serialized_end=1932,
+  serialized_start=2824,
+  serialized_end=2936,
 )
 
 
@@ -1202,8 +1627,8 @@ _TXTEMPLATE_OUTPUTSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2035,
-  serialized_end=2081,
+  serialized_start=3039,
+  serialized_end=3085,
 )
 
 _TXTEMPLATE = _descriptor.Descriptor(
@@ -1240,8 +1665,8 @@ _TXTEMPLATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1935,
-  serialized_end=2081,
+  serialized_start=2939,
+  serialized_end=3085,
 )
 
 
@@ -1286,8 +1711,8 @@ _UTXOLEASE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2083,
-  serialized_end=2161,
+  serialized_start=3087,
+  serialized_end=3165,
 )
 
 
@@ -1306,6 +1731,13 @@ _FINALIZEPSBTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='account', full_name='walletrpc.FinalizePsbtRequest.account', index=1,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1318,8 +1750,8 @@ _FINALIZEPSBTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2163,
-  serialized_end=2205,
+  serialized_start=3167,
+  serialized_end=3226,
 )
 
 
@@ -1357,13 +1789,76 @@ _FINALIZEPSBTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2207,
-  serialized_end=2272,
+  serialized_start=3228,
+  serialized_end=3293,
+)
+
+
+_LISTLEASESREQUEST = _descriptor.Descriptor(
+  name='ListLeasesRequest',
+  full_name='walletrpc.ListLeasesRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3295,
+  serialized_end=3314,
+)
+
+
+_LISTLEASESRESPONSE = _descriptor.Descriptor(
+  name='ListLeasesResponse',
+  full_name='walletrpc.ListLeasesResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='locked_utxos', full_name='walletrpc.ListLeasesResponse.locked_utxos', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3316,
+  serialized_end=3380,
 )
 
 _LISTUNSPENTRESPONSE.fields_by_name['utxos'].message_type = rpc__pb2._UTXO
 _LEASEOUTPUTREQUEST.fields_by_name['outpoint'].message_type = rpc__pb2._OUTPOINT
 _RELEASEOUTPUTREQUEST.fields_by_name['outpoint'].message_type = rpc__pb2._OUTPOINT
+_ACCOUNT.fields_by_name['address_type'].enum_type = _ADDRESSTYPE
+_LISTACCOUNTSREQUEST.fields_by_name['address_type'].enum_type = _ADDRESSTYPE
+_LISTACCOUNTSRESPONSE.fields_by_name['accounts'].message_type = _ACCOUNT
+_IMPORTACCOUNTREQUEST.fields_by_name['address_type'].enum_type = _ADDRESSTYPE
+_IMPORTACCOUNTRESPONSE.fields_by_name['account'].message_type = _ACCOUNT
+_IMPORTPUBLICKEYREQUEST.fields_by_name['address_type'].enum_type = _ADDRESSTYPE
 _SENDOUTPUTSREQUEST.fields_by_name['outputs'].message_type = signer__pb2._TXOUT
 _PENDINGSWEEP.fields_by_name['outpoint'].message_type = rpc__pb2._OUTPOINT
 _PENDINGSWEEP.fields_by_name['witness_type'].enum_type = _WITNESSTYPE
@@ -1396,6 +1891,7 @@ _TXTEMPLATE_OUTPUTSENTRY.containing_type = _TXTEMPLATE
 _TXTEMPLATE.fields_by_name['inputs'].message_type = rpc__pb2._OUTPOINT
 _TXTEMPLATE.fields_by_name['outputs'].message_type = _TXTEMPLATE_OUTPUTSENTRY
 _UTXOLEASE.fields_by_name['outpoint'].message_type = rpc__pb2._OUTPOINT
+_LISTLEASESRESPONSE.fields_by_name['locked_utxos'].message_type = _UTXOLEASE
 DESCRIPTOR.message_types_by_name['ListUnspentRequest'] = _LISTUNSPENTREQUEST
 DESCRIPTOR.message_types_by_name['ListUnspentResponse'] = _LISTUNSPENTRESPONSE
 DESCRIPTOR.message_types_by_name['LeaseOutputRequest'] = _LEASEOUTPUTREQUEST
@@ -1405,6 +1901,13 @@ DESCRIPTOR.message_types_by_name['ReleaseOutputResponse'] = _RELEASEOUTPUTRESPON
 DESCRIPTOR.message_types_by_name['KeyReq'] = _KEYREQ
 DESCRIPTOR.message_types_by_name['AddrRequest'] = _ADDRREQUEST
 DESCRIPTOR.message_types_by_name['AddrResponse'] = _ADDRRESPONSE
+DESCRIPTOR.message_types_by_name['Account'] = _ACCOUNT
+DESCRIPTOR.message_types_by_name['ListAccountsRequest'] = _LISTACCOUNTSREQUEST
+DESCRIPTOR.message_types_by_name['ListAccountsResponse'] = _LISTACCOUNTSRESPONSE
+DESCRIPTOR.message_types_by_name['ImportAccountRequest'] = _IMPORTACCOUNTREQUEST
+DESCRIPTOR.message_types_by_name['ImportAccountResponse'] = _IMPORTACCOUNTRESPONSE
+DESCRIPTOR.message_types_by_name['ImportPublicKeyRequest'] = _IMPORTPUBLICKEYREQUEST
+DESCRIPTOR.message_types_by_name['ImportPublicKeyResponse'] = _IMPORTPUBLICKEYRESPONSE
 DESCRIPTOR.message_types_by_name['Transaction'] = _TRANSACTION
 DESCRIPTOR.message_types_by_name['PublishResponse'] = _PUBLISHRESPONSE
 DESCRIPTOR.message_types_by_name['SendOutputsRequest'] = _SENDOUTPUTSREQUEST
@@ -1426,6 +1929,9 @@ DESCRIPTOR.message_types_by_name['TxTemplate'] = _TXTEMPLATE
 DESCRIPTOR.message_types_by_name['UtxoLease'] = _UTXOLEASE
 DESCRIPTOR.message_types_by_name['FinalizePsbtRequest'] = _FINALIZEPSBTREQUEST
 DESCRIPTOR.message_types_by_name['FinalizePsbtResponse'] = _FINALIZEPSBTRESPONSE
+DESCRIPTOR.message_types_by_name['ListLeasesRequest'] = _LISTLEASESREQUEST
+DESCRIPTOR.message_types_by_name['ListLeasesResponse'] = _LISTLEASESRESPONSE
+DESCRIPTOR.enum_types_by_name['AddressType'] = _ADDRESSTYPE
 DESCRIPTOR.enum_types_by_name['WitnessType'] = _WITNESSTYPE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -1491,6 +1997,55 @@ AddrResponse = _reflection.GeneratedProtocolMessageType('AddrResponse', (_messag
   # @@protoc_insertion_point(class_scope:walletrpc.AddrResponse)
   })
 _sym_db.RegisterMessage(AddrResponse)
+
+Account = _reflection.GeneratedProtocolMessageType('Account', (_message.Message,), {
+  'DESCRIPTOR' : _ACCOUNT,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.Account)
+  })
+_sym_db.RegisterMessage(Account)
+
+ListAccountsRequest = _reflection.GeneratedProtocolMessageType('ListAccountsRequest', (_message.Message,), {
+  'DESCRIPTOR' : _LISTACCOUNTSREQUEST,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ListAccountsRequest)
+  })
+_sym_db.RegisterMessage(ListAccountsRequest)
+
+ListAccountsResponse = _reflection.GeneratedProtocolMessageType('ListAccountsResponse', (_message.Message,), {
+  'DESCRIPTOR' : _LISTACCOUNTSRESPONSE,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ListAccountsResponse)
+  })
+_sym_db.RegisterMessage(ListAccountsResponse)
+
+ImportAccountRequest = _reflection.GeneratedProtocolMessageType('ImportAccountRequest', (_message.Message,), {
+  'DESCRIPTOR' : _IMPORTACCOUNTREQUEST,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ImportAccountRequest)
+  })
+_sym_db.RegisterMessage(ImportAccountRequest)
+
+ImportAccountResponse = _reflection.GeneratedProtocolMessageType('ImportAccountResponse', (_message.Message,), {
+  'DESCRIPTOR' : _IMPORTACCOUNTRESPONSE,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ImportAccountResponse)
+  })
+_sym_db.RegisterMessage(ImportAccountResponse)
+
+ImportPublicKeyRequest = _reflection.GeneratedProtocolMessageType('ImportPublicKeyRequest', (_message.Message,), {
+  'DESCRIPTOR' : _IMPORTPUBLICKEYREQUEST,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ImportPublicKeyRequest)
+  })
+_sym_db.RegisterMessage(ImportPublicKeyRequest)
+
+ImportPublicKeyResponse = _reflection.GeneratedProtocolMessageType('ImportPublicKeyResponse', (_message.Message,), {
+  'DESCRIPTOR' : _IMPORTPUBLICKEYRESPONSE,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ImportPublicKeyResponse)
+  })
+_sym_db.RegisterMessage(ImportPublicKeyResponse)
 
 Transaction = _reflection.GeneratedProtocolMessageType('Transaction', (_message.Message,), {
   'DESCRIPTOR' : _TRANSACTION,
@@ -1655,8 +2210,25 @@ FinalizePsbtResponse = _reflection.GeneratedProtocolMessageType('FinalizePsbtRes
   })
 _sym_db.RegisterMessage(FinalizePsbtResponse)
 
+ListLeasesRequest = _reflection.GeneratedProtocolMessageType('ListLeasesRequest', (_message.Message,), {
+  'DESCRIPTOR' : _LISTLEASESREQUEST,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ListLeasesRequest)
+  })
+_sym_db.RegisterMessage(ListLeasesRequest)
+
+ListLeasesResponse = _reflection.GeneratedProtocolMessageType('ListLeasesResponse', (_message.Message,), {
+  'DESCRIPTOR' : _LISTLEASESRESPONSE,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.ListLeasesResponse)
+  })
+_sym_db.RegisterMessage(ListLeasesResponse)
+
 
 DESCRIPTOR._options = None
+_PENDINGSWEEP.fields_by_name['sat_per_byte']._options = None
+_PENDINGSWEEP.fields_by_name['requested_sat_per_byte']._options = None
+_BUMPFEEREQUEST.fields_by_name['sat_per_byte']._options = None
 _TXTEMPLATE_OUTPUTSENTRY._options = None
 
 _WALLETKIT = _descriptor.ServiceDescriptor(
@@ -1666,8 +2238,8 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2687,
-  serialized_end=3815,
+  serialized_start=3919,
+  serialized_end=5377,
   methods=[
   _descriptor.MethodDescriptor(
     name='ListUnspent',
@@ -1700,9 +2272,19 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='ListLeases',
+    full_name='walletrpc.WalletKit.ListLeases',
+    index=3,
+    containing_service=None,
+    input_type=_LISTLEASESREQUEST,
+    output_type=_LISTLEASESRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='DeriveNextKey',
     full_name='walletrpc.WalletKit.DeriveNextKey',
-    index=3,
+    index=4,
     containing_service=None,
     input_type=_KEYREQ,
     output_type=signer__pb2._KEYDESCRIPTOR,
@@ -1712,7 +2294,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='DeriveKey',
     full_name='walletrpc.WalletKit.DeriveKey',
-    index=4,
+    index=5,
     containing_service=None,
     input_type=signer__pb2._KEYLOCATOR,
     output_type=signer__pb2._KEYDESCRIPTOR,
@@ -1722,7 +2304,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='NextAddr',
     full_name='walletrpc.WalletKit.NextAddr',
-    index=5,
+    index=6,
     containing_service=None,
     input_type=_ADDRREQUEST,
     output_type=_ADDRRESPONSE,
@@ -1730,9 +2312,39 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='ListAccounts',
+    full_name='walletrpc.WalletKit.ListAccounts',
+    index=7,
+    containing_service=None,
+    input_type=_LISTACCOUNTSREQUEST,
+    output_type=_LISTACCOUNTSRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ImportAccount',
+    full_name='walletrpc.WalletKit.ImportAccount',
+    index=8,
+    containing_service=None,
+    input_type=_IMPORTACCOUNTREQUEST,
+    output_type=_IMPORTACCOUNTRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ImportPublicKey',
+    full_name='walletrpc.WalletKit.ImportPublicKey',
+    index=9,
+    containing_service=None,
+    input_type=_IMPORTPUBLICKEYREQUEST,
+    output_type=_IMPORTPUBLICKEYRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='PublishTransaction',
     full_name='walletrpc.WalletKit.PublishTransaction',
-    index=6,
+    index=10,
     containing_service=None,
     input_type=_TRANSACTION,
     output_type=_PUBLISHRESPONSE,
@@ -1742,7 +2354,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='SendOutputs',
     full_name='walletrpc.WalletKit.SendOutputs',
-    index=7,
+    index=11,
     containing_service=None,
     input_type=_SENDOUTPUTSREQUEST,
     output_type=_SENDOUTPUTSRESPONSE,
@@ -1752,7 +2364,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='EstimateFee',
     full_name='walletrpc.WalletKit.EstimateFee',
-    index=8,
+    index=12,
     containing_service=None,
     input_type=_ESTIMATEFEEREQUEST,
     output_type=_ESTIMATEFEERESPONSE,
@@ -1762,7 +2374,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='PendingSweeps',
     full_name='walletrpc.WalletKit.PendingSweeps',
-    index=9,
+    index=13,
     containing_service=None,
     input_type=_PENDINGSWEEPSREQUEST,
     output_type=_PENDINGSWEEPSRESPONSE,
@@ -1772,7 +2384,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='BumpFee',
     full_name='walletrpc.WalletKit.BumpFee',
-    index=10,
+    index=14,
     containing_service=None,
     input_type=_BUMPFEEREQUEST,
     output_type=_BUMPFEERESPONSE,
@@ -1782,7 +2394,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ListSweeps',
     full_name='walletrpc.WalletKit.ListSweeps',
-    index=11,
+    index=15,
     containing_service=None,
     input_type=_LISTSWEEPSREQUEST,
     output_type=_LISTSWEEPSRESPONSE,
@@ -1792,7 +2404,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='LabelTransaction',
     full_name='walletrpc.WalletKit.LabelTransaction',
-    index=12,
+    index=16,
     containing_service=None,
     input_type=_LABELTRANSACTIONREQUEST,
     output_type=_LABELTRANSACTIONRESPONSE,
@@ -1802,7 +2414,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='FundPsbt',
     full_name='walletrpc.WalletKit.FundPsbt',
-    index=13,
+    index=17,
     containing_service=None,
     input_type=_FUNDPSBTREQUEST,
     output_type=_FUNDPSBTRESPONSE,
@@ -1812,7 +2424,7 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='FinalizePsbt',
     full_name='walletrpc.WalletKit.FinalizePsbt',
-    index=14,
+    index=18,
     containing_service=None,
     input_type=_FINALIZEPSBTREQUEST,
     output_type=_FINALIZEPSBTRESPONSE,
