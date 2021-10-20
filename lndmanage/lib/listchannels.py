@@ -455,9 +455,8 @@ class ListChannels(object):
         channel_point_mapping = {k: v['channel_point'].split(':')[0]
                                  for k, v in channels.items()}
         # only read annotations if config file is given
-        if self.node.config_file:
-            config = settings.read_config(self.node.config_file)
-            annotations = config['annotations']
+        if self.node.config:
+            annotations = self.node.config['annotations']
         else:
             annotations = {}
         channel_annotations_funding_id = {}

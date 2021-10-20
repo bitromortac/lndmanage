@@ -65,23 +65,22 @@ class Node(object):
 
 
 class LndNode(Node):
-    """
-    Implements an interface to an lnd node.
-    """
-    def __init__(self, config_file=None, lnd_home=None, lnd_host=None,
-                 regtest=False):
+    """Implements the node interface for LND."""
+    def __init__(self, config_file: Optional[str] = None,
+                 lnd_home: Optional[str] = None,
+                 lnd_host: Optional[str] = None, regtest=False):
         """
         :param config_file: path to the config file
-        :type config_file: str
         :param lnd_home: path to lnd home folder
-        :type lnd_home: str
         :param lnd_host: lnd host of format "127.0.0.1:9735"
-        :type lnd_host: str
         :param regtest: if the node is representing a regtest node
-        :type regtest: bool
         """
         super().__init__()
-        self.config_file = config_file
+        if config_file:
+            self.config_file = config_file
+            self.config = settings.read_config(self.config_file)
+        else:
+            self.config = None
         self.lnd_home = lnd_home
         self.lnd_host = lnd_host
         self.regtest = regtest
@@ -123,11 +122,10 @@ class LndNode(Node):
                     'if lnd_home is given, lnd_host must be given also')
             lnd_host = self.lnd_host
         else:
-            config = settings.read_config(self.config_file)
-            cert_file = os.path.expanduser(config['network']['tls_cert_file'])
+            cert_file = os.path.expanduser(self.config['network']['tls_cert_file'])
             macaroon_file = \
-                os.path.expanduser(config['network']['admin_macaroon_file'])
-            lnd_host = config['network']['lnd_grpc_host']
+                os.path.expanduser(self.config['network']['admin_macaroon_file'])
+            lnd_host = self.config['network']['lnd_grpc_host']
 
         cert = None
         try:

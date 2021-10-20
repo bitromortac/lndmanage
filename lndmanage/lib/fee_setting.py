@@ -1,3 +1,4 @@
+from configparser import NoSectionError
 import json
 import logging
 import os
@@ -7,9 +8,9 @@ from typing import Tuple, List, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from lndmanage.lib.node import LndNode
 
-from lndmanage import settings
 from lndmanage.lib.user import yes_no_question
 from lndmanage.lib.forwardings import ForwardingAnalyzer
+from lndmanage import settings
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -167,10 +168,17 @@ class FeeSetter(object):
             "of %d.", self.params['min_base_fee'], self.params['cltv'])
         channel_fee_policies = {}
 
+        try:
+            ignored_channels = self.node.config.items('excluded-channels-fee-opt')
+            ignored_channels = {int(c) for c, _ in ignored_channels}
+        except NoSectionError:
+            ignored_channels = set()
+
         stats = []
 
         # loop over channel peers
         for pk, cs in self.node.pubkey_to_channel_map().items():
+            ignore_peer = bool(set(cs).intersection(ignored_channels))
             logger.info(f">>> Fee optimization for node {pk} "
                         f"({self.node.network.node_alias(pk)}):")
             # loop over channels with peer
@@ -322,11 +330,14 @@ class FeeSetter(object):
                     'bfn': base_fee_msat_new,
                 })
 
-                channel_fee_policies[channel_data['channel_point']] = {
-                    'base_fee_msat': base_fee_msat_new,
-                    'fee_rate': fee_rate_new,
-                    'cltv': self.params['cltv'],
-                }
+                if ignore_peer:
+                    logger.info(f"    Ignore channel {channel_id} due to config file.")
+                else:
+                    channel_fee_policies[channel_data['channel_point']] = {
+                        'base_fee_msat': base_fee_msat_new,
+                        'fee_rate': fee_rate_new,
+                        'cltv': self.params['cltv'],
+                    }
             logger.info("")
         return channel_fee_policies, stats
 
