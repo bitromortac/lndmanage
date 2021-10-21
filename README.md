@@ -7,40 +7,41 @@
 lndmanage is a command line tool for advanced channel management of an 
 [LND](https://github.com/lightningnetwork/lnd) node.
 
-Current feature list (use the ```--help``` flag for subcommands):
+[See installation instructions.](#setup)
 
-* Activity reports ```report```
+### Feature list:
+
+* Activity reports [```report```](#activity-report)
 * Display the node summary ```status```
-* ```info``` command: explore info about a channel or node in the graph
+* [```info```](#info-command) command: explore info about a channel or node in the graph
 * Advanced channel listings ```listchannels```
   * ```listchannels rebalance```: list channels for rebalancing
-  * ```listchannels forwardings```: list forwarding statistics for each channel 
-  * ```listchannels hygiene```: information for closing of active channels
-  * ```listchannels inactive```: information on inactive channels
-* Rebalancing command ```rebalance```
+  * [```listchannels forwardings```](#forwarding-information): list forwarding statistics for each channel 
+  * [```listchannels hygiene```](#active-channels): information for closing of active channels
+  * [```listchannels inactive```](#inactive-channels): information on inactive channels
+* Fee updating [```update-fees```](#fee-optimization): increase revenue and rebalance by fee optimization
+* Rebalancing command [```rebalance```](#channel-rebalancing)
   * different rebalancing strategies can be chosen
   * a target 'balancedness' can be specified (e.g. to empty the channel)
 * Circular self-payments ```circle```
-* Recommendation of good nodes ```recommend-nodes```
-* Batched channel opening ```openchannels```
-* Support of ```lncli```
+* Recommendation of good nodes [```recommend-nodes```](#channel-opening-strategies)
+* Batched channel opening [```openchannels```](#batched-channel-opening)
+* Support of [```lncli```](#lncli-support)
    
 **DISCLAIMER: This is BETA software, so please be careful (All actions are 
   executed as a dry run unless you call lndmanage with the ```--reckless``` 
   flag though). No warranty is given.**
 
-## Command line options
+## Command Line Options
 ```
-usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}]
-                    {status,listchannels,rebalance,circle} ...
+usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}] {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees} ...
 
 Lightning network daemon channel management tool.
 
 positional arguments:
-  {status,listchannels,rebalance,circle}
+  {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees}
     status              display node status
-    listchannels        lists channels with extended information [see also
-                        subcommands with -h]
+    listchannels        lists channels with extended information [see also subcommands with -h]
     rebalance           rebalance a channel
     circle              circular self-payment
     recommend-nodes     recommends nodes [see also subcommands with -h]
@@ -48,6 +49,8 @@ positional arguments:
     info                displays info on channels and nodes
     lncli               execute lncli
     openchannels        opens multiple channels with UTXO control
+    update-fees         optimize the fees on your channels to increase revenue and to automatically rebalance
+
 ```
 
 ## Info Command
@@ -135,7 +138,7 @@ Forwardings:
    cidxxxxxxxxxxxxxxx: 3
 ```
 
-## Rebalancing a channel
+## Channel Rebalancing
 The workflow for rebalancing a channel goes as follows:
 
 * take a look at all your unbalanced channels with:
@@ -176,6 +179,7 @@ The workflow for rebalancing a channel goes as follows:
   can try to do it in smaller chunks, which can be set by the flag
   `--chunksize 0.5` (in this example only half the amounts are used)
 
+## Forwarding Information
 A more sophisticated way to see if funds have to be reallocated is to 
 have a look at the forwarding statistics of, e.g., the last two months
  of the individual channels with 
@@ -207,8 +211,98 @@ xxxxxxxxxxxxxxxxxx    4    32   216  25.461  0.42  0.38 0.17 X 6000000 1003 0.00
 ...
 ```
 
+## Fee Optimization
+The `update-fees` command lets you dynamically update the fee rates and base fees on your
+channels. It analyzes the outward (fee-earning) forwardings that happened on them and lowers
+or increases fees incrementally based on the demand. The minimal and maximal fee rate boundaries
+are configurable (see `update-fees -h`). The fee optimization will enforce that fee rates
+are not lowered, when the channel has no outbound liquidity, it economically enforces a
+buffer for excess demand times.
+
+The command will not set new fees unless the user answers with `yes` after the statistics output.
+
+Example output for a channel with excess demand:
+```
+>>> Fee optimization for node XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (node alias):
+    Channels with peer: 1, total capacity: 5000000, total local balance: 1033113
+    Outward forwarded amount: 1521253 (rate 217322 / target rate 14286)
+    Number of outward forwardings:      1
+    Fee rate change: 0.000150 -> 0.000225 (factor 1.500)
+    Base fee change:    0 ->    0 (factor 0.750)
+  > Statistics for channel XXXXXXXXXXXXXXXXXX:
+    ub: 0.59, flow: 0.26, fees: 226.666 sat, cap: 5000000 sat, lb: 1033113 sat, nfwd: 2, in: 895518 sat, out: 1521253 sat.
+```
+One can see that the channel routed more than the target of 14286 sat/day, so the fee rate is increased by a factor of 1.5.
+
+Example output for a channel with no demand:
+```
+>>> Fee optimization for node XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (node alias):
+    Channels with peer: 1, total capacity: 5000000, total local balance: 3134892
+    Outward forwarded amount:      0 (rate     0 / target rate 14286)
+    Number of outward forwardings:      0
+    Fee rate change: 0.000149 -> 0.000106 (factor 0.707)
+    Base fee change:    0 ->    0 (factor 0.750)
+  > Statistics for channel XXXXXXXXXXXXXXXXXX:
+    ub: -0.25, flow: 0.00, fees: 0.000 sat, cap: 5000000 sat, lb: 3134892 sat, nfwd: 0, in: 0 sat, out: 0 sat.
+```
+There was no demand on that channel, so the fee rate was decreased by a factor of 0.707.
+
+Example for an exhausted channel:
+```
+>>> Fee optimization for node XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (node alias)
+    Channels with peer: 1, total capacity: 2000000, total local balance: 20810
+    Outward forwarded amount:      0 (rate     0 / target rate 14286)
+    Number of outward forwardings:      0
+    Fee rate change: 0.000150 -> 0.000157 (factor 1.048)
+    Base fee change:    0 ->    0 (factor 0.750)
+  > Statistics for channel XXXXXXXXXXXXXXXXXX:
+    ub: 0.98, flow: 0.00, fees: 0.000 sat, cap: 2000000 sat, lb: 20810 sat, nfwd: 0, in: 0 sat, out: 0 sat.
+```
+This channel is exhausted (it only has 20810 sat left in it, or ub=0.98). Even though
+there was no demand for this channel, the fee rate is *not* lowered, but kept roughly
+constant (increased a bit by factor 1.048) in the hope it will be filled again by an
+incoming forwarding event.
+
+The target for how much a channel should route per day can be set via the
+`--target-forwarding-amount-sat` config parameter. This value has direct influence on
+the revenue, but it is unknown beforehand and every node operator has to tune it.
+A reasonable value could be half of the daily routed amount of the best-income
+channel (see `lndmanage listchannels forwardings`). Future work will focus on setting
+the target amount automatically on a per channel basis. After each optimization step
+forwarding statistics are collected in a json file, to use the data in the future to
+model the fee-demand curve. *Please report if the default parameter is way too off for you.*
+
+Channels can be exempt from fee updates via the `[excluded-channels-fee-opt]` config
+section, see [config example](lndmanage/templates/config_sample.ini).
+
+The `update-fees` command is meant to be run periodically. A weekly interval is
+recommended to not put too much strain on the network, which also averages out weekly
+patterns and makes the gossip propagate also to nodes that are not always
+online like mobile phones.
+
+A convenient way to run this command automatically (every Sunday) is via a cronjob:
+```
+$ crontab -e
+# m h  dom mon dow   command
+0 0 * * Sun lndmanage update-fees --reckless --from-days-ago 7
+```
+
+### Initial fee setting
+If a node was bootstrapped or one is unsure which initial fees to apply, it is
+recommended to apply high inital fee rates. This can be accomplished by
+`$ lndmanage update-fees --init`. If the node has done already some forwardings,
+one can immediately follow with a `$ lndmanage update-fees --from-days-ago 30` and
+the fees will adjust downwards or upwards depending on the historic traffic. In order
+for opened channels to not start with a very low fee setting (and thus to prevent
+immediate depletion), it is recommended to set a default high fee rate for channel
+opening in the lnd config:
+```
+bitcoin.feerate=2500
+```
+
+
 ## Channel hygiene
-### Inactive channels
+### Inactive Channels
 Inactive channels ([Zombie channels](https://medium.com/@gcomxx/get-rid-of-those-zombie-channels-1267d5a2a708))
  lock up capital, which can be used elsewhere. 
 In order to close those channels it is useful to take a look
@@ -242,7 +336,7 @@ Channels, which were updated a long time ago (```lupp```) are likely to be
 inactive in the future and may be closed. Be aware, that if you are the initiator
 of the channel, you have to pay a hefty fee for the force closing.
 
-### Active channels
+### Active Channels
 As well as inactive channels, active channels can lock up capital that is
 better directed towards other nodes. In order to facilitate the hard
 decision whether a channel should be closed, one can have a look at the
@@ -276,7 +370,7 @@ may want to consider closing the channel. Another way to judge the reliability
 of the channel is to look at the proportion the channel stayed active when
 your node was active, given by the `ulr` column.
 
-## Channel opening strategies
+## Channel Opening Strategies
 Which nodes best to connect to in the Lightning Network is ongoing research. 
 This also depends on your personal use case, whether you are a paying user, 
 a routing node operator or a service provider (or subsets of those). Therefore
@@ -319,7 +413,7 @@ under the `annotations` section (as specified in
 [`config_sample.ini`](lndmanage/templates/config_sample.ini)), annotations
 can be saved. These annotations will then appear in the `listchannels` views.
 
-## Batched channel opening
+## Batched Channel Opening
 lndmanage supports batched channel opening support using LND's internal wallet.
 With this command you can specify node pubkeys, amounts, and have coin control
 to avoid change creation. Reserves for anchor commitments are respected or
