@@ -450,7 +450,8 @@ class ListChannels(object):
         :param channels: dict
         :return: dict
         """
-        logger.debug("Adding annotations from file %s.", self.node.config_file)
+        if self.node.config:
+            logger.debug("Adding annotations from file %s.", self.node.config_file)
         # mapping between the channel point and channel id
         channel_point_mapping = {k: v['channel_point'].split(':')[0]
                                  for k, v in channels.items()}
