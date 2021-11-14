@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # define symbols for bool to string conversion
-POSITIVE_MARKER = u"\u2713"
-NEGATIVE_MARKER = u"\u2717"
+POSITIVE_MARKER = "\u2713"
+NEGATIVE_MARKER = "\u2717"
 ALIAS_LENGTH = 25
 ANNOTATION_LENGTH = 25
 
@@ -23,276 +23,276 @@ ANNOTATION_LENGTH = 25
 # define printing abbreviations
 # convert key can specify a function, which lets one do unit conversions
 PRINT_CHANNELS_FORMAT = {
-    'act': {
-        'dict_key': 'active',
-        'description': 'channel is active',
-        'width': 3,
-        'format': '^3',
-        'align': '>',
-        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
+    "act": {
+        "dict_key": "active",
+        "description": "channel is active",
+        "width": 3,
+        "format": "^3",
+        "align": ">",
+        "convert": lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
-    'age': {
-        'dict_key': 'age',
-        'description': 'channel age [days]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "age": {
+        "dict_key": "age",
+        "description": "channel age [days]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'alias': {
-        'dict_key': 'alias',
-        'description': 'alias',
-        'width': ALIAS_LENGTH,
-        'format': '.<'+str(ALIAS_LENGTH),
-        'align': '^',
-        'convert': lambda x: alias_cutoff(x),
+    "alias": {
+        "dict_key": "alias",
+        "description": "alias",
+        "width": ALIAS_LENGTH,
+        "format": ".<" + str(ALIAS_LENGTH),
+        "align": "^",
+        "convert": lambda x: alias_cutoff(x),
     },
-    'annotation': {
-        'dict_key': 'annotation',
-        'description': 'channel annotation',
-        'width': ANNOTATION_LENGTH,
-        'format': '.<'+str(ANNOTATION_LENGTH),
-        'align': '^',
-        'convert': lambda x: alias_cutoff(x),
+    "annotation": {
+        "dict_key": "annotation",
+        "description": "channel annotation",
+        "width": ANNOTATION_LENGTH,
+        "format": ".<" + str(ANNOTATION_LENGTH),
+        "align": "^",
+        "convert": lambda x: alias_cutoff(x),
     },
-    'atb': {
-        'dict_key': 'amount_to_balanced',
-        'description': 'amount to be balanced (local side) [sat]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "atb": {
+        "dict_key": "amount_to_balanced",
+        "description": "amount to be balanced (local side) [sat]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'bwd': {
-        'dict_key': 'bandwidth_demand',
-        'description': 'bandwidth demand: capacity / max(mean_in, mean_out)',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
+    "bwd": {
+        "dict_key": "bandwidth_demand",
+        "description": "bandwidth demand: capacity / max(mean_in, mean_out)",
+        "width": 5,
+        "format": "5.2f",
+        "align": ">",
     },
-    'cap': {
-        'dict_key': 'capacity',
-        'description': 'channel capacity [sat]',
-        'width': 9,
-        'format': '9d',
-        'align': '>',
+    "cap": {
+        "dict_key": "capacity",
+        "description": "channel capacity [sat]",
+        "width": 9,
+        "format": "9d",
+        "align": ">",
     },
-    'cid': {
-        'dict_key': 'chan_id',
-        'description': 'channel id',
-        'width': 18,
-        'format': '',
-        'align': '^',
+    "cid": {
+        "dict_key": "chan_id",
+        "description": "channel id",
+        "width": 18,
+        "format": "",
+        "align": "^",
     },
-    'fees': {
-        'dict_key': 'fees_total',
-        'description': 'total fees [sat]',
-        'width': 7,
-        'format': '7.2f',
-        'align': '>',
-        'convert': lambda x: float(x) / 1000
+    "fees": {
+        "dict_key": "fees_total",
+        "description": "total fees [sat]",
+        "width": 7,
+        "format": "7.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
     },
-    'f/w': {
-        'dict_key': 'fees_total_per_week',
-        'description': 'total fees per week [sat / week]',
-        'width': 6,
-        'format': '6.2f',
-        'align': '>',
-        'convert': lambda x: float(x) / 1000
+    "f/w": {
+        "dict_key": "fees_total_per_week",
+        "description": "total fees per week [sat / week]",
+        "width": 6,
+        "format": "6.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
     },
-    'nfwd/a': {
-        'dict_key': 'forwardings_per_channel_age',
-        'description': 'number of forwardings per channel age in forwarding interval [1 / days]',
-        'width': 6,
-        'format': '6.2f',
-        'align': '>',
+    "nfwd/a": {
+        "dict_key": "forwardings_per_channel_age",
+        "description": "number of forwardings per channel age in forwarding interval [1 / days]",
+        "width": 6,
+        "format": "6.2f",
+        "align": ">",
     },
-    'flow': {
-        'dict_key': 'flow_direction',
-        'description': 'flow direction (positive is outwards)',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
+    "flow": {
+        "dict_key": "flow_direction",
+        "description": "flow direction (positive is outwards)",
+        "width": 5,
+        "format": "5.2f",
+        "align": ">",
         # 'convert': lambda x: '>'*int(nan_to_zero(x)*10/3.0) if x > 0 else
         # '<'*(-int(nan_to_zero(x)*10/3.0))
     },
-    'pbf': {
-        'dict_key': 'peer_base_fee',
-        'description': 'peer base fee [msat]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "pbf": {
+        "dict_key": "peer_base_fee",
+        "description": "peer base fee [msat]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'pfr': {
-        'dict_key': 'peer_fee_rate',
-        'description': 'peer fee rate',
-        'width': 8,
-        'format': '1.6f',
-        'align': '>',
-        'convert': lambda x: x / 1E6
+    "pfr": {
+        "dict_key": "peer_fee_rate",
+        "description": "peer fee rate",
+        "width": 8,
+        "format": "1.6f",
+        "align": ">",
+        "convert": lambda x: x / 1e6,
     },
-    'lbf': {
-        'dict_key': 'local_base_fee',
-        'description': 'local base fee [msat]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "lbf": {
+        "dict_key": "local_base_fee",
+        "description": "local base fee [msat]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'lfr': {
-        'dict_key': 'local_fee_rate',
-        'description': 'local fee rate',
-        'width': 8,
-        'format': '1.6f',
-        'align': '>',
-        'convert': lambda x: x / 1E6
+    "lfr": {
+        "dict_key": "local_fee_rate",
+        "description": "local fee rate",
+        "width": 8,
+        "format": "1.6f",
+        "align": ">",
+        "convert": lambda x: x / 1e6,
     },
-    'lup': {
-        'dict_key': 'last_update',
-        'description': 'last update time [days ago]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "lup": {
+        "dict_key": "last_update",
+        "description": "last update time [days ago]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'lupp': {
-        'dict_key': 'last_update_peer',
-        'description': 'last update time by peer [days ago]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "lupp": {
+        "dict_key": "last_update_peer",
+        "description": "last update time by peer [days ago]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'lupl': {
-        'dict_key': 'last_update_local',
-        'description': 'last update time by local [days ago]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "lupl": {
+        "dict_key": "last_update_local",
+        "description": "last update time by local [days ago]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'lb': {
-        'dict_key': 'local_balance',
-        'description': 'local balance [sat]',
-        'width': 9,
-        'format': '9d',
-        'align': '>',
+    "lb": {
+        "dict_key": "local_balance",
+        "description": "local balance [sat]",
+        "width": 9,
+        "format": "9d",
+        "align": ">",
     },
-    'nfwd': {
-        'dict_key': 'number_forwardings',
-        'description': 'number of forwardings',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "nfwd": {
+        "dict_key": "number_forwardings",
+        "description": "number of forwardings",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'priv': {
-        'dict_key': 'private',
-        'description': 'channel is private',
-        'width': 5,
-        'format': '^5',
-        'align': '>',
-        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
+    "priv": {
+        "dict_key": "private",
+        "description": "channel is private",
+        "width": 5,
+        "format": "^5",
+        "align": ">",
+        "convert": lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
-    'r': {
-        'dict_key': 'action_required',
-        'description': 'action is required',
-        'width': 1,
-        'format': '^1',
-        'align': '>',
-        'convert': lambda x: NEGATIVE_MARKER if x else '',
+    "r": {
+        "dict_key": "action_required",
+        "description": "action is required",
+        "width": 1,
+        "format": "^1",
+        "align": ">",
+        "convert": lambda x: NEGATIVE_MARKER if x else "",
     },
-    'rb': {
-        'dict_key': 'remote_balance',
-        'description': 'remote balance [sat]',
-        'width': 9,
-        'format': '9d',
-        'align': '>',
+    "rb": {
+        "dict_key": "remote_balance",
+        "description": "remote balance [sat]",
+        "width": 9,
+        "format": "9d",
+        "align": ">",
     },
-    'in': {
-        'dict_key': 'total_forwarding_in',
-        'description': 'total forwarding inwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "in": {
+        "dict_key": "total_forwarding_in",
+        "description": "total forwarding inwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'ini': {
-        'dict_key': 'initiator',
-        'description': 'true if we opened channel',
-        'width': 3,
-        'format': '^3',
-        'align': '>',
-        'convert': lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
+    "ini": {
+        "dict_key": "initiator",
+        "description": "true if we opened channel",
+        "width": 3,
+        "format": "^3",
+        "align": ">",
+        "convert": lambda x: POSITIVE_MARKER if x else NEGATIVE_MARKER,
     },
-    'tot': {
-        'dict_key': 'total_forwarding',
-        'description': 'total forwarding [sat]',
-        'width': 5,
-        'format': '5.0f',
-        'align': '>',
+    "tot": {
+        "dict_key": "total_forwarding",
+        "description": "total forwarding [sat]",
+        "width": 5,
+        "format": "5.0f",
+        "align": ">",
     },
-    'ub': {
-        'dict_key': 'unbalancedness',
-        'description': 'unbalancedness [-1 ... 1] (0 is 50:50 balanced)',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
+    "ub": {
+        "dict_key": "unbalancedness",
+        "description": "unbalancedness [-1 ... 1] (0 is 50:50 balanced)",
+        "width": 5,
+        "format": "5.2f",
+        "align": ">",
     },
-    'ulr': {
-        'dict_key': 'uptime_lifetime_ratio',
-        'description': 'ratio of uptime to lifetime of channel [0 ... 1]',
-        'width': 5,
-        'format': '5.2f',
-        'align': '>',
+    "ulr": {
+        "dict_key": "uptime_lifetime_ratio",
+        "description": "ratio of uptime to lifetime of channel [0 ... 1]",
+        "width": 5,
+        "format": "5.2f",
+        "align": ">",
     },
-    'imed': {
-        'dict_key': 'median_forwarding_in',
-        'description': 'median forwarding inwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "imed": {
+        "dict_key": "median_forwarding_in",
+        "description": "median forwarding inwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'imean': {
-        'dict_key': 'mean_forwarding_in',
-        'description': 'mean forwarding inwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "imean": {
+        "dict_key": "mean_forwarding_in",
+        "description": "mean forwarding inwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'imax': {
-        'dict_key': 'largest_forwarding_amount_in',
-        'description': 'largest forwarding inwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "imax": {
+        "dict_key": "largest_forwarding_amount_in",
+        "description": "largest forwarding inwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'omed': {
-        'dict_key': 'median_forwarding_out',
-        'description': 'median forwarding outwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "omed": {
+        "dict_key": "median_forwarding_out",
+        "description": "median forwarding outwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'omean': {
-        'dict_key': 'mean_forwarding_out',
-        'description': 'mean forwarding outwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "omean": {
+        "dict_key": "mean_forwarding_out",
+        "description": "mean forwarding outwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'omax': {
-        'dict_key': 'largest_forwarding_amount_out',
-        'description': 'largest forwarding outwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "omax": {
+        "dict_key": "largest_forwarding_amount_out",
+        "description": "largest forwarding outwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'out': {
-        'dict_key': 'total_forwarding_out',
-        'description': 'total forwarding outwards [sat]',
-        'width': 10,
-        'format': '10.0f',
-        'align': '>',
+    "out": {
+        "dict_key": "total_forwarding_out",
+        "description": "total forwarding outwards [sat]",
+        "width": 10,
+        "format": "10.0f",
+        "align": ">",
     },
-    'sr/w': {
-        'dict_key': 'sent_received_per_week',
-        'description': 'sent and received per week [sat]',
-        'width': 9,
-        'format': '9d',
-        'align': '>',
+    "sr/w": {
+        "dict_key": "sent_received_per_week",
+        "description": "sent and received per week [sat]",
+        "width": 9,
+        "format": "9d",
+        "align": ">",
     },
 }
 
@@ -305,7 +305,7 @@ def alias_cutoff(alias):
     :return: str
     """
     if len(alias) > ALIAS_LENGTH:
-        return alias[:ALIAS_LENGTH-3] + '...'
+        return alias[: ALIAS_LENGTH - 3] + "..."
     else:
         return alias
 
@@ -314,13 +314,14 @@ class ListChannels(object):
     """
     A class to list lightning channels.
     """
+
     def __init__(self, node):
         """
         :param node: :class:`lib.node.Node`
         """
         self.node = node
 
-    def print_all_channels(self, sort_string='rev_alias'):
+    def print_all_channels(self, sort_string="rev_alias"):
         """
         Prints all active and inactive channels.
 
@@ -331,20 +332,21 @@ class ListChannels(object):
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
-            'function': lambda x: (
-                x[1][PRINT_CHANNELS_FORMAT['priv']['dict_key']],
-                x[1][sort_string]
-                ),
-            'string': sort_string,
-            'reverse': reverse_sorting,
+            "function": lambda x: (
+                x[1][PRINT_CHANNELS_FORMAT["priv"]["dict_key"]],
+                x[1][sort_string],
+            ),
+            "string": sort_string,
+            "reverse": reverse_sorting,
         }
 
         self._print_channels(
-            channels, columns='cid,priv,act,ub,cap,lb,rb,lbf,'
-                              'lfr,annotation,alias',
-            sort_dict=sort_dict)
+            channels,
+            columns="cid,priv,act,ub,cap,lb,rb,lbf," "lfr,annotation,alias",
+            sort_dict=sort_dict,
+        )
 
-    def print_channels_unbalanced(self, unbalancedness, sort_string='rev_ub'):
+    def print_channels_unbalanced(self, unbalancedness, sort_string="rev_ub"):
         """
         Prints unbalanced channels with
         |unbalancedness(channel)| > unbalancedness.
@@ -354,43 +356,47 @@ class ListChannels(object):
         """
 
         channels = self._add_channel_annotations(
-            self.node.get_unbalanced_channels(unbalancedness))
+            self.node.get_unbalanced_channels(unbalancedness)
+        )
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
-            'function': lambda x: x[1][sort_string],
-            'string': sort_string,
-            'reverse': reverse_sorting,
+            "function": lambda x: x[1][sort_string],
+            "string": sort_string,
+            "reverse": reverse_sorting,
         }
 
         self._print_channels(
-            channels, columns='cid,ub,cap,lb,rb,pbf,pfr,annotation,alias',
-            sort_dict=sort_dict)
+            channels,
+            columns="cid,ub,cap,lb,rb,pbf,pfr,annotation,alias",
+            sort_dict=sort_dict,
+        )
 
-    def print_channels_inactive(self, sort_string='lupp'):
+    def print_channels_inactive(self, sort_string="lupp"):
         """
         Prints all inactive channels.
 
         :param sort_string: str
         """
 
-        channels = self._add_channel_annotations(
-            self.node.get_inactive_channels())
+        channels = self._add_channel_annotations(self.node.get_inactive_channels())
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
-            'function': lambda x: (-x[1]['private'], x[1][sort_string]),
-            'string': sort_string,
-            'reverse': reverse_sorting,
+            "function": lambda x: (-x[1]["private"], x[1][sort_string]),
+            "string": sort_string,
+            "reverse": reverse_sorting,
         }
 
         self._print_channels(
-            channels, columns='cid,lupp,ulr,priv,ini,age,ub,cap,lb,rb,'
-                              'sr/w,annotation,alias',
-            sort_dict=sort_dict)
+            channels,
+            columns="cid,lupp,ulr,priv,ini,age,ub,cap,lb,rb," "sr/w,annotation,alias",
+            sort_dict=sort_dict,
+        )
 
-    def print_channels_forwardings(self, time_interval_start,
-                                   time_interval_end, sort_string):
+    def print_channels_forwardings(
+        self, time_interval_start, time_interval_end, sort_string
+    ):
 
         """
         Prints forwarding statistics for each channel.
@@ -401,27 +407,28 @@ class ListChannels(object):
         """
 
         channels = get_forwarding_statistics_channels(
-            self.node, time_interval_start, time_interval_end)
+            self.node, time_interval_start, time_interval_end
+        )
 
         channels = self._add_channel_annotations(channels)
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
-            'function': lambda x: (
-                float('inf') if math.isnan(x[1][sort_string])
-                else x[1][sort_string],
-                x[1][PRINT_CHANNELS_FORMAT['nfwd']['dict_key']],
-                x[1][PRINT_CHANNELS_FORMAT['ub']['dict_key']]
-                ),
-            'string': sort_string,
-            'reverse': reverse_sorting,
+            "function": lambda x: (
+                float("inf") if math.isnan(x[1][sort_string]) else x[1][sort_string],
+                x[1][PRINT_CHANNELS_FORMAT["nfwd"]["dict_key"]],
+                x[1][PRINT_CHANNELS_FORMAT["ub"]["dict_key"]],
+            ),
+            "string": sort_string,
+            "reverse": reverse_sorting,
         }
 
         self._print_channels(
             channels,
-            columns='cid,nfwd,age,fees,f/w,flow,ub,bwd,r,'
-                    'cap,pbf,pfr,annotation,alias',
-            sort_dict=sort_dict)
+            columns="cid,nfwd,age,fees,f/w,flow,ub,bwd,r,"
+            "cap,pbf,pfr,annotation,alias",
+            sort_dict=sort_dict,
+        )
 
     def print_channels_hygiene(self, time_interval_start, sort_string):
         """
@@ -433,22 +440,23 @@ class ListChannels(object):
         """
         time_interval_end = time.time()
         channels = get_forwarding_statistics_channels(
-            self.node, time_interval_start, time_interval_end)
+            self.node, time_interval_start, time_interval_end
+        )
 
         channels = self._add_channel_annotations(channels)
 
         sort_string, reverse_sorting = self._sorting_order(sort_string)
         sort_dict = {
-            'function': lambda x:
-                x[1][sort_string],
-            'string': sort_string,
-            'reverse': reverse_sorting,
+            "function": lambda x: x[1][sort_string],
+            "string": sort_string,
+            "reverse": reverse_sorting,
         }
 
         self._print_channels(
             channels,
-            columns='cid,age,ini,nfwd/a,nfwd,f/w,ulr,lb,cap,lfr,pfr,annotation,alias',
-            sort_dict=sort_dict)
+            columns="cid,age,ini,nfwd/a,nfwd,f/w,ulr,lb,cap,lfr,pfr,annotation,alias",
+            sort_dict=sort_dict,
+        )
 
     def _add_channel_annotations(self, channels):
         """
@@ -460,11 +468,12 @@ class ListChannels(object):
         if self.node.config:
             logger.debug("Adding annotations from file %s.", self.node.config_file)
         # mapping between the channel point and channel id
-        channel_point_mapping = {k: v['channel_point'].split(':')[0]
-                                 for k, v in channels.items()}
+        channel_point_mapping = {
+            k: v["channel_point"].split(":")[0] for k, v in channels.items()
+        }
         # only read annotations if config file is given
         if self.node.config:
-            annotations = self.node.config['annotations']
+            annotations = self.node.config["annotations"]
         else:
             annotations = {}
         channel_annotations_funding_id = {}
@@ -473,19 +482,17 @@ class ListChannels(object):
         for id, annotation in annotations.items():
             if len(id) == 18 and id.isnumeric():
                 # valid channel id
-                channel_annotations_channel_id[int(id)] = \
-                    annotation
+                channel_annotations_channel_id[int(id)] = annotation
             elif len(id) == 64 and id.isalnum():
                 # valid funding transaction id
-                channel_annotations_funding_id[id] = \
-                    annotation
+                channel_annotations_funding_id[id] = annotation
             else:
                 raise ValueError(
-                    'First part needs to be either a channel id or the '
-                    'funding transaction id. \n'
-                    'The funding transaction id can be found with '
-                    '`lncli listchannels` under the channel point (the '
-                    'characters before the colon).'
+                    "First part needs to be either a channel id or the "
+                    "funding transaction id. \n"
+                    "The funding transaction id can be found with "
+                    "`lncli listchannels` under the channel point (the "
+                    "characters before the colon)."
                 )
 
         for channel_id, channel_values in channels.items():
@@ -494,12 +501,13 @@ class ListChannels(object):
             # if no channel annotation, try with funding id
             if annotation is None:
                 annotation = channel_annotations_funding_id.get(
-                    channel_point_mapping[channel_id], None)
+                    channel_point_mapping[channel_id], None
+                )
 
             if annotation is not None:
-                channels[channel_id]['annotation'] = annotation
+                channels[channel_id]["annotation"] = annotation
             else:
-                channels[channel_id]['annotation'] = ''
+                channels[channel_id]["annotation"] = ""
 
         return channels
 
@@ -515,25 +523,29 @@ class ListChannels(object):
         if not channels:
             logger.info(">>> Did not find any channels.")
 
-        channels = OrderedDict(sorted(
-            channels.items(), key=sort_dict['function'],
-            reverse=sort_dict['reverse']))
+        channels = OrderedDict(
+            sorted(
+                channels.items(),
+                key=sort_dict["function"],
+                reverse=sort_dict["reverse"],
+            )
+        )
 
-        logger.info("Sorting channels by %s.", sort_dict['string'])
+        logger.info("Sorting channels by %s.", sort_dict["string"])
 
         logger.info("-------- Description --------")
-        columns = columns.split(',')
+        columns = columns.split(",")
         for column in columns:
             logger.info(
-                "%-10s %s", column,
-                PRINT_CHANNELS_FORMAT[column]['description'])
+                "%-10s %s", column, PRINT_CHANNELS_FORMAT[column]["description"]
+            )
 
         logger.info("-------- Channels --------")
         # prepare the column header
-        column_header = ''
+        column_header = ""
         for column in columns:
-            column_label = PRINT_CHANNELS_FORMAT[column]['align']
-            column_width = PRINT_CHANNELS_FORMAT[column]['width']
+            column_label = PRINT_CHANNELS_FORMAT[column]["align"]
+            column_width = PRINT_CHANNELS_FORMAT[column]["width"]
             column_header += f"{column:{column_label}{column_width}} "
 
         # print the channel data
@@ -553,12 +565,13 @@ class ListChannels(object):
         :return: formatted str
         """
 
-        string = ''
+        string = ""
         for column in columns:
-            format_string = PRINT_CHANNELS_FORMAT[column]['format']
+            format_string = PRINT_CHANNELS_FORMAT[column]["format"]
             conversion_function = PRINT_CHANNELS_FORMAT[column].get(
-                'convert', lambda x: x)
-            value = column_values[PRINT_CHANNELS_FORMAT[column]['dict_key']]
+                "convert", lambda x: x
+            )
+            value = column_values[PRINT_CHANNELS_FORMAT[column]["dict_key"]]
             converted_value = conversion_function(value)
             string += f"{converted_value:{format_string}} "
 
@@ -576,10 +589,10 @@ class ListChannels(object):
         """
 
         reverse_sorting = True
-        if sort_string[:4] == 'rev_':
+        if sort_string[:4] == "rev_":
             reverse_sorting = False
             sort_string = sort_string[4:]
 
-        sort_string = PRINT_CHANNELS_FORMAT[sort_string]['dict_key']
+        sort_string = PRINT_CHANNELS_FORMAT[sort_string]["dict_key"]
 
         return sort_string, reverse_sorting
