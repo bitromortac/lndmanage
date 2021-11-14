@@ -13,8 +13,7 @@ class NewNode(TestNetwork):
     network_definition = test_graphs_paths['empty_graph']
 
     def graph_test(self):
-        self.assertEqual(1, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(0, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(0, len(self.master_node_graph_view))
 
     def test_empty(self):
         # LND interface of lndmanage is initialized in setUp method of super

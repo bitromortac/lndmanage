@@ -35,8 +35,7 @@ class Batchopen(TestNetwork):
     network_definition = test_graphs_paths['star_ring_3_liquid']
 
     def graph_test(self):
-        self.assertEqual(4, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(6, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(6, len(self.master_node_graph_view))
 
     def test_batchopen(self):
         channel_opener = openchannels.ChannelOpener(self.lndnode)

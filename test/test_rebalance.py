@@ -104,8 +104,7 @@ class TestLiquidRebalance(RebalanceTest):
     # C -> D (channel #5)
 
     def graph_test(self):
-        self.assertEqual(4, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(6, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(6, len(self.master_node_graph_view))
 
     def test_rebalance_channel_6(self):
         test_channel_number = 6
@@ -135,7 +134,7 @@ class TestLiquidRebalance(RebalanceTest):
 
     def test_rebalance_channel_1(self):
         test_channel_number = 1
-        self.rebalance_and_check(test_channel_number, 0.0, False)
+        self.rebalance_and_check(test_channel_number, 0.0, False, places=2)
 
     def test_rebalance_channel_2(self):
         test_channel_number = 2
@@ -165,8 +164,7 @@ class TestUnbalancedRebalance(RebalanceTest):
     # A -> E (channel #4)
 
     def graph_test(self):
-        self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(10, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(10, len(self.master_node_graph_view))
 
     def test_rebalance_channel_1(self):
         """tests multiple rebalance of one channel"""
@@ -186,8 +184,7 @@ class TestIlliquidRebalance(RebalanceTest):
     # A -> E (channel #4)
 
     def graph_test(self):
-        self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(10, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(10, len(self.master_node_graph_view))
 
     def test_rebalance_channel_1(self):
         """

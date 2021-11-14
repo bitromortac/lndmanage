@@ -121,8 +121,7 @@ class TestCircleLiquid(CircleTest):
 
     def graph_test(self):
         # assert some basic properties of the graph
-        self.assertEqual(4, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(6, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(6, len(self.master_node_graph_view))
 
     def test_circle_success_1_2(self):
         """
@@ -269,8 +268,7 @@ class TestCircleIlliquid(CircleTest):
     network_definition = test_graphs_paths['star_ring_4_illiquid']
 
     def graph_test(self):
-        self.assertEqual(5, self.master_node_networkinfo['num_nodes'])
-        self.assertEqual(10, self.master_node_networkinfo['num_channels'])
+        self.assertEqual(10, len(self.master_node_graph_view))
 
     def test_circle_fail_2_3_no_route(self):
         """

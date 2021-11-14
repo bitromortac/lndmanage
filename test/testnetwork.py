@@ -55,7 +55,7 @@ class TestNetwork(TestCase):
 
         master_node_data_dir = self.testnet.master_node.data_dir
         master_node_port = self.testnet.master_node._grpc_port
-        self.master_node_networkinfo = self.testnet.master_node.getnetworkinfo()
+        self.master_node_graph_view = self.testnet.master_node_graph_view()
 
         self.lndnode = LndNode(
             lnd_home=master_node_data_dir,
