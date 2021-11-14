@@ -24,6 +24,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/bitromortac/lndmanage",
     packages=setuptools.find_packages(),
+    python_requires='>3.8.0',
     install_requires=[
         "googleapis-common-protos>=1.52.0",
         "grpcio>=1.31.0",
