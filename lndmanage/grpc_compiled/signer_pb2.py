@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z-github.com/lightningnetwork/lnd/lnrpc/signrpc',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0csigner.proto\x12\x07signrpc\"3\n\nKeyLocator\x12\x12\n\nkey_family\x18\x01 \x01(\x05\x12\x11\n\tkey_index\x18\x02 \x01(\x05\"L\n\rKeyDescriptor\x12\x15\n\rraw_key_bytes\x18\x01 \x01(\x0c\x12$\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocator\")\n\x05TxOut\x12\r\n\x05value\x18\x01 \x01(\x03\x12\x11\n\tpk_script\x18\x02 \x01(\x0c\"\xc4\x01\n\x0eSignDescriptor\x12(\n\x08key_desc\x18\x01 \x01(\x0b\x32\x16.signrpc.KeyDescriptor\x12\x14\n\x0csingle_tweak\x18\x02 \x01(\x0c\x12\x14\n\x0c\x64ouble_tweak\x18\x03 \x01(\x0c\x12\x16\n\x0ewitness_script\x18\x04 \x01(\x0c\x12\x1e\n\x06output\x18\x05 \x01(\x0b\x32\x0e.signrpc.TxOut\x12\x0f\n\x07sighash\x18\x07 \x01(\r\x12\x13\n\x0binput_index\x18\x08 \x01(\x05\"L\n\x07SignReq\x12\x14\n\x0craw_tx_bytes\x18\x01 \x01(\x0c\x12+\n\nsign_descs\x18\x02 \x03(\x0b\x32\x17.signrpc.SignDescriptor\"\x1c\n\x08SignResp\x12\x10\n\x08raw_sigs\x18\x01 \x03(\x0c\"2\n\x0bInputScript\x12\x0f\n\x07witness\x18\x01 \x03(\x0c\x12\x12\n\nsig_script\x18\x02 \x01(\x0c\">\n\x0fInputScriptResp\x12+\n\rinput_scripts\x18\x01 \x03(\x0b\x32\x14.signrpc.InputScript\"C\n\x0eSignMessageReq\x12\x0b\n\x03msg\x18\x01 \x01(\x0c\x12$\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocator\"$\n\x0fSignMessageResp\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"B\n\x10VerifyMessageReq\x12\x0b\n\x03msg\x18\x01 \x01(\x0c\x12\x11\n\tsignature\x18\x02 \x01(\x0c\x12\x0e\n\x06pubkey\x18\x03 \x01(\x0c\"\"\n\x11VerifyMessageResp\x12\r\n\x05valid\x18\x01 \x01(\x08\"\x80\x01\n\x10SharedKeyRequest\x12\x18\n\x10\x65phemeral_pubkey\x18\x01 \x01(\x0c\x12(\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocatorB\x02\x18\x01\x12(\n\x08key_desc\x18\x03 \x01(\x0b\x32\x16.signrpc.KeyDescriptor\"\'\n\x11SharedKeyResponse\x12\x12\n\nshared_key\x18\x01 \x01(\x0c\x32\xd4\x02\n\x06Signer\x12\x34\n\rSignOutputRaw\x12\x10.signrpc.SignReq\x1a\x11.signrpc.SignResp\x12@\n\x12\x43omputeInputScript\x12\x10.signrpc.SignReq\x1a\x18.signrpc.InputScriptResp\x12@\n\x0bSignMessage\x12\x17.signrpc.SignMessageReq\x1a\x18.signrpc.SignMessageResp\x12\x46\n\rVerifyMessage\x12\x19.signrpc.VerifyMessageReq\x1a\x1a.signrpc.VerifyMessageResp\x12H\n\x0f\x44\x65riveSharedKey\x12\x19.signrpc.SharedKeyRequest\x1a\x1a.signrpc.SharedKeyResponseB/Z-github.com/lightningnetwork/lnd/lnrpc/signrpcb\x06proto3'
+  serialized_pb=b'\n\x0csigner.proto\x12\x07signrpc\"3\n\nKeyLocator\x12\x12\n\nkey_family\x18\x01 \x01(\x05\x12\x11\n\tkey_index\x18\x02 \x01(\x05\"L\n\rKeyDescriptor\x12\x15\n\rraw_key_bytes\x18\x01 \x01(\x0c\x12$\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocator\")\n\x05TxOut\x12\r\n\x05value\x18\x01 \x01(\x03\x12\x11\n\tpk_script\x18\x02 \x01(\x0c\"\xc4\x01\n\x0eSignDescriptor\x12(\n\x08key_desc\x18\x01 \x01(\x0b\x32\x16.signrpc.KeyDescriptor\x12\x14\n\x0csingle_tweak\x18\x02 \x01(\x0c\x12\x14\n\x0c\x64ouble_tweak\x18\x03 \x01(\x0c\x12\x16\n\x0ewitness_script\x18\x04 \x01(\x0c\x12\x1e\n\x06output\x18\x05 \x01(\x0b\x32\x0e.signrpc.TxOut\x12\x0f\n\x07sighash\x18\x07 \x01(\r\x12\x13\n\x0binput_index\x18\x08 \x01(\x05\"L\n\x07SignReq\x12\x14\n\x0craw_tx_bytes\x18\x01 \x01(\x0c\x12+\n\nsign_descs\x18\x02 \x03(\x0b\x32\x17.signrpc.SignDescriptor\"\x1c\n\x08SignResp\x12\x10\n\x08raw_sigs\x18\x01 \x03(\x0c\"2\n\x0bInputScript\x12\x0f\n\x07witness\x18\x01 \x03(\x0c\x12\x12\n\nsig_script\x18\x02 \x01(\x0c\">\n\x0fInputScriptResp\x12+\n\rinput_scripts\x18\x01 \x03(\x0b\x32\x14.signrpc.InputScript\"m\n\x0eSignMessageReq\x12\x0b\n\x03msg\x18\x01 \x01(\x0c\x12$\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocator\x12\x13\n\x0b\x64ouble_hash\x18\x03 \x01(\x08\x12\x13\n\x0b\x63ompact_sig\x18\x04 \x01(\x08\"$\n\x0fSignMessageResp\x12\x11\n\tsignature\x18\x01 \x01(\x0c\"B\n\x10VerifyMessageReq\x12\x0b\n\x03msg\x18\x01 \x01(\x0c\x12\x11\n\tsignature\x18\x02 \x01(\x0c\x12\x0e\n\x06pubkey\x18\x03 \x01(\x0c\"\"\n\x11VerifyMessageResp\x12\r\n\x05valid\x18\x01 \x01(\x08\"\x80\x01\n\x10SharedKeyRequest\x12\x18\n\x10\x65phemeral_pubkey\x18\x01 \x01(\x0c\x12(\n\x07key_loc\x18\x02 \x01(\x0b\x32\x13.signrpc.KeyLocatorB\x02\x18\x01\x12(\n\x08key_desc\x18\x03 \x01(\x0b\x32\x16.signrpc.KeyDescriptor\"\'\n\x11SharedKeyResponse\x12\x12\n\nshared_key\x18\x01 \x01(\x0c\x32\xd4\x02\n\x06Signer\x12\x34\n\rSignOutputRaw\x12\x10.signrpc.SignReq\x1a\x11.signrpc.SignResp\x12@\n\x12\x43omputeInputScript\x12\x10.signrpc.SignReq\x1a\x18.signrpc.InputScriptResp\x12@\n\x0bSignMessage\x12\x17.signrpc.SignMessageReq\x1a\x18.signrpc.SignMessageResp\x12\x46\n\rVerifyMessage\x12\x19.signrpc.VerifyMessageReq\x1a\x1a.signrpc.VerifyMessageResp\x12H\n\x0f\x44\x65riveSharedKey\x12\x19.signrpc.SharedKeyRequest\x1a\x1a.signrpc.SharedKeyResponseB/Z-github.com/lightningnetwork/lnd/lnrpc/signrpcb\x06proto3'
 )
 
 
@@ -380,6 +380,20 @@ _SIGNMESSAGEREQ = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='double_hash', full_name='signrpc.SignMessageReq.double_hash', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='compact_sig', full_name='signrpc.SignMessageReq.compact_sig', index=3,
+      number=4, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -393,7 +407,7 @@ _SIGNMESSAGEREQ = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=622,
-  serialized_end=689,
+  serialized_end=731,
 )
 
 
@@ -424,8 +438,8 @@ _SIGNMESSAGERESP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=691,
-  serialized_end=727,
+  serialized_start=733,
+  serialized_end=769,
 )
 
 
@@ -470,8 +484,8 @@ _VERIFYMESSAGEREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=729,
-  serialized_end=795,
+  serialized_start=771,
+  serialized_end=837,
 )
 
 
@@ -502,8 +516,8 @@ _VERIFYMESSAGERESP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=797,
-  serialized_end=831,
+  serialized_start=839,
+  serialized_end=873,
 )
 
 
@@ -548,8 +562,8 @@ _SHAREDKEYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=834,
-  serialized_end=962,
+  serialized_start=876,
+  serialized_end=1004,
 )
 
 
@@ -580,8 +594,8 @@ _SHAREDKEYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=964,
-  serialized_end=1003,
+  serialized_start=1006,
+  serialized_end=1045,
 )
 
 _KEYDESCRIPTOR.fields_by_name['key_loc'].message_type = _KEYLOCATOR
@@ -717,8 +731,8 @@ _SIGNER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1006,
-  serialized_end=1346,
+  serialized_start=1048,
+  serialized_end=1388,
   methods=[
   _descriptor.MethodDescriptor(
     name='SignOutputRaw',

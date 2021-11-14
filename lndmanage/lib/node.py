@@ -11,8 +11,8 @@ from grpc._channel import _Rendezvous
 from grpc._channel import _InactiveRpcError
 from google.protobuf.json_format import MessageToDict
 
-import lndmanage.grpc_compiled.rpc_pb2 as lnd
-import lndmanage.grpc_compiled.rpc_pb2_grpc as lndrpc
+import lndmanage.grpc_compiled.lightning_pb2 as lnd
+import lndmanage.grpc_compiled.lightning_pb2_grpc as lndrpc
 import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 import lndmanage.grpc_compiled.walletkit_pb2 as lndwalletkit

@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
+from lndmanage.grpc_compiled import lightning_pb2 as lightning__pb2
 from lndmanage.grpc_compiled import router_pb2 as router__pb2
-from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
 
 
 class RouterStub(object):
@@ -20,12 +20,12 @@ class RouterStub(object):
         self.SendPaymentV2 = channel.unary_stream(
                 '/routerrpc.Router/SendPaymentV2',
                 request_serializer=router__pb2.SendPaymentRequest.SerializeToString,
-                response_deserializer=rpc__pb2.Payment.FromString,
+                response_deserializer=lightning__pb2.Payment.FromString,
                 )
         self.TrackPaymentV2 = channel.unary_stream(
                 '/routerrpc.Router/TrackPaymentV2',
                 request_serializer=router__pb2.TrackPaymentRequest.SerializeToString,
-                response_deserializer=rpc__pb2.Payment.FromString,
+                response_deserializer=lightning__pb2.Payment.FromString,
                 )
         self.EstimateRouteFee = channel.unary_unary(
                 '/routerrpc.Router/EstimateRouteFee',
@@ -40,7 +40,7 @@ class RouterStub(object):
         self.SendToRouteV2 = channel.unary_unary(
                 '/routerrpc.Router/SendToRouteV2',
                 request_serializer=router__pb2.SendToRouteRequest.SerializeToString,
-                response_deserializer=rpc__pb2.HTLCAttempt.FromString,
+                response_deserializer=lightning__pb2.HTLCAttempt.FromString,
                 )
         self.ResetMissionControl = channel.unary_unary(
                 '/routerrpc.Router/ResetMissionControl',
@@ -282,12 +282,12 @@ def add_RouterServicer_to_server(servicer, server):
             'SendPaymentV2': grpc.unary_stream_rpc_method_handler(
                     servicer.SendPaymentV2,
                     request_deserializer=router__pb2.SendPaymentRequest.FromString,
-                    response_serializer=rpc__pb2.Payment.SerializeToString,
+                    response_serializer=lightning__pb2.Payment.SerializeToString,
             ),
             'TrackPaymentV2': grpc.unary_stream_rpc_method_handler(
                     servicer.TrackPaymentV2,
                     request_deserializer=router__pb2.TrackPaymentRequest.FromString,
-                    response_serializer=rpc__pb2.Payment.SerializeToString,
+                    response_serializer=lightning__pb2.Payment.SerializeToString,
             ),
             'EstimateRouteFee': grpc.unary_unary_rpc_method_handler(
                     servicer.EstimateRouteFee,
@@ -302,7 +302,7 @@ def add_RouterServicer_to_server(servicer, server):
             'SendToRouteV2': grpc.unary_unary_rpc_method_handler(
                     servicer.SendToRouteV2,
                     request_deserializer=router__pb2.SendToRouteRequest.FromString,
-                    response_serializer=rpc__pb2.HTLCAttempt.SerializeToString,
+                    response_serializer=lightning__pb2.HTLCAttempt.SerializeToString,
             ),
             'ResetMissionControl': grpc.unary_unary_rpc_method_handler(
                     servicer.ResetMissionControl,
@@ -389,7 +389,7 @@ class Router(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/routerrpc.Router/SendPaymentV2',
             router__pb2.SendPaymentRequest.SerializeToString,
-            rpc__pb2.Payment.FromString,
+            lightning__pb2.Payment.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -406,7 +406,7 @@ class Router(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/routerrpc.Router/TrackPaymentV2',
             router__pb2.TrackPaymentRequest.SerializeToString,
-            rpc__pb2.Payment.FromString,
+            lightning__pb2.Payment.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -457,7 +457,7 @@ class Router(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/routerrpc.Router/SendToRouteV2',
             router__pb2.SendToRouteRequest.SerializeToString,
-            rpc__pb2.HTLCAttempt.FromString,
+            lightning__pb2.HTLCAttempt.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

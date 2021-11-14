@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from lndmanage.grpc_compiled import rpc_pb2 as rpc__pb2
+from lndmanage.grpc_compiled import lightning_pb2 as lightning__pb2
 
 
 class LightningStub(object):
@@ -34,298 +34,328 @@ class LightningStub(object):
         """
         self.WalletBalance = channel.unary_unary(
                 '/lnrpc.Lightning/WalletBalance',
-                request_serializer=rpc__pb2.WalletBalanceRequest.SerializeToString,
-                response_deserializer=rpc__pb2.WalletBalanceResponse.FromString,
+                request_serializer=lightning__pb2.WalletBalanceRequest.SerializeToString,
+                response_deserializer=lightning__pb2.WalletBalanceResponse.FromString,
                 )
         self.ChannelBalance = channel.unary_unary(
                 '/lnrpc.Lightning/ChannelBalance',
-                request_serializer=rpc__pb2.ChannelBalanceRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelBalanceResponse.FromString,
+                request_serializer=lightning__pb2.ChannelBalanceRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelBalanceResponse.FromString,
                 )
         self.GetTransactions = channel.unary_unary(
                 '/lnrpc.Lightning/GetTransactions',
-                request_serializer=rpc__pb2.GetTransactionsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.TransactionDetails.FromString,
+                request_serializer=lightning__pb2.GetTransactionsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.TransactionDetails.FromString,
                 )
         self.EstimateFee = channel.unary_unary(
                 '/lnrpc.Lightning/EstimateFee',
-                request_serializer=rpc__pb2.EstimateFeeRequest.SerializeToString,
-                response_deserializer=rpc__pb2.EstimateFeeResponse.FromString,
+                request_serializer=lightning__pb2.EstimateFeeRequest.SerializeToString,
+                response_deserializer=lightning__pb2.EstimateFeeResponse.FromString,
                 )
         self.SendCoins = channel.unary_unary(
                 '/lnrpc.Lightning/SendCoins',
-                request_serializer=rpc__pb2.SendCoinsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendCoinsResponse.FromString,
+                request_serializer=lightning__pb2.SendCoinsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendCoinsResponse.FromString,
                 )
         self.ListUnspent = channel.unary_unary(
                 '/lnrpc.Lightning/ListUnspent',
-                request_serializer=rpc__pb2.ListUnspentRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListUnspentResponse.FromString,
+                request_serializer=lightning__pb2.ListUnspentRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListUnspentResponse.FromString,
                 )
         self.SubscribeTransactions = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribeTransactions',
-                request_serializer=rpc__pb2.GetTransactionsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.Transaction.FromString,
+                request_serializer=lightning__pb2.GetTransactionsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.Transaction.FromString,
                 )
         self.SendMany = channel.unary_unary(
                 '/lnrpc.Lightning/SendMany',
-                request_serializer=rpc__pb2.SendManyRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendManyResponse.FromString,
+                request_serializer=lightning__pb2.SendManyRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendManyResponse.FromString,
                 )
         self.NewAddress = channel.unary_unary(
                 '/lnrpc.Lightning/NewAddress',
-                request_serializer=rpc__pb2.NewAddressRequest.SerializeToString,
-                response_deserializer=rpc__pb2.NewAddressResponse.FromString,
+                request_serializer=lightning__pb2.NewAddressRequest.SerializeToString,
+                response_deserializer=lightning__pb2.NewAddressResponse.FromString,
                 )
         self.SignMessage = channel.unary_unary(
                 '/lnrpc.Lightning/SignMessage',
-                request_serializer=rpc__pb2.SignMessageRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SignMessageResponse.FromString,
+                request_serializer=lightning__pb2.SignMessageRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SignMessageResponse.FromString,
                 )
         self.VerifyMessage = channel.unary_unary(
                 '/lnrpc.Lightning/VerifyMessage',
-                request_serializer=rpc__pb2.VerifyMessageRequest.SerializeToString,
-                response_deserializer=rpc__pb2.VerifyMessageResponse.FromString,
+                request_serializer=lightning__pb2.VerifyMessageRequest.SerializeToString,
+                response_deserializer=lightning__pb2.VerifyMessageResponse.FromString,
                 )
         self.ConnectPeer = channel.unary_unary(
                 '/lnrpc.Lightning/ConnectPeer',
-                request_serializer=rpc__pb2.ConnectPeerRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ConnectPeerResponse.FromString,
+                request_serializer=lightning__pb2.ConnectPeerRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ConnectPeerResponse.FromString,
                 )
         self.DisconnectPeer = channel.unary_unary(
                 '/lnrpc.Lightning/DisconnectPeer',
-                request_serializer=rpc__pb2.DisconnectPeerRequest.SerializeToString,
-                response_deserializer=rpc__pb2.DisconnectPeerResponse.FromString,
+                request_serializer=lightning__pb2.DisconnectPeerRequest.SerializeToString,
+                response_deserializer=lightning__pb2.DisconnectPeerResponse.FromString,
                 )
         self.ListPeers = channel.unary_unary(
                 '/lnrpc.Lightning/ListPeers',
-                request_serializer=rpc__pb2.ListPeersRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListPeersResponse.FromString,
+                request_serializer=lightning__pb2.ListPeersRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListPeersResponse.FromString,
                 )
         self.SubscribePeerEvents = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribePeerEvents',
-                request_serializer=rpc__pb2.PeerEventSubscription.SerializeToString,
-                response_deserializer=rpc__pb2.PeerEvent.FromString,
+                request_serializer=lightning__pb2.PeerEventSubscription.SerializeToString,
+                response_deserializer=lightning__pb2.PeerEvent.FromString,
                 )
         self.GetInfo = channel.unary_unary(
                 '/lnrpc.Lightning/GetInfo',
-                request_serializer=rpc__pb2.GetInfoRequest.SerializeToString,
-                response_deserializer=rpc__pb2.GetInfoResponse.FromString,
+                request_serializer=lightning__pb2.GetInfoRequest.SerializeToString,
+                response_deserializer=lightning__pb2.GetInfoResponse.FromString,
                 )
         self.GetRecoveryInfo = channel.unary_unary(
                 '/lnrpc.Lightning/GetRecoveryInfo',
-                request_serializer=rpc__pb2.GetRecoveryInfoRequest.SerializeToString,
-                response_deserializer=rpc__pb2.GetRecoveryInfoResponse.FromString,
+                request_serializer=lightning__pb2.GetRecoveryInfoRequest.SerializeToString,
+                response_deserializer=lightning__pb2.GetRecoveryInfoResponse.FromString,
                 )
         self.PendingChannels = channel.unary_unary(
                 '/lnrpc.Lightning/PendingChannels',
-                request_serializer=rpc__pb2.PendingChannelsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.PendingChannelsResponse.FromString,
+                request_serializer=lightning__pb2.PendingChannelsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.PendingChannelsResponse.FromString,
                 )
         self.ListChannels = channel.unary_unary(
                 '/lnrpc.Lightning/ListChannels',
-                request_serializer=rpc__pb2.ListChannelsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListChannelsResponse.FromString,
+                request_serializer=lightning__pb2.ListChannelsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListChannelsResponse.FromString,
                 )
         self.SubscribeChannelEvents = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribeChannelEvents',
-                request_serializer=rpc__pb2.ChannelEventSubscription.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelEventUpdate.FromString,
+                request_serializer=lightning__pb2.ChannelEventSubscription.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelEventUpdate.FromString,
                 )
         self.ClosedChannels = channel.unary_unary(
                 '/lnrpc.Lightning/ClosedChannels',
-                request_serializer=rpc__pb2.ClosedChannelsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ClosedChannelsResponse.FromString,
+                request_serializer=lightning__pb2.ClosedChannelsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ClosedChannelsResponse.FromString,
                 )
         self.OpenChannelSync = channel.unary_unary(
                 '/lnrpc.Lightning/OpenChannelSync',
-                request_serializer=rpc__pb2.OpenChannelRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelPoint.FromString,
+                request_serializer=lightning__pb2.OpenChannelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelPoint.FromString,
                 )
         self.OpenChannel = channel.unary_stream(
                 '/lnrpc.Lightning/OpenChannel',
-                request_serializer=rpc__pb2.OpenChannelRequest.SerializeToString,
-                response_deserializer=rpc__pb2.OpenStatusUpdate.FromString,
+                request_serializer=lightning__pb2.OpenChannelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.OpenStatusUpdate.FromString,
+                )
+        self.BatchOpenChannel = channel.unary_unary(
+                '/lnrpc.Lightning/BatchOpenChannel',
+                request_serializer=lightning__pb2.BatchOpenChannelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.BatchOpenChannelResponse.FromString,
                 )
         self.FundingStateStep = channel.unary_unary(
                 '/lnrpc.Lightning/FundingStateStep',
-                request_serializer=rpc__pb2.FundingTransitionMsg.SerializeToString,
-                response_deserializer=rpc__pb2.FundingStateStepResp.FromString,
+                request_serializer=lightning__pb2.FundingTransitionMsg.SerializeToString,
+                response_deserializer=lightning__pb2.FundingStateStepResp.FromString,
                 )
         self.ChannelAcceptor = channel.stream_stream(
                 '/lnrpc.Lightning/ChannelAcceptor',
-                request_serializer=rpc__pb2.ChannelAcceptResponse.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelAcceptRequest.FromString,
+                request_serializer=lightning__pb2.ChannelAcceptResponse.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelAcceptRequest.FromString,
                 )
         self.CloseChannel = channel.unary_stream(
                 '/lnrpc.Lightning/CloseChannel',
-                request_serializer=rpc__pb2.CloseChannelRequest.SerializeToString,
-                response_deserializer=rpc__pb2.CloseStatusUpdate.FromString,
+                request_serializer=lightning__pb2.CloseChannelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.CloseStatusUpdate.FromString,
                 )
         self.AbandonChannel = channel.unary_unary(
                 '/lnrpc.Lightning/AbandonChannel',
-                request_serializer=rpc__pb2.AbandonChannelRequest.SerializeToString,
-                response_deserializer=rpc__pb2.AbandonChannelResponse.FromString,
+                request_serializer=lightning__pb2.AbandonChannelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.AbandonChannelResponse.FromString,
                 )
         self.SendPayment = channel.stream_stream(
                 '/lnrpc.Lightning/SendPayment',
-                request_serializer=rpc__pb2.SendRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendResponse.FromString,
+                request_serializer=lightning__pb2.SendRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendResponse.FromString,
                 )
         self.SendPaymentSync = channel.unary_unary(
                 '/lnrpc.Lightning/SendPaymentSync',
-                request_serializer=rpc__pb2.SendRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendResponse.FromString,
+                request_serializer=lightning__pb2.SendRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendResponse.FromString,
                 )
         self.SendToRoute = channel.stream_stream(
                 '/lnrpc.Lightning/SendToRoute',
-                request_serializer=rpc__pb2.SendToRouteRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendResponse.FromString,
+                request_serializer=lightning__pb2.SendToRouteRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendResponse.FromString,
                 )
         self.SendToRouteSync = channel.unary_unary(
                 '/lnrpc.Lightning/SendToRouteSync',
-                request_serializer=rpc__pb2.SendToRouteRequest.SerializeToString,
-                response_deserializer=rpc__pb2.SendResponse.FromString,
+                request_serializer=lightning__pb2.SendToRouteRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendResponse.FromString,
                 )
         self.AddInvoice = channel.unary_unary(
                 '/lnrpc.Lightning/AddInvoice',
-                request_serializer=rpc__pb2.Invoice.SerializeToString,
-                response_deserializer=rpc__pb2.AddInvoiceResponse.FromString,
+                request_serializer=lightning__pb2.Invoice.SerializeToString,
+                response_deserializer=lightning__pb2.AddInvoiceResponse.FromString,
                 )
         self.ListInvoices = channel.unary_unary(
                 '/lnrpc.Lightning/ListInvoices',
-                request_serializer=rpc__pb2.ListInvoiceRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListInvoiceResponse.FromString,
+                request_serializer=lightning__pb2.ListInvoiceRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListInvoiceResponse.FromString,
                 )
         self.LookupInvoice = channel.unary_unary(
                 '/lnrpc.Lightning/LookupInvoice',
-                request_serializer=rpc__pb2.PaymentHash.SerializeToString,
-                response_deserializer=rpc__pb2.Invoice.FromString,
+                request_serializer=lightning__pb2.PaymentHash.SerializeToString,
+                response_deserializer=lightning__pb2.Invoice.FromString,
                 )
         self.SubscribeInvoices = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribeInvoices',
-                request_serializer=rpc__pb2.InvoiceSubscription.SerializeToString,
-                response_deserializer=rpc__pb2.Invoice.FromString,
+                request_serializer=lightning__pb2.InvoiceSubscription.SerializeToString,
+                response_deserializer=lightning__pb2.Invoice.FromString,
                 )
         self.DecodePayReq = channel.unary_unary(
                 '/lnrpc.Lightning/DecodePayReq',
-                request_serializer=rpc__pb2.PayReqString.SerializeToString,
-                response_deserializer=rpc__pb2.PayReq.FromString,
+                request_serializer=lightning__pb2.PayReqString.SerializeToString,
+                response_deserializer=lightning__pb2.PayReq.FromString,
                 )
         self.ListPayments = channel.unary_unary(
                 '/lnrpc.Lightning/ListPayments',
-                request_serializer=rpc__pb2.ListPaymentsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListPaymentsResponse.FromString,
+                request_serializer=lightning__pb2.ListPaymentsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListPaymentsResponse.FromString,
+                )
+        self.DeletePayment = channel.unary_unary(
+                '/lnrpc.Lightning/DeletePayment',
+                request_serializer=lightning__pb2.DeletePaymentRequest.SerializeToString,
+                response_deserializer=lightning__pb2.DeletePaymentResponse.FromString,
                 )
         self.DeleteAllPayments = channel.unary_unary(
                 '/lnrpc.Lightning/DeleteAllPayments',
-                request_serializer=rpc__pb2.DeleteAllPaymentsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.DeleteAllPaymentsResponse.FromString,
+                request_serializer=lightning__pb2.DeleteAllPaymentsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.DeleteAllPaymentsResponse.FromString,
                 )
         self.DescribeGraph = channel.unary_unary(
                 '/lnrpc.Lightning/DescribeGraph',
-                request_serializer=rpc__pb2.ChannelGraphRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelGraph.FromString,
+                request_serializer=lightning__pb2.ChannelGraphRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelGraph.FromString,
                 )
         self.GetNodeMetrics = channel.unary_unary(
                 '/lnrpc.Lightning/GetNodeMetrics',
-                request_serializer=rpc__pb2.NodeMetricsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.NodeMetricsResponse.FromString,
+                request_serializer=lightning__pb2.NodeMetricsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.NodeMetricsResponse.FromString,
                 )
         self.GetChanInfo = channel.unary_unary(
                 '/lnrpc.Lightning/GetChanInfo',
-                request_serializer=rpc__pb2.ChanInfoRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelEdge.FromString,
+                request_serializer=lightning__pb2.ChanInfoRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelEdge.FromString,
                 )
         self.GetNodeInfo = channel.unary_unary(
                 '/lnrpc.Lightning/GetNodeInfo',
-                request_serializer=rpc__pb2.NodeInfoRequest.SerializeToString,
-                response_deserializer=rpc__pb2.NodeInfo.FromString,
+                request_serializer=lightning__pb2.NodeInfoRequest.SerializeToString,
+                response_deserializer=lightning__pb2.NodeInfo.FromString,
                 )
         self.QueryRoutes = channel.unary_unary(
                 '/lnrpc.Lightning/QueryRoutes',
-                request_serializer=rpc__pb2.QueryRoutesRequest.SerializeToString,
-                response_deserializer=rpc__pb2.QueryRoutesResponse.FromString,
+                request_serializer=lightning__pb2.QueryRoutesRequest.SerializeToString,
+                response_deserializer=lightning__pb2.QueryRoutesResponse.FromString,
                 )
         self.GetNetworkInfo = channel.unary_unary(
                 '/lnrpc.Lightning/GetNetworkInfo',
-                request_serializer=rpc__pb2.NetworkInfoRequest.SerializeToString,
-                response_deserializer=rpc__pb2.NetworkInfo.FromString,
+                request_serializer=lightning__pb2.NetworkInfoRequest.SerializeToString,
+                response_deserializer=lightning__pb2.NetworkInfo.FromString,
                 )
         self.StopDaemon = channel.unary_unary(
                 '/lnrpc.Lightning/StopDaemon',
-                request_serializer=rpc__pb2.StopRequest.SerializeToString,
-                response_deserializer=rpc__pb2.StopResponse.FromString,
+                request_serializer=lightning__pb2.StopRequest.SerializeToString,
+                response_deserializer=lightning__pb2.StopResponse.FromString,
                 )
         self.SubscribeChannelGraph = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribeChannelGraph',
-                request_serializer=rpc__pb2.GraphTopologySubscription.SerializeToString,
-                response_deserializer=rpc__pb2.GraphTopologyUpdate.FromString,
+                request_serializer=lightning__pb2.GraphTopologySubscription.SerializeToString,
+                response_deserializer=lightning__pb2.GraphTopologyUpdate.FromString,
                 )
         self.DebugLevel = channel.unary_unary(
                 '/lnrpc.Lightning/DebugLevel',
-                request_serializer=rpc__pb2.DebugLevelRequest.SerializeToString,
-                response_deserializer=rpc__pb2.DebugLevelResponse.FromString,
+                request_serializer=lightning__pb2.DebugLevelRequest.SerializeToString,
+                response_deserializer=lightning__pb2.DebugLevelResponse.FromString,
                 )
         self.FeeReport = channel.unary_unary(
                 '/lnrpc.Lightning/FeeReport',
-                request_serializer=rpc__pb2.FeeReportRequest.SerializeToString,
-                response_deserializer=rpc__pb2.FeeReportResponse.FromString,
+                request_serializer=lightning__pb2.FeeReportRequest.SerializeToString,
+                response_deserializer=lightning__pb2.FeeReportResponse.FromString,
                 )
         self.UpdateChannelPolicy = channel.unary_unary(
                 '/lnrpc.Lightning/UpdateChannelPolicy',
-                request_serializer=rpc__pb2.PolicyUpdateRequest.SerializeToString,
-                response_deserializer=rpc__pb2.PolicyUpdateResponse.FromString,
+                request_serializer=lightning__pb2.PolicyUpdateRequest.SerializeToString,
+                response_deserializer=lightning__pb2.PolicyUpdateResponse.FromString,
                 )
         self.ForwardingHistory = channel.unary_unary(
                 '/lnrpc.Lightning/ForwardingHistory',
-                request_serializer=rpc__pb2.ForwardingHistoryRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ForwardingHistoryResponse.FromString,
+                request_serializer=lightning__pb2.ForwardingHistoryRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ForwardingHistoryResponse.FromString,
                 )
         self.ExportChannelBackup = channel.unary_unary(
                 '/lnrpc.Lightning/ExportChannelBackup',
-                request_serializer=rpc__pb2.ExportChannelBackupRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChannelBackup.FromString,
+                request_serializer=lightning__pb2.ExportChannelBackupRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChannelBackup.FromString,
                 )
         self.ExportAllChannelBackups = channel.unary_unary(
                 '/lnrpc.Lightning/ExportAllChannelBackups',
-                request_serializer=rpc__pb2.ChanBackupExportRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ChanBackupSnapshot.FromString,
+                request_serializer=lightning__pb2.ChanBackupExportRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ChanBackupSnapshot.FromString,
                 )
         self.VerifyChanBackup = channel.unary_unary(
                 '/lnrpc.Lightning/VerifyChanBackup',
-                request_serializer=rpc__pb2.ChanBackupSnapshot.SerializeToString,
-                response_deserializer=rpc__pb2.VerifyChanBackupResponse.FromString,
+                request_serializer=lightning__pb2.ChanBackupSnapshot.SerializeToString,
+                response_deserializer=lightning__pb2.VerifyChanBackupResponse.FromString,
                 )
         self.RestoreChannelBackups = channel.unary_unary(
                 '/lnrpc.Lightning/RestoreChannelBackups',
-                request_serializer=rpc__pb2.RestoreChanBackupRequest.SerializeToString,
-                response_deserializer=rpc__pb2.RestoreBackupResponse.FromString,
+                request_serializer=lightning__pb2.RestoreChanBackupRequest.SerializeToString,
+                response_deserializer=lightning__pb2.RestoreBackupResponse.FromString,
                 )
         self.SubscribeChannelBackups = channel.unary_stream(
                 '/lnrpc.Lightning/SubscribeChannelBackups',
-                request_serializer=rpc__pb2.ChannelBackupSubscription.SerializeToString,
-                response_deserializer=rpc__pb2.ChanBackupSnapshot.FromString,
+                request_serializer=lightning__pb2.ChannelBackupSubscription.SerializeToString,
+                response_deserializer=lightning__pb2.ChanBackupSnapshot.FromString,
                 )
         self.BakeMacaroon = channel.unary_unary(
                 '/lnrpc.Lightning/BakeMacaroon',
-                request_serializer=rpc__pb2.BakeMacaroonRequest.SerializeToString,
-                response_deserializer=rpc__pb2.BakeMacaroonResponse.FromString,
+                request_serializer=lightning__pb2.BakeMacaroonRequest.SerializeToString,
+                response_deserializer=lightning__pb2.BakeMacaroonResponse.FromString,
                 )
         self.ListMacaroonIDs = channel.unary_unary(
                 '/lnrpc.Lightning/ListMacaroonIDs',
-                request_serializer=rpc__pb2.ListMacaroonIDsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListMacaroonIDsResponse.FromString,
+                request_serializer=lightning__pb2.ListMacaroonIDsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListMacaroonIDsResponse.FromString,
                 )
         self.DeleteMacaroonID = channel.unary_unary(
                 '/lnrpc.Lightning/DeleteMacaroonID',
-                request_serializer=rpc__pb2.DeleteMacaroonIDRequest.SerializeToString,
-                response_deserializer=rpc__pb2.DeleteMacaroonIDResponse.FromString,
+                request_serializer=lightning__pb2.DeleteMacaroonIDRequest.SerializeToString,
+                response_deserializer=lightning__pb2.DeleteMacaroonIDResponse.FromString,
                 )
         self.ListPermissions = channel.unary_unary(
                 '/lnrpc.Lightning/ListPermissions',
-                request_serializer=rpc__pb2.ListPermissionsRequest.SerializeToString,
-                response_deserializer=rpc__pb2.ListPermissionsResponse.FromString,
+                request_serializer=lightning__pb2.ListPermissionsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListPermissionsResponse.FromString,
+                )
+        self.CheckMacaroonPermissions = channel.unary_unary(
+                '/lnrpc.Lightning/CheckMacaroonPermissions',
+                request_serializer=lightning__pb2.CheckMacPermRequest.SerializeToString,
+                response_deserializer=lightning__pb2.CheckMacPermResponse.FromString,
+                )
+        self.RegisterRPCMiddleware = channel.stream_stream(
+                '/lnrpc.Lightning/RegisterRPCMiddleware',
+                request_serializer=lightning__pb2.RPCMiddlewareResponse.SerializeToString,
+                response_deserializer=lightning__pb2.RPCMiddlewareRequest.FromString,
+                )
+        self.SendCustomMessage = channel.unary_unary(
+                '/lnrpc.Lightning/SendCustomMessage',
+                request_serializer=lightning__pb2.SendCustomMessageRequest.SerializeToString,
+                response_deserializer=lightning__pb2.SendCustomMessageResponse.FromString,
+                )
+        self.SubscribeCustomMessages = channel.unary_stream(
+                '/lnrpc.Lightning/SubscribeCustomMessages',
+                request_serializer=lightning__pb2.SubscribeCustomMessagesRequest.SerializeToString,
+                response_deserializer=lightning__pb2.CustomMessage.FromString,
                 )
 
 
@@ -592,6 +622,18 @@ class LightningServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def BatchOpenChannel(self, request, context):
+        """lncli: `batchopenchannel`
+        BatchOpenChannel attempts to open multiple single-funded channels in a
+        single transaction in an atomic way. This means either all channel open
+        requests succeed at once or all attempts are aborted if any of them fail.
+        This is the safer variant of using PSBTs to manually fund a batch of
+        channels through the OpenChannel RPC.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def FundingStateStep(self, request, context):
         """
         FundingStateStep is an advanced funding related call that allows the caller
@@ -758,9 +800,19 @@ class LightningServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DeletePayment(self, request, context):
+        """
+        DeletePayment deletes an outgoing payment from DB. Note that it will not
+        attempt to delete an In-Flight payment, since that would be unsafe.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def DeleteAllPayments(self, request, context):
         """
-        DeleteAllPayments deletes all outgoing payments from DB.
+        DeleteAllPayments deletes all outgoing payments from DB. Note that it will
+        not attempt to delete In-Flight payments, since that would be unsafe.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -999,303 +1051,379 @@ class LightningServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CheckMacaroonPermissions(self, request, context):
+        """
+        CheckMacaroonPermissions checks whether a request follows the constraints
+        imposed on the macaroon and that the macaroon is authorized to follow the
+        provided permissions.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RegisterRPCMiddleware(self, request_iterator, context):
+        """
+        RegisterRPCMiddleware adds a new gRPC middleware to the interceptor chain. A
+        gRPC middleware is software component external to lnd that aims to add
+        additional business logic to lnd by observing/intercepting/validating
+        incoming gRPC client requests and (if needed) replacing/overwriting outgoing
+        messages before they're sent to the client. When registering the middleware
+        must identify itself and indicate what custom macaroon caveats it wants to
+        be responsible for. Only requests that contain a macaroon with that specific
+        custom caveat are then sent to the middleware for inspection. The other
+        option is to register for the read-only mode in which all requests/responses
+        are forwarded for interception to the middleware but the middleware is not
+        allowed to modify any responses. As a security measure, _no_ middleware can
+        modify responses for requests made with _unencumbered_ macaroons!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendCustomMessage(self, request, context):
+        """lncli: `sendcustom`
+        SendCustomMessage sends a custom peer message.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeCustomMessages(self, request, context):
+        """lncli: `subscribecustom`
+        SubscribeCustomMessages subscribes to a stream of incoming custom peer
+        messages.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LightningServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'WalletBalance': grpc.unary_unary_rpc_method_handler(
                     servicer.WalletBalance,
-                    request_deserializer=rpc__pb2.WalletBalanceRequest.FromString,
-                    response_serializer=rpc__pb2.WalletBalanceResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.WalletBalanceRequest.FromString,
+                    response_serializer=lightning__pb2.WalletBalanceResponse.SerializeToString,
             ),
             'ChannelBalance': grpc.unary_unary_rpc_method_handler(
                     servicer.ChannelBalance,
-                    request_deserializer=rpc__pb2.ChannelBalanceRequest.FromString,
-                    response_serializer=rpc__pb2.ChannelBalanceResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ChannelBalanceRequest.FromString,
+                    response_serializer=lightning__pb2.ChannelBalanceResponse.SerializeToString,
             ),
             'GetTransactions': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTransactions,
-                    request_deserializer=rpc__pb2.GetTransactionsRequest.FromString,
-                    response_serializer=rpc__pb2.TransactionDetails.SerializeToString,
+                    request_deserializer=lightning__pb2.GetTransactionsRequest.FromString,
+                    response_serializer=lightning__pb2.TransactionDetails.SerializeToString,
             ),
             'EstimateFee': grpc.unary_unary_rpc_method_handler(
                     servicer.EstimateFee,
-                    request_deserializer=rpc__pb2.EstimateFeeRequest.FromString,
-                    response_serializer=rpc__pb2.EstimateFeeResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.EstimateFeeRequest.FromString,
+                    response_serializer=lightning__pb2.EstimateFeeResponse.SerializeToString,
             ),
             'SendCoins': grpc.unary_unary_rpc_method_handler(
                     servicer.SendCoins,
-                    request_deserializer=rpc__pb2.SendCoinsRequest.FromString,
-                    response_serializer=rpc__pb2.SendCoinsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendCoinsRequest.FromString,
+                    response_serializer=lightning__pb2.SendCoinsResponse.SerializeToString,
             ),
             'ListUnspent': grpc.unary_unary_rpc_method_handler(
                     servicer.ListUnspent,
-                    request_deserializer=rpc__pb2.ListUnspentRequest.FromString,
-                    response_serializer=rpc__pb2.ListUnspentResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListUnspentRequest.FromString,
+                    response_serializer=lightning__pb2.ListUnspentResponse.SerializeToString,
             ),
             'SubscribeTransactions': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeTransactions,
-                    request_deserializer=rpc__pb2.GetTransactionsRequest.FromString,
-                    response_serializer=rpc__pb2.Transaction.SerializeToString,
+                    request_deserializer=lightning__pb2.GetTransactionsRequest.FromString,
+                    response_serializer=lightning__pb2.Transaction.SerializeToString,
             ),
             'SendMany': grpc.unary_unary_rpc_method_handler(
                     servicer.SendMany,
-                    request_deserializer=rpc__pb2.SendManyRequest.FromString,
-                    response_serializer=rpc__pb2.SendManyResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendManyRequest.FromString,
+                    response_serializer=lightning__pb2.SendManyResponse.SerializeToString,
             ),
             'NewAddress': grpc.unary_unary_rpc_method_handler(
                     servicer.NewAddress,
-                    request_deserializer=rpc__pb2.NewAddressRequest.FromString,
-                    response_serializer=rpc__pb2.NewAddressResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.NewAddressRequest.FromString,
+                    response_serializer=lightning__pb2.NewAddressResponse.SerializeToString,
             ),
             'SignMessage': grpc.unary_unary_rpc_method_handler(
                     servicer.SignMessage,
-                    request_deserializer=rpc__pb2.SignMessageRequest.FromString,
-                    response_serializer=rpc__pb2.SignMessageResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SignMessageRequest.FromString,
+                    response_serializer=lightning__pb2.SignMessageResponse.SerializeToString,
             ),
             'VerifyMessage': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyMessage,
-                    request_deserializer=rpc__pb2.VerifyMessageRequest.FromString,
-                    response_serializer=rpc__pb2.VerifyMessageResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.VerifyMessageRequest.FromString,
+                    response_serializer=lightning__pb2.VerifyMessageResponse.SerializeToString,
             ),
             'ConnectPeer': grpc.unary_unary_rpc_method_handler(
                     servicer.ConnectPeer,
-                    request_deserializer=rpc__pb2.ConnectPeerRequest.FromString,
-                    response_serializer=rpc__pb2.ConnectPeerResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ConnectPeerRequest.FromString,
+                    response_serializer=lightning__pb2.ConnectPeerResponse.SerializeToString,
             ),
             'DisconnectPeer': grpc.unary_unary_rpc_method_handler(
                     servicer.DisconnectPeer,
-                    request_deserializer=rpc__pb2.DisconnectPeerRequest.FromString,
-                    response_serializer=rpc__pb2.DisconnectPeerResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.DisconnectPeerRequest.FromString,
+                    response_serializer=lightning__pb2.DisconnectPeerResponse.SerializeToString,
             ),
             'ListPeers': grpc.unary_unary_rpc_method_handler(
                     servicer.ListPeers,
-                    request_deserializer=rpc__pb2.ListPeersRequest.FromString,
-                    response_serializer=rpc__pb2.ListPeersResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListPeersRequest.FromString,
+                    response_serializer=lightning__pb2.ListPeersResponse.SerializeToString,
             ),
             'SubscribePeerEvents': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribePeerEvents,
-                    request_deserializer=rpc__pb2.PeerEventSubscription.FromString,
-                    response_serializer=rpc__pb2.PeerEvent.SerializeToString,
+                    request_deserializer=lightning__pb2.PeerEventSubscription.FromString,
+                    response_serializer=lightning__pb2.PeerEvent.SerializeToString,
             ),
             'GetInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetInfo,
-                    request_deserializer=rpc__pb2.GetInfoRequest.FromString,
-                    response_serializer=rpc__pb2.GetInfoResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.GetInfoRequest.FromString,
+                    response_serializer=lightning__pb2.GetInfoResponse.SerializeToString,
             ),
             'GetRecoveryInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetRecoveryInfo,
-                    request_deserializer=rpc__pb2.GetRecoveryInfoRequest.FromString,
-                    response_serializer=rpc__pb2.GetRecoveryInfoResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.GetRecoveryInfoRequest.FromString,
+                    response_serializer=lightning__pb2.GetRecoveryInfoResponse.SerializeToString,
             ),
             'PendingChannels': grpc.unary_unary_rpc_method_handler(
                     servicer.PendingChannels,
-                    request_deserializer=rpc__pb2.PendingChannelsRequest.FromString,
-                    response_serializer=rpc__pb2.PendingChannelsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.PendingChannelsRequest.FromString,
+                    response_serializer=lightning__pb2.PendingChannelsResponse.SerializeToString,
             ),
             'ListChannels': grpc.unary_unary_rpc_method_handler(
                     servicer.ListChannels,
-                    request_deserializer=rpc__pb2.ListChannelsRequest.FromString,
-                    response_serializer=rpc__pb2.ListChannelsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListChannelsRequest.FromString,
+                    response_serializer=lightning__pb2.ListChannelsResponse.SerializeToString,
             ),
             'SubscribeChannelEvents': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeChannelEvents,
-                    request_deserializer=rpc__pb2.ChannelEventSubscription.FromString,
-                    response_serializer=rpc__pb2.ChannelEventUpdate.SerializeToString,
+                    request_deserializer=lightning__pb2.ChannelEventSubscription.FromString,
+                    response_serializer=lightning__pb2.ChannelEventUpdate.SerializeToString,
             ),
             'ClosedChannels': grpc.unary_unary_rpc_method_handler(
                     servicer.ClosedChannels,
-                    request_deserializer=rpc__pb2.ClosedChannelsRequest.FromString,
-                    response_serializer=rpc__pb2.ClosedChannelsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ClosedChannelsRequest.FromString,
+                    response_serializer=lightning__pb2.ClosedChannelsResponse.SerializeToString,
             ),
             'OpenChannelSync': grpc.unary_unary_rpc_method_handler(
                     servicer.OpenChannelSync,
-                    request_deserializer=rpc__pb2.OpenChannelRequest.FromString,
-                    response_serializer=rpc__pb2.ChannelPoint.SerializeToString,
+                    request_deserializer=lightning__pb2.OpenChannelRequest.FromString,
+                    response_serializer=lightning__pb2.ChannelPoint.SerializeToString,
             ),
             'OpenChannel': grpc.unary_stream_rpc_method_handler(
                     servicer.OpenChannel,
-                    request_deserializer=rpc__pb2.OpenChannelRequest.FromString,
-                    response_serializer=rpc__pb2.OpenStatusUpdate.SerializeToString,
+                    request_deserializer=lightning__pb2.OpenChannelRequest.FromString,
+                    response_serializer=lightning__pb2.OpenStatusUpdate.SerializeToString,
+            ),
+            'BatchOpenChannel': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatchOpenChannel,
+                    request_deserializer=lightning__pb2.BatchOpenChannelRequest.FromString,
+                    response_serializer=lightning__pb2.BatchOpenChannelResponse.SerializeToString,
             ),
             'FundingStateStep': grpc.unary_unary_rpc_method_handler(
                     servicer.FundingStateStep,
-                    request_deserializer=rpc__pb2.FundingTransitionMsg.FromString,
-                    response_serializer=rpc__pb2.FundingStateStepResp.SerializeToString,
+                    request_deserializer=lightning__pb2.FundingTransitionMsg.FromString,
+                    response_serializer=lightning__pb2.FundingStateStepResp.SerializeToString,
             ),
             'ChannelAcceptor': grpc.stream_stream_rpc_method_handler(
                     servicer.ChannelAcceptor,
-                    request_deserializer=rpc__pb2.ChannelAcceptResponse.FromString,
-                    response_serializer=rpc__pb2.ChannelAcceptRequest.SerializeToString,
+                    request_deserializer=lightning__pb2.ChannelAcceptResponse.FromString,
+                    response_serializer=lightning__pb2.ChannelAcceptRequest.SerializeToString,
             ),
             'CloseChannel': grpc.unary_stream_rpc_method_handler(
                     servicer.CloseChannel,
-                    request_deserializer=rpc__pb2.CloseChannelRequest.FromString,
-                    response_serializer=rpc__pb2.CloseStatusUpdate.SerializeToString,
+                    request_deserializer=lightning__pb2.CloseChannelRequest.FromString,
+                    response_serializer=lightning__pb2.CloseStatusUpdate.SerializeToString,
             ),
             'AbandonChannel': grpc.unary_unary_rpc_method_handler(
                     servicer.AbandonChannel,
-                    request_deserializer=rpc__pb2.AbandonChannelRequest.FromString,
-                    response_serializer=rpc__pb2.AbandonChannelResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.AbandonChannelRequest.FromString,
+                    response_serializer=lightning__pb2.AbandonChannelResponse.SerializeToString,
             ),
             'SendPayment': grpc.stream_stream_rpc_method_handler(
                     servicer.SendPayment,
-                    request_deserializer=rpc__pb2.SendRequest.FromString,
-                    response_serializer=rpc__pb2.SendResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendRequest.FromString,
+                    response_serializer=lightning__pb2.SendResponse.SerializeToString,
             ),
             'SendPaymentSync': grpc.unary_unary_rpc_method_handler(
                     servicer.SendPaymentSync,
-                    request_deserializer=rpc__pb2.SendRequest.FromString,
-                    response_serializer=rpc__pb2.SendResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendRequest.FromString,
+                    response_serializer=lightning__pb2.SendResponse.SerializeToString,
             ),
             'SendToRoute': grpc.stream_stream_rpc_method_handler(
                     servicer.SendToRoute,
-                    request_deserializer=rpc__pb2.SendToRouteRequest.FromString,
-                    response_serializer=rpc__pb2.SendResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendToRouteRequest.FromString,
+                    response_serializer=lightning__pb2.SendResponse.SerializeToString,
             ),
             'SendToRouteSync': grpc.unary_unary_rpc_method_handler(
                     servicer.SendToRouteSync,
-                    request_deserializer=rpc__pb2.SendToRouteRequest.FromString,
-                    response_serializer=rpc__pb2.SendResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.SendToRouteRequest.FromString,
+                    response_serializer=lightning__pb2.SendResponse.SerializeToString,
             ),
             'AddInvoice': grpc.unary_unary_rpc_method_handler(
                     servicer.AddInvoice,
-                    request_deserializer=rpc__pb2.Invoice.FromString,
-                    response_serializer=rpc__pb2.AddInvoiceResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.Invoice.FromString,
+                    response_serializer=lightning__pb2.AddInvoiceResponse.SerializeToString,
             ),
             'ListInvoices': grpc.unary_unary_rpc_method_handler(
                     servicer.ListInvoices,
-                    request_deserializer=rpc__pb2.ListInvoiceRequest.FromString,
-                    response_serializer=rpc__pb2.ListInvoiceResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListInvoiceRequest.FromString,
+                    response_serializer=lightning__pb2.ListInvoiceResponse.SerializeToString,
             ),
             'LookupInvoice': grpc.unary_unary_rpc_method_handler(
                     servicer.LookupInvoice,
-                    request_deserializer=rpc__pb2.PaymentHash.FromString,
-                    response_serializer=rpc__pb2.Invoice.SerializeToString,
+                    request_deserializer=lightning__pb2.PaymentHash.FromString,
+                    response_serializer=lightning__pb2.Invoice.SerializeToString,
             ),
             'SubscribeInvoices': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeInvoices,
-                    request_deserializer=rpc__pb2.InvoiceSubscription.FromString,
-                    response_serializer=rpc__pb2.Invoice.SerializeToString,
+                    request_deserializer=lightning__pb2.InvoiceSubscription.FromString,
+                    response_serializer=lightning__pb2.Invoice.SerializeToString,
             ),
             'DecodePayReq': grpc.unary_unary_rpc_method_handler(
                     servicer.DecodePayReq,
-                    request_deserializer=rpc__pb2.PayReqString.FromString,
-                    response_serializer=rpc__pb2.PayReq.SerializeToString,
+                    request_deserializer=lightning__pb2.PayReqString.FromString,
+                    response_serializer=lightning__pb2.PayReq.SerializeToString,
             ),
             'ListPayments': grpc.unary_unary_rpc_method_handler(
                     servicer.ListPayments,
-                    request_deserializer=rpc__pb2.ListPaymentsRequest.FromString,
-                    response_serializer=rpc__pb2.ListPaymentsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListPaymentsRequest.FromString,
+                    response_serializer=lightning__pb2.ListPaymentsResponse.SerializeToString,
+            ),
+            'DeletePayment': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeletePayment,
+                    request_deserializer=lightning__pb2.DeletePaymentRequest.FromString,
+                    response_serializer=lightning__pb2.DeletePaymentResponse.SerializeToString,
             ),
             'DeleteAllPayments': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteAllPayments,
-                    request_deserializer=rpc__pb2.DeleteAllPaymentsRequest.FromString,
-                    response_serializer=rpc__pb2.DeleteAllPaymentsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.DeleteAllPaymentsRequest.FromString,
+                    response_serializer=lightning__pb2.DeleteAllPaymentsResponse.SerializeToString,
             ),
             'DescribeGraph': grpc.unary_unary_rpc_method_handler(
                     servicer.DescribeGraph,
-                    request_deserializer=rpc__pb2.ChannelGraphRequest.FromString,
-                    response_serializer=rpc__pb2.ChannelGraph.SerializeToString,
+                    request_deserializer=lightning__pb2.ChannelGraphRequest.FromString,
+                    response_serializer=lightning__pb2.ChannelGraph.SerializeToString,
             ),
             'GetNodeMetrics': grpc.unary_unary_rpc_method_handler(
                     servicer.GetNodeMetrics,
-                    request_deserializer=rpc__pb2.NodeMetricsRequest.FromString,
-                    response_serializer=rpc__pb2.NodeMetricsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.NodeMetricsRequest.FromString,
+                    response_serializer=lightning__pb2.NodeMetricsResponse.SerializeToString,
             ),
             'GetChanInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetChanInfo,
-                    request_deserializer=rpc__pb2.ChanInfoRequest.FromString,
-                    response_serializer=rpc__pb2.ChannelEdge.SerializeToString,
+                    request_deserializer=lightning__pb2.ChanInfoRequest.FromString,
+                    response_serializer=lightning__pb2.ChannelEdge.SerializeToString,
             ),
             'GetNodeInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetNodeInfo,
-                    request_deserializer=rpc__pb2.NodeInfoRequest.FromString,
-                    response_serializer=rpc__pb2.NodeInfo.SerializeToString,
+                    request_deserializer=lightning__pb2.NodeInfoRequest.FromString,
+                    response_serializer=lightning__pb2.NodeInfo.SerializeToString,
             ),
             'QueryRoutes': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryRoutes,
-                    request_deserializer=rpc__pb2.QueryRoutesRequest.FromString,
-                    response_serializer=rpc__pb2.QueryRoutesResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.QueryRoutesRequest.FromString,
+                    response_serializer=lightning__pb2.QueryRoutesResponse.SerializeToString,
             ),
             'GetNetworkInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetNetworkInfo,
-                    request_deserializer=rpc__pb2.NetworkInfoRequest.FromString,
-                    response_serializer=rpc__pb2.NetworkInfo.SerializeToString,
+                    request_deserializer=lightning__pb2.NetworkInfoRequest.FromString,
+                    response_serializer=lightning__pb2.NetworkInfo.SerializeToString,
             ),
             'StopDaemon': grpc.unary_unary_rpc_method_handler(
                     servicer.StopDaemon,
-                    request_deserializer=rpc__pb2.StopRequest.FromString,
-                    response_serializer=rpc__pb2.StopResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.StopRequest.FromString,
+                    response_serializer=lightning__pb2.StopResponse.SerializeToString,
             ),
             'SubscribeChannelGraph': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeChannelGraph,
-                    request_deserializer=rpc__pb2.GraphTopologySubscription.FromString,
-                    response_serializer=rpc__pb2.GraphTopologyUpdate.SerializeToString,
+                    request_deserializer=lightning__pb2.GraphTopologySubscription.FromString,
+                    response_serializer=lightning__pb2.GraphTopologyUpdate.SerializeToString,
             ),
             'DebugLevel': grpc.unary_unary_rpc_method_handler(
                     servicer.DebugLevel,
-                    request_deserializer=rpc__pb2.DebugLevelRequest.FromString,
-                    response_serializer=rpc__pb2.DebugLevelResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.DebugLevelRequest.FromString,
+                    response_serializer=lightning__pb2.DebugLevelResponse.SerializeToString,
             ),
             'FeeReport': grpc.unary_unary_rpc_method_handler(
                     servicer.FeeReport,
-                    request_deserializer=rpc__pb2.FeeReportRequest.FromString,
-                    response_serializer=rpc__pb2.FeeReportResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.FeeReportRequest.FromString,
+                    response_serializer=lightning__pb2.FeeReportResponse.SerializeToString,
             ),
             'UpdateChannelPolicy': grpc.unary_unary_rpc_method_handler(
                     servicer.UpdateChannelPolicy,
-                    request_deserializer=rpc__pb2.PolicyUpdateRequest.FromString,
-                    response_serializer=rpc__pb2.PolicyUpdateResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.PolicyUpdateRequest.FromString,
+                    response_serializer=lightning__pb2.PolicyUpdateResponse.SerializeToString,
             ),
             'ForwardingHistory': grpc.unary_unary_rpc_method_handler(
                     servicer.ForwardingHistory,
-                    request_deserializer=rpc__pb2.ForwardingHistoryRequest.FromString,
-                    response_serializer=rpc__pb2.ForwardingHistoryResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ForwardingHistoryRequest.FromString,
+                    response_serializer=lightning__pb2.ForwardingHistoryResponse.SerializeToString,
             ),
             'ExportChannelBackup': grpc.unary_unary_rpc_method_handler(
                     servicer.ExportChannelBackup,
-                    request_deserializer=rpc__pb2.ExportChannelBackupRequest.FromString,
-                    response_serializer=rpc__pb2.ChannelBackup.SerializeToString,
+                    request_deserializer=lightning__pb2.ExportChannelBackupRequest.FromString,
+                    response_serializer=lightning__pb2.ChannelBackup.SerializeToString,
             ),
             'ExportAllChannelBackups': grpc.unary_unary_rpc_method_handler(
                     servicer.ExportAllChannelBackups,
-                    request_deserializer=rpc__pb2.ChanBackupExportRequest.FromString,
-                    response_serializer=rpc__pb2.ChanBackupSnapshot.SerializeToString,
+                    request_deserializer=lightning__pb2.ChanBackupExportRequest.FromString,
+                    response_serializer=lightning__pb2.ChanBackupSnapshot.SerializeToString,
             ),
             'VerifyChanBackup': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyChanBackup,
-                    request_deserializer=rpc__pb2.ChanBackupSnapshot.FromString,
-                    response_serializer=rpc__pb2.VerifyChanBackupResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ChanBackupSnapshot.FromString,
+                    response_serializer=lightning__pb2.VerifyChanBackupResponse.SerializeToString,
             ),
             'RestoreChannelBackups': grpc.unary_unary_rpc_method_handler(
                     servicer.RestoreChannelBackups,
-                    request_deserializer=rpc__pb2.RestoreChanBackupRequest.FromString,
-                    response_serializer=rpc__pb2.RestoreBackupResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.RestoreChanBackupRequest.FromString,
+                    response_serializer=lightning__pb2.RestoreBackupResponse.SerializeToString,
             ),
             'SubscribeChannelBackups': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeChannelBackups,
-                    request_deserializer=rpc__pb2.ChannelBackupSubscription.FromString,
-                    response_serializer=rpc__pb2.ChanBackupSnapshot.SerializeToString,
+                    request_deserializer=lightning__pb2.ChannelBackupSubscription.FromString,
+                    response_serializer=lightning__pb2.ChanBackupSnapshot.SerializeToString,
             ),
             'BakeMacaroon': grpc.unary_unary_rpc_method_handler(
                     servicer.BakeMacaroon,
-                    request_deserializer=rpc__pb2.BakeMacaroonRequest.FromString,
-                    response_serializer=rpc__pb2.BakeMacaroonResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.BakeMacaroonRequest.FromString,
+                    response_serializer=lightning__pb2.BakeMacaroonResponse.SerializeToString,
             ),
             'ListMacaroonIDs': grpc.unary_unary_rpc_method_handler(
                     servicer.ListMacaroonIDs,
-                    request_deserializer=rpc__pb2.ListMacaroonIDsRequest.FromString,
-                    response_serializer=rpc__pb2.ListMacaroonIDsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListMacaroonIDsRequest.FromString,
+                    response_serializer=lightning__pb2.ListMacaroonIDsResponse.SerializeToString,
             ),
             'DeleteMacaroonID': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteMacaroonID,
-                    request_deserializer=rpc__pb2.DeleteMacaroonIDRequest.FromString,
-                    response_serializer=rpc__pb2.DeleteMacaroonIDResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.DeleteMacaroonIDRequest.FromString,
+                    response_serializer=lightning__pb2.DeleteMacaroonIDResponse.SerializeToString,
             ),
             'ListPermissions': grpc.unary_unary_rpc_method_handler(
                     servicer.ListPermissions,
-                    request_deserializer=rpc__pb2.ListPermissionsRequest.FromString,
-                    response_serializer=rpc__pb2.ListPermissionsResponse.SerializeToString,
+                    request_deserializer=lightning__pb2.ListPermissionsRequest.FromString,
+                    response_serializer=lightning__pb2.ListPermissionsResponse.SerializeToString,
+            ),
+            'CheckMacaroonPermissions': grpc.unary_unary_rpc_method_handler(
+                    servicer.CheckMacaroonPermissions,
+                    request_deserializer=lightning__pb2.CheckMacPermRequest.FromString,
+                    response_serializer=lightning__pb2.CheckMacPermResponse.SerializeToString,
+            ),
+            'RegisterRPCMiddleware': grpc.stream_stream_rpc_method_handler(
+                    servicer.RegisterRPCMiddleware,
+                    request_deserializer=lightning__pb2.RPCMiddlewareResponse.FromString,
+                    response_serializer=lightning__pb2.RPCMiddlewareRequest.SerializeToString,
+            ),
+            'SendCustomMessage': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendCustomMessage,
+                    request_deserializer=lightning__pb2.SendCustomMessageRequest.FromString,
+                    response_serializer=lightning__pb2.SendCustomMessageResponse.SerializeToString,
+            ),
+            'SubscribeCustomMessages': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeCustomMessages,
+                    request_deserializer=lightning__pb2.SubscribeCustomMessagesRequest.FromString,
+                    response_serializer=lightning__pb2.CustomMessage.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1337,8 +1465,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/WalletBalance',
-            rpc__pb2.WalletBalanceRequest.SerializeToString,
-            rpc__pb2.WalletBalanceResponse.FromString,
+            lightning__pb2.WalletBalanceRequest.SerializeToString,
+            lightning__pb2.WalletBalanceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1354,8 +1482,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ChannelBalance',
-            rpc__pb2.ChannelBalanceRequest.SerializeToString,
-            rpc__pb2.ChannelBalanceResponse.FromString,
+            lightning__pb2.ChannelBalanceRequest.SerializeToString,
+            lightning__pb2.ChannelBalanceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1371,8 +1499,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetTransactions',
-            rpc__pb2.GetTransactionsRequest.SerializeToString,
-            rpc__pb2.TransactionDetails.FromString,
+            lightning__pb2.GetTransactionsRequest.SerializeToString,
+            lightning__pb2.TransactionDetails.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1388,8 +1516,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/EstimateFee',
-            rpc__pb2.EstimateFeeRequest.SerializeToString,
-            rpc__pb2.EstimateFeeResponse.FromString,
+            lightning__pb2.EstimateFeeRequest.SerializeToString,
+            lightning__pb2.EstimateFeeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1405,8 +1533,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SendCoins',
-            rpc__pb2.SendCoinsRequest.SerializeToString,
-            rpc__pb2.SendCoinsResponse.FromString,
+            lightning__pb2.SendCoinsRequest.SerializeToString,
+            lightning__pb2.SendCoinsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1422,8 +1550,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListUnspent',
-            rpc__pb2.ListUnspentRequest.SerializeToString,
-            rpc__pb2.ListUnspentResponse.FromString,
+            lightning__pb2.ListUnspentRequest.SerializeToString,
+            lightning__pb2.ListUnspentResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1439,8 +1567,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeTransactions',
-            rpc__pb2.GetTransactionsRequest.SerializeToString,
-            rpc__pb2.Transaction.FromString,
+            lightning__pb2.GetTransactionsRequest.SerializeToString,
+            lightning__pb2.Transaction.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1456,8 +1584,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SendMany',
-            rpc__pb2.SendManyRequest.SerializeToString,
-            rpc__pb2.SendManyResponse.FromString,
+            lightning__pb2.SendManyRequest.SerializeToString,
+            lightning__pb2.SendManyResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1473,8 +1601,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/NewAddress',
-            rpc__pb2.NewAddressRequest.SerializeToString,
-            rpc__pb2.NewAddressResponse.FromString,
+            lightning__pb2.NewAddressRequest.SerializeToString,
+            lightning__pb2.NewAddressResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1490,8 +1618,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SignMessage',
-            rpc__pb2.SignMessageRequest.SerializeToString,
-            rpc__pb2.SignMessageResponse.FromString,
+            lightning__pb2.SignMessageRequest.SerializeToString,
+            lightning__pb2.SignMessageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1507,8 +1635,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/VerifyMessage',
-            rpc__pb2.VerifyMessageRequest.SerializeToString,
-            rpc__pb2.VerifyMessageResponse.FromString,
+            lightning__pb2.VerifyMessageRequest.SerializeToString,
+            lightning__pb2.VerifyMessageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1524,8 +1652,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ConnectPeer',
-            rpc__pb2.ConnectPeerRequest.SerializeToString,
-            rpc__pb2.ConnectPeerResponse.FromString,
+            lightning__pb2.ConnectPeerRequest.SerializeToString,
+            lightning__pb2.ConnectPeerResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1541,8 +1669,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DisconnectPeer',
-            rpc__pb2.DisconnectPeerRequest.SerializeToString,
-            rpc__pb2.DisconnectPeerResponse.FromString,
+            lightning__pb2.DisconnectPeerRequest.SerializeToString,
+            lightning__pb2.DisconnectPeerResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1558,8 +1686,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListPeers',
-            rpc__pb2.ListPeersRequest.SerializeToString,
-            rpc__pb2.ListPeersResponse.FromString,
+            lightning__pb2.ListPeersRequest.SerializeToString,
+            lightning__pb2.ListPeersResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1575,8 +1703,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribePeerEvents',
-            rpc__pb2.PeerEventSubscription.SerializeToString,
-            rpc__pb2.PeerEvent.FromString,
+            lightning__pb2.PeerEventSubscription.SerializeToString,
+            lightning__pb2.PeerEvent.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1592,8 +1720,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetInfo',
-            rpc__pb2.GetInfoRequest.SerializeToString,
-            rpc__pb2.GetInfoResponse.FromString,
+            lightning__pb2.GetInfoRequest.SerializeToString,
+            lightning__pb2.GetInfoResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1609,8 +1737,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetRecoveryInfo',
-            rpc__pb2.GetRecoveryInfoRequest.SerializeToString,
-            rpc__pb2.GetRecoveryInfoResponse.FromString,
+            lightning__pb2.GetRecoveryInfoRequest.SerializeToString,
+            lightning__pb2.GetRecoveryInfoResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1626,8 +1754,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/PendingChannels',
-            rpc__pb2.PendingChannelsRequest.SerializeToString,
-            rpc__pb2.PendingChannelsResponse.FromString,
+            lightning__pb2.PendingChannelsRequest.SerializeToString,
+            lightning__pb2.PendingChannelsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1643,8 +1771,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListChannels',
-            rpc__pb2.ListChannelsRequest.SerializeToString,
-            rpc__pb2.ListChannelsResponse.FromString,
+            lightning__pb2.ListChannelsRequest.SerializeToString,
+            lightning__pb2.ListChannelsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1660,8 +1788,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeChannelEvents',
-            rpc__pb2.ChannelEventSubscription.SerializeToString,
-            rpc__pb2.ChannelEventUpdate.FromString,
+            lightning__pb2.ChannelEventSubscription.SerializeToString,
+            lightning__pb2.ChannelEventUpdate.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1677,8 +1805,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ClosedChannels',
-            rpc__pb2.ClosedChannelsRequest.SerializeToString,
-            rpc__pb2.ClosedChannelsResponse.FromString,
+            lightning__pb2.ClosedChannelsRequest.SerializeToString,
+            lightning__pb2.ClosedChannelsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1694,8 +1822,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/OpenChannelSync',
-            rpc__pb2.OpenChannelRequest.SerializeToString,
-            rpc__pb2.ChannelPoint.FromString,
+            lightning__pb2.OpenChannelRequest.SerializeToString,
+            lightning__pb2.ChannelPoint.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1711,8 +1839,25 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/OpenChannel',
-            rpc__pb2.OpenChannelRequest.SerializeToString,
-            rpc__pb2.OpenStatusUpdate.FromString,
+            lightning__pb2.OpenChannelRequest.SerializeToString,
+            lightning__pb2.OpenStatusUpdate.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def BatchOpenChannel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/BatchOpenChannel',
+            lightning__pb2.BatchOpenChannelRequest.SerializeToString,
+            lightning__pb2.BatchOpenChannelResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1728,8 +1873,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/FundingStateStep',
-            rpc__pb2.FundingTransitionMsg.SerializeToString,
-            rpc__pb2.FundingStateStepResp.FromString,
+            lightning__pb2.FundingTransitionMsg.SerializeToString,
+            lightning__pb2.FundingStateStepResp.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1745,8 +1890,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.stream_stream(request_iterator, target, '/lnrpc.Lightning/ChannelAcceptor',
-            rpc__pb2.ChannelAcceptResponse.SerializeToString,
-            rpc__pb2.ChannelAcceptRequest.FromString,
+            lightning__pb2.ChannelAcceptResponse.SerializeToString,
+            lightning__pb2.ChannelAcceptRequest.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1762,8 +1907,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/CloseChannel',
-            rpc__pb2.CloseChannelRequest.SerializeToString,
-            rpc__pb2.CloseStatusUpdate.FromString,
+            lightning__pb2.CloseChannelRequest.SerializeToString,
+            lightning__pb2.CloseStatusUpdate.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1779,8 +1924,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/AbandonChannel',
-            rpc__pb2.AbandonChannelRequest.SerializeToString,
-            rpc__pb2.AbandonChannelResponse.FromString,
+            lightning__pb2.AbandonChannelRequest.SerializeToString,
+            lightning__pb2.AbandonChannelResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1796,8 +1941,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.stream_stream(request_iterator, target, '/lnrpc.Lightning/SendPayment',
-            rpc__pb2.SendRequest.SerializeToString,
-            rpc__pb2.SendResponse.FromString,
+            lightning__pb2.SendRequest.SerializeToString,
+            lightning__pb2.SendResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1813,8 +1958,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SendPaymentSync',
-            rpc__pb2.SendRequest.SerializeToString,
-            rpc__pb2.SendResponse.FromString,
+            lightning__pb2.SendRequest.SerializeToString,
+            lightning__pb2.SendResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1830,8 +1975,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.stream_stream(request_iterator, target, '/lnrpc.Lightning/SendToRoute',
-            rpc__pb2.SendToRouteRequest.SerializeToString,
-            rpc__pb2.SendResponse.FromString,
+            lightning__pb2.SendToRouteRequest.SerializeToString,
+            lightning__pb2.SendResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1847,8 +1992,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SendToRouteSync',
-            rpc__pb2.SendToRouteRequest.SerializeToString,
-            rpc__pb2.SendResponse.FromString,
+            lightning__pb2.SendToRouteRequest.SerializeToString,
+            lightning__pb2.SendResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1864,8 +2009,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/AddInvoice',
-            rpc__pb2.Invoice.SerializeToString,
-            rpc__pb2.AddInvoiceResponse.FromString,
+            lightning__pb2.Invoice.SerializeToString,
+            lightning__pb2.AddInvoiceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1881,8 +2026,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListInvoices',
-            rpc__pb2.ListInvoiceRequest.SerializeToString,
-            rpc__pb2.ListInvoiceResponse.FromString,
+            lightning__pb2.ListInvoiceRequest.SerializeToString,
+            lightning__pb2.ListInvoiceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1898,8 +2043,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/LookupInvoice',
-            rpc__pb2.PaymentHash.SerializeToString,
-            rpc__pb2.Invoice.FromString,
+            lightning__pb2.PaymentHash.SerializeToString,
+            lightning__pb2.Invoice.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1915,8 +2060,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeInvoices',
-            rpc__pb2.InvoiceSubscription.SerializeToString,
-            rpc__pb2.Invoice.FromString,
+            lightning__pb2.InvoiceSubscription.SerializeToString,
+            lightning__pb2.Invoice.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1932,8 +2077,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DecodePayReq',
-            rpc__pb2.PayReqString.SerializeToString,
-            rpc__pb2.PayReq.FromString,
+            lightning__pb2.PayReqString.SerializeToString,
+            lightning__pb2.PayReq.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1949,8 +2094,25 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListPayments',
-            rpc__pb2.ListPaymentsRequest.SerializeToString,
-            rpc__pb2.ListPaymentsResponse.FromString,
+            lightning__pb2.ListPaymentsRequest.SerializeToString,
+            lightning__pb2.ListPaymentsResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DeletePayment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DeletePayment',
+            lightning__pb2.DeletePaymentRequest.SerializeToString,
+            lightning__pb2.DeletePaymentResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1966,8 +2128,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DeleteAllPayments',
-            rpc__pb2.DeleteAllPaymentsRequest.SerializeToString,
-            rpc__pb2.DeleteAllPaymentsResponse.FromString,
+            lightning__pb2.DeleteAllPaymentsRequest.SerializeToString,
+            lightning__pb2.DeleteAllPaymentsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -1983,8 +2145,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DescribeGraph',
-            rpc__pb2.ChannelGraphRequest.SerializeToString,
-            rpc__pb2.ChannelGraph.FromString,
+            lightning__pb2.ChannelGraphRequest.SerializeToString,
+            lightning__pb2.ChannelGraph.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2000,8 +2162,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetNodeMetrics',
-            rpc__pb2.NodeMetricsRequest.SerializeToString,
-            rpc__pb2.NodeMetricsResponse.FromString,
+            lightning__pb2.NodeMetricsRequest.SerializeToString,
+            lightning__pb2.NodeMetricsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2017,8 +2179,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetChanInfo',
-            rpc__pb2.ChanInfoRequest.SerializeToString,
-            rpc__pb2.ChannelEdge.FromString,
+            lightning__pb2.ChanInfoRequest.SerializeToString,
+            lightning__pb2.ChannelEdge.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2034,8 +2196,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetNodeInfo',
-            rpc__pb2.NodeInfoRequest.SerializeToString,
-            rpc__pb2.NodeInfo.FromString,
+            lightning__pb2.NodeInfoRequest.SerializeToString,
+            lightning__pb2.NodeInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2051,8 +2213,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/QueryRoutes',
-            rpc__pb2.QueryRoutesRequest.SerializeToString,
-            rpc__pb2.QueryRoutesResponse.FromString,
+            lightning__pb2.QueryRoutesRequest.SerializeToString,
+            lightning__pb2.QueryRoutesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2068,8 +2230,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/GetNetworkInfo',
-            rpc__pb2.NetworkInfoRequest.SerializeToString,
-            rpc__pb2.NetworkInfo.FromString,
+            lightning__pb2.NetworkInfoRequest.SerializeToString,
+            lightning__pb2.NetworkInfo.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2085,8 +2247,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/StopDaemon',
-            rpc__pb2.StopRequest.SerializeToString,
-            rpc__pb2.StopResponse.FromString,
+            lightning__pb2.StopRequest.SerializeToString,
+            lightning__pb2.StopResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2102,8 +2264,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeChannelGraph',
-            rpc__pb2.GraphTopologySubscription.SerializeToString,
-            rpc__pb2.GraphTopologyUpdate.FromString,
+            lightning__pb2.GraphTopologySubscription.SerializeToString,
+            lightning__pb2.GraphTopologyUpdate.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2119,8 +2281,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DebugLevel',
-            rpc__pb2.DebugLevelRequest.SerializeToString,
-            rpc__pb2.DebugLevelResponse.FromString,
+            lightning__pb2.DebugLevelRequest.SerializeToString,
+            lightning__pb2.DebugLevelResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2136,8 +2298,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/FeeReport',
-            rpc__pb2.FeeReportRequest.SerializeToString,
-            rpc__pb2.FeeReportResponse.FromString,
+            lightning__pb2.FeeReportRequest.SerializeToString,
+            lightning__pb2.FeeReportResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2153,8 +2315,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/UpdateChannelPolicy',
-            rpc__pb2.PolicyUpdateRequest.SerializeToString,
-            rpc__pb2.PolicyUpdateResponse.FromString,
+            lightning__pb2.PolicyUpdateRequest.SerializeToString,
+            lightning__pb2.PolicyUpdateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2170,8 +2332,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ForwardingHistory',
-            rpc__pb2.ForwardingHistoryRequest.SerializeToString,
-            rpc__pb2.ForwardingHistoryResponse.FromString,
+            lightning__pb2.ForwardingHistoryRequest.SerializeToString,
+            lightning__pb2.ForwardingHistoryResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2187,8 +2349,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ExportChannelBackup',
-            rpc__pb2.ExportChannelBackupRequest.SerializeToString,
-            rpc__pb2.ChannelBackup.FromString,
+            lightning__pb2.ExportChannelBackupRequest.SerializeToString,
+            lightning__pb2.ChannelBackup.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2204,8 +2366,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ExportAllChannelBackups',
-            rpc__pb2.ChanBackupExportRequest.SerializeToString,
-            rpc__pb2.ChanBackupSnapshot.FromString,
+            lightning__pb2.ChanBackupExportRequest.SerializeToString,
+            lightning__pb2.ChanBackupSnapshot.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2221,8 +2383,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/VerifyChanBackup',
-            rpc__pb2.ChanBackupSnapshot.SerializeToString,
-            rpc__pb2.VerifyChanBackupResponse.FromString,
+            lightning__pb2.ChanBackupSnapshot.SerializeToString,
+            lightning__pb2.VerifyChanBackupResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2238,8 +2400,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/RestoreChannelBackups',
-            rpc__pb2.RestoreChanBackupRequest.SerializeToString,
-            rpc__pb2.RestoreBackupResponse.FromString,
+            lightning__pb2.RestoreChanBackupRequest.SerializeToString,
+            lightning__pb2.RestoreBackupResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2255,8 +2417,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeChannelBackups',
-            rpc__pb2.ChannelBackupSubscription.SerializeToString,
-            rpc__pb2.ChanBackupSnapshot.FromString,
+            lightning__pb2.ChannelBackupSubscription.SerializeToString,
+            lightning__pb2.ChanBackupSnapshot.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2272,8 +2434,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/BakeMacaroon',
-            rpc__pb2.BakeMacaroonRequest.SerializeToString,
-            rpc__pb2.BakeMacaroonResponse.FromString,
+            lightning__pb2.BakeMacaroonRequest.SerializeToString,
+            lightning__pb2.BakeMacaroonResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2289,8 +2451,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListMacaroonIDs',
-            rpc__pb2.ListMacaroonIDsRequest.SerializeToString,
-            rpc__pb2.ListMacaroonIDsResponse.FromString,
+            lightning__pb2.ListMacaroonIDsRequest.SerializeToString,
+            lightning__pb2.ListMacaroonIDsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2306,8 +2468,8 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/DeleteMacaroonID',
-            rpc__pb2.DeleteMacaroonIDRequest.SerializeToString,
-            rpc__pb2.DeleteMacaroonIDResponse.FromString,
+            lightning__pb2.DeleteMacaroonIDRequest.SerializeToString,
+            lightning__pb2.DeleteMacaroonIDResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -2323,7 +2485,75 @@ class Lightning(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListPermissions',
-            rpc__pb2.ListPermissionsRequest.SerializeToString,
-            rpc__pb2.ListPermissionsResponse.FromString,
+            lightning__pb2.ListPermissionsRequest.SerializeToString,
+            lightning__pb2.ListPermissionsResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CheckMacaroonPermissions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/CheckMacaroonPermissions',
+            lightning__pb2.CheckMacPermRequest.SerializeToString,
+            lightning__pb2.CheckMacPermResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RegisterRPCMiddleware(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(request_iterator, target, '/lnrpc.Lightning/RegisterRPCMiddleware',
+            lightning__pb2.RPCMiddlewareResponse.SerializeToString,
+            lightning__pb2.RPCMiddlewareRequest.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendCustomMessage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/SendCustomMessage',
+            lightning__pb2.SendCustomMessageRequest.SerializeToString,
+            lightning__pb2.SendCustomMessageResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SubscribeCustomMessages(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeCustomMessages',
+            lightning__pb2.SubscribeCustomMessagesRequest.SerializeToString,
+            lightning__pb2.CustomMessage.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
