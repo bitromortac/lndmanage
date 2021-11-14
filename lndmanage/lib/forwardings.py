@@ -559,66 +559,42 @@ def get_forwarding_statistics_channels(node, time_interval_start,
     # join the two data sets:
     channels = node.get_unbalanced_channels(unbalancedness_greater_than=0.0)
 
-    # TODO: improve this code, don't repeat
     for k, c in channels.items():
-        try:  # channel forwarding statistics exists
-            chan_stats = statistics[c['chan_id']]
-            c['bandwidth_demand'] = max(
-                nan_to_zero(chan_stats['mean_forwarding_in']),
-                nan_to_zero(chan_stats['mean_forwarding_out'])
-            ) / c['capacity']
-            c['fees_total'] = chan_stats['fees_total']
-            # time interval may be zero, to avoid zero division, replace by NaN
-            try:
-                c['fees_total_per_week'] = chan_stats['fees_total'] \
-                    / (forwarding_analyzer.max_time_interval / 7)
-            except ZeroDivisionError:
-                c['fees_total_per_week'] = float('nan')
-            c['flow_direction'] = chan_stats['flow_direction']
-            c['median_forwarding_in'] = chan_stats['median_forwarding_in']
-            c['median_forwarding_out'] = chan_stats['median_forwarding_out']
-            c['mean_forwarding_in'] = chan_stats['mean_forwarding_in']
-            c['mean_forwarding_out'] = chan_stats['mean_forwarding_out']
-            c['number_forwardings'] = chan_stats['number_forwardings']
-            c['largest_forwarding_amount_in'] = \
-                chan_stats['largest_forwarding_amount_in']
-            c['largest_forwarding_amount_out'] = \
-                chan_stats['largest_forwarding_amount_out']
-            c['total_forwarding_in'] = chan_stats['total_forwarding_in']
-            c['total_forwarding_out'] = chan_stats['total_forwarding_out']
+        # we may not have forwarding data for every channel
+        chan_stats = statistics.get(c['chan_id'], {})
+        c['forwardings_per_channel_age'] = chan_stats.get('number_forwardings', 0.01) / c['age']
+        c['bandwidth_demand'] = max(
+            nan_to_zero(chan_stats.get('mean_forwarding_in', 0)),
+            nan_to_zero(chan_stats.get('mean_forwarding_out', 0))
+        ) / c['capacity']
+        c['fees_total'] = chan_stats.get('fees_total', 0)
+        try:
+            c['fees_total_per_week'] = chan_stats.get('fees_total', 0) \
+                / (forwarding_analyzer.max_time_interval / 7)
+        except ZeroDivisionError:
+            c['fees_total_per_week'] = float('nan')
+        c['flow_direction'] = chan_stats.get('flow_direction', float('nan'))
+        c['median_forwarding_in'] = chan_stats.get('median_forwarding_in', float('nan'))
+        c['median_forwarding_out'] = chan_stats.get('median_forwarding_out', float('nan'))
+        c['mean_forwarding_in'] = chan_stats.get('mean_forwarding_in', float('nan'))
+        c['mean_forwarding_out'] = chan_stats.get('mean_forwarding_out', float('nan'))
+        c['number_forwardings'] = chan_stats.get('number_forwardings', 0)
+        c['largest_forwarding_amount_in'] = chan_stats.get('largest_forwarding_amount_in', float('nan'))
+        c['largest_forwarding_amount_out'] = chan_stats.get('largest_forwarding_amount_out', float('nan'))
+        c['total_forwarding_in'] = chan_stats.get('total_forwarding_in', 0)
+        c['total_forwarding_out'] = chan_stats.get('total_forwarding_out', 0)
 
-            # action required if flow same direction as unbalancedness
-            # or bandwidth demand too high
+        # action required if flow same direction as unbalancedness
+        # or bandwidth demand too high
+        # TODO: refine 'action_required' by better metric
+        if c['unbalancedness'] * c['flow_direction'] > 0 and abs(
+                c['unbalancedness']) > settings.UNBALANCED_CHANNEL:
+            c['action_required'] = True
+        else:
+            c['action_required'] = False
+        if c['bandwidth_demand'] > 0.5:
+            c['action_required'] = True
 
-            # TODO: refine 'action_required' by better metric
-            if c['unbalancedness'] * c['flow_direction'] > 0 and abs(
-                    c['unbalancedness']) > settings.UNBALANCED_CHANNEL:
-                c['action_required'] = True
-            else:
-                c['action_required'] = False
-            if c['bandwidth_demand'] > 0.5:
-                c['action_required'] = True
-
-        except KeyError:  # no forwarding statistics on channel is available
-            c['bandwidth_demand'] = 0
-            c['fees_total'] = 0
-            c['fees_total_per_week'] = 0
-            c['flow_direction'] = float('nan')
-            c['median_forwarding_out'] = float('nan')
-            c['median_forwarding_in'] = float('nan')
-            c['mean_forwarding_out'] = float('nan')
-            c['mean_forwarding_in'] = float('nan')
-            c['number_forwardings'] = 0
-            c['largest_forwarding_amount_in'] = float('nan')
-            c['largest_forwarding_amount_out'] = float('nan')
-            c['total_forwarding_in'] = float('nan')
-            c['total_forwarding_out'] = float('nan')
-            if abs(c['unbalancedness']) > settings.UNBALANCED_CHANNEL:
-                c['action_required'] = True
-            else:
-                c['action_required'] = False
-            if c['bandwidth_demand'] > 0.5:
-                c['action_required'] = True
     return channels
 
 

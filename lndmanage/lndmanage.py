@@ -129,7 +129,7 @@ class Parser(object):
             '--from-days-ago', default=60, type=int,
             help='time interval start (days ago)')
         parser_listchannels_hygiene.add_argument(
-            '--sort-by', default='rev_nfwd', type=str,
+            '--sort-by', default='rev_nfwd/a', type=str,
             help='sort by column (look at description)')
 
         # cmd: rebalance

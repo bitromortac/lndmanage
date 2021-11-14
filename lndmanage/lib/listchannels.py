@@ -98,6 +98,13 @@ PRINT_CHANNELS_FORMAT = {
         'align': '>',
         'convert': lambda x: float(x) / 1000
     },
+    'nfwd/a': {
+        'dict_key': 'forwardings_per_channel_age',
+        'description': 'number of forwardings per channel age in forwarding interval [1 / days]',
+        'width': 6,
+        'format': '6.2f',
+        'align': '>',
+    },
     'flow': {
         'dict_key': 'flow_direction',
         'description': 'flow direction (positive is outwards)',
@@ -440,7 +447,7 @@ class ListChannels(object):
 
         self._print_channels(
             channels,
-            columns='cid,age,nfwd,f/w,ulr,lb,cap,pbf,pfr,annotation,alias',
+            columns='cid,age,ini,nfwd/a,nfwd,f/w,ulr,lb,cap,lfr,pfr,annotation,alias',
             sort_dict=sort_dict)
 
     def _add_channel_annotations(self, channels):
