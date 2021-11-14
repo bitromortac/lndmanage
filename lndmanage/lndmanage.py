@@ -508,6 +508,8 @@ class Parser(object):
                 logger.error(f"Too expensive: {e}")
             except RebalanceFailure as e:
                 logger.error(f"Rebalance failure: {e}")
+            except KeyboardInterrupt:
+                pass
 
         elif args.cmd == 'circle':
             rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
