@@ -60,7 +60,6 @@ class Parser(object):
     def __init__(self):
 
         # figure out if lncli is available and determine path of executable
-        self.lncli = False
         self.lncli_path = None
 
         self.check_for_lncli()
@@ -326,7 +325,7 @@ class Parser(object):
             help='info string can represent a node public key or a channel id')
 
         # cmd: lncli
-        if self.lncli:
+        if self.lncli_path:
             parser_lncli = subparsers.add_parser(
             'lncli',
             help='execute lncli')
@@ -437,19 +436,18 @@ class Parser(object):
 
     def check_for_lncli(self):
         """
-        Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli
-        and self.lncli_path. Executable in LNDMANAGE_HOME is prioritized.
+        Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli_path.
+        Executable in LNDMANAGE_HOME is prioritized.
         """
         lncli_candidate = os.path.join(settings.home_dir, 'lncli')
 
         # look in lndmanage home folder after lncli
         if os.access(lncli_candidate, os.X_OK):
-            self.lncli = True
-            self.lncli_path = lncli_candidate
+            if self.lncli_path:
+                self.lncli_path = lncli_candidate
         # look in PATH
         else:
             path = spawn.find_executable('lncli')
-            self.lncli = True
             self.lncli_path = path
 
     def parse_arguments(self):
@@ -635,7 +633,7 @@ def main():
                     "You can type 'help' or 'exit'.")
         node = LndNode(config_file=config_file)
 
-        if parser.lncli:
+        if parser.lncli_path:
             logger.info("Enabled lncli: using " + parser.lncli_path)
 
         while True:
@@ -660,9 +658,13 @@ def main():
 
             # lncli execution
             if args_list[0] == 'lncli':
-                lncli = Lncli(parser.lncli_path, config_file)
-                lncli.lncli(args_list[1:])
-                continue
+                if parser.lncli_path:
+                    lncli = Lncli(parser.lncli_path, config_file)
+                    lncli.lncli(args_list[1:])
+                    continue
+                else:
+                    logger.info("lncli not enabled, put lncli in PATH or in ~/.lndmanage")
+                    continue
             try:
                 # need to run with parse_known_args to get an exception
                 args = parser.parser.parse_args(args_list)
