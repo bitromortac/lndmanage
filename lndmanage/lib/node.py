@@ -80,6 +80,7 @@ class LndNode(Node):
             self.config_file = config_file
             self.config = settings.read_config(self.config_file)
         else:
+            self.config_file = None
             self.config = None
         self.lnd_home = lnd_home
         self.lnd_host = lnd_host
