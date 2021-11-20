@@ -16,7 +16,7 @@ from lndmanage.lib.exceptions import (
 )
 from lndmanage.lib.fee_setting import FeeSetter, optimization_parameters
 from lndmanage.lib.info import Info
-from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.listings import ListChannels, ListPeers
 from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.openchannels import ChannelOpener
@@ -130,6 +130,30 @@ class Parser(object):
         parser_listchannels_hygiene.add_argument(
             '--sort-by', default='rev_nfwd/a', type=str,
             help='sort by column (look at description)')
+
+        # cmd: listpeers
+        self.parser_listpeers = subparsers.add_parser(
+            'listpeers',
+            help='lists peers with extended information',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        self.parser_listpeers.add_argument(
+            '--from-days-ago', default=60, type=int,
+            help='time interval start (days ago)')
+        self.parser_listpeers.add_argument(
+            '--sort-by', default='f/w', type=str,
+            help='sort by column (look at description)')
+        listpeers_subparsers = self.parser_listpeers.add_subparsers(
+            dest='subcmd')
+
+        # cmd: listpeers in
+        listpeers_subparsers.add_parser(
+            'in',
+            help="displays peers sorted by inward traffic")
+
+        # cmd: listpeers out
+        listpeers_subparsers.add_parser(
+            'out',
+            help="displays peers sorted by outward traffic")
 
         # cmd: rebalance
         self.parser_rebalance = subparsers.add_parser(
@@ -488,6 +512,32 @@ class Parser(object):
                             f"{args.from_days_ago} days.")
                 listchannels.print_channels_hygiene(
                     time_interval_start=time_from, sort_string=args.sort_by)
+
+        elif args.cmd == 'listpeers':
+            listpeers = ListPeers(node)
+            time_from = time.time() - args.from_days_ago * 24 * 60 * 60
+            time_to = time.time()
+            logger.info(
+                f"Forwardings from {args.from_days_ago} days ago"
+                f" to now are included.")
+            if not args.subcmd:
+                listpeers.print_all_nodes(
+                    time_interval_start=time_from,
+                    time_interval_end=time_to,
+                    sort_string=args.sort_by,
+                )
+            elif args.subcmd == 'in':
+                listpeers.print_all_nodes(
+                    time_interval_start=time_from,
+                    time_interval_end=time_to,
+                    sort_string='in',
+                )
+            elif args.subcmd == 'out':
+                listpeers.print_all_nodes(
+                    time_interval_start=time_from,
+                    time_interval_end=time_to,
+                    sort_string='out',
+                )
 
         elif args.cmd == 'rebalance':
             if args.target:

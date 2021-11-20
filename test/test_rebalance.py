@@ -4,7 +4,7 @@ Integration tests for rebalancing of channels.
 import time
 
 from lndmanage import settings
-from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
 from lndmanage.lib.exceptions import RebalanceCandidatesExhausted

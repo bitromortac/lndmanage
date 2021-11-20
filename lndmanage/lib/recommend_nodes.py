@@ -225,7 +225,7 @@ class RecommendNodes(object):
         """
         forwarding_analyzer = ForwardingAnalyzer(self.node)
         # analyze all historic forwardings
-        forwarding_analyzer.initialize_forwarding_data(0, time.time())
+        forwarding_analyzer.initialize_forwarding_stats(0, time.time())
         nodes = forwarding_analyzer.get_forwarding_statistics_nodes()
         nodes = self.add_metadata_and_remove_pruned(nodes)
         return nodes
@@ -244,7 +244,7 @@ class RecommendNodes(object):
         """
         forwarding_analyzer = ForwardingAnalyzer(self.node)
         # analyze all historic forwardings
-        forwarding_analyzer.initialize_forwarding_data(0, time.time())
+        forwarding_analyzer.initialize_forwarding_stats(0, time.time())
         nodes_in, nodes_out = forwarding_analyzer.simple_flow_analysis(
             last_forwardings_to_analyze)
         raw_nodes = nodes_out if out_direction else nodes_in

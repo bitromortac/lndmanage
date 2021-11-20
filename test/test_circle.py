@@ -3,7 +3,7 @@ Tests for circular self-payments.
 """
 import time
 
-from lndmanage.lib.listchannels import ListChannels
+from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.exceptions import (
     RebalanceFailure,
