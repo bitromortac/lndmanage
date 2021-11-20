@@ -19,6 +19,7 @@ lndmanage is a command line tool for advanced channel management of an
   * [```listchannels forwardings```](#forwarding-information): list forwarding statistics for each channel 
   * [```listchannels hygiene```](#active-channels): information for closing of active channels
   * [```listchannels inactive```](#inactive-channels): information on inactive channels
+* Peer listing [```listpeers```](#peer-listing): aggregated channel statistics
 * Fee updating [```update-fees```](#fee-optimization): increase revenue and rebalance by fee optimization
 * Rebalancing command [```rebalance```](#channel-rebalancing)
   * different rebalancing strategies can be chosen
@@ -42,6 +43,7 @@ positional arguments:
   {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees}
     status              display node status
     listchannels        lists channels with extended information [see also subcommands with -h]
+    listpeers           lists peers with extended information
     rebalance           rebalance a channel
     circle              circular self-payment
     recommend-nodes     recommends nodes [see also subcommands with -h]
@@ -370,6 +372,15 @@ may want to consider closing the channel. Another way to judge the reliability
 of the channel is to look at the proportion the channel stayed active when
 your node was active, given by the `ulr` column.
 
+## Peer listing
+The command `$ lndmanage listpeers` will show aggregated statistics for channels. This
+is important if one has for example a public channel (for route advertisement), but
+other channels are kept private. Care must be taken that always at least a single channel
+is public, which is indicated by the `maximum public channel capacity`. `listpeers` shows
+statistics  such as total incoming and outgoing forwarding amounts as well as total local
+and remote balance. Subcommands `listpeers in` or `listpeers out` can be used to sort by
+incoming or outgoing traffic.
+
 ## Channel Opening Strategies
 Which nodes best to connect to in the Lightning Network is ongoing research. 
 This also depends on your personal use case, whether you are a paying user, 
@@ -400,8 +411,8 @@ Another example of the command using 'bos-scores' is
   predominantly be of outbound type, the node will have a large
  demand for inbound liquidity, which is something you want to exploit as a
  routing node.
-* ```recommend-nodes second-neighbors```: One way of positioning the node
-better in the network is to get connected to as many as possible other nodes
+* ```recommend-nodes second-neighbors```: One way of improving the position of the node
+in the network is to get connected to as many as possible other nodes
 with a least number of additional hops. With the `second-neighbors` command
 you can get a list of nodes that would give you the most new second neighbors,
  if you would open up a channel with.
