@@ -6,6 +6,7 @@ import math
 import logging
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Tuple, List, Dict
+import time
 
 if TYPE_CHECKING:
     from lndmanage.lib.node import LndNode
@@ -849,7 +850,6 @@ class ListPeers(object):
 
 
 if __name__ == "__main__":
-    import time
     import logging.config
     from lndmanage.lib.node import LndNode
 
