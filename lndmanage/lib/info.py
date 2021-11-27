@@ -1,5 +1,6 @@
 import re
 import datetime
+from typing import Tuple
 
 from lndmanage.lib.network_info import NetworkAnalysis
 from lndmanage.lib import ln_utilities
@@ -105,17 +106,13 @@ class Info(object):
 
             self.print_node_info(general_info)
 
-    def parse(self, info):
-        """
-        Parse whether info contains a channel id or node public key and hand
+    def parse(self, info: str) -> Tuple[int, str]:
+        """Parse whether info contains a channel id or node public key and hand
         it back. If no info could be extracted, raise a ValueError.
 
-        :param info:
-        :type info: str
         :return: channel_id, node_pub_key
-        :rtype: int, str
         """
-        exp_channel_id = re.compile("^[0-9]{18}$")
+        exp_channel_id = re.compile("^[0-9]{13,20}$")
         exp_short_channel_id = re.compile("^[0-9]{6}x[0-9]{3}x[0-9]$")
         exp_chan_point = re.compile("^[a-z0-9]{64}:[0-9]$")
         exp_node_id = re.compile("^[a-z0-9]{66}$")
