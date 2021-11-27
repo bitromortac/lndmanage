@@ -305,7 +305,7 @@ class FeeSetter(object):
                     number_forwardings_out = 0
                 else:
                     flow = channel_stats["flow_direction"]
-                    fees_sat = channel_stats["fees_total"] / 1000
+                    fees_sat = channel_stats["fees_out"] / 1000
                     total_forwarding_in = channel_stats["total_forwarding_in"]
                     total_forwarding_out = channel_stats["total_forwarding_out"]
                     number_forwardings = channel_stats["number_forwardings"]

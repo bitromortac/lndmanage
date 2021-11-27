@@ -87,18 +87,34 @@ PRINT_CHANNELS_FORMAT = {
         "align": "^",
     },
     "fees": {
-        "dict_key": "fees_total",
+        "dict_key": "fees_out",
         "description": "total fees [sat]",
         "width": 7,
         "format": "7.2f",
         "align": ">",
         "convert": lambda x: float(x) / 1000,
     },
-    "f/w": {
-        "dict_key": "fees_total_per_week",
-        "description": "total fees per week [sat / week]",
-        "width": 6,
-        "format": "6.2f",
+    "fio": {
+        "dict_key": "fees_in_out",
+        "description": "total fees in and out [sat]",
+        "width": 7,
+        "format": "7.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
+    },
+    "fo/w": {
+        "dict_key": "fees_out_per_week",
+        "description": "total fees out per week [sat / week]",
+        "width": 7,
+        "format": "7.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
+    },
+    "fi/w": {
+        "dict_key": "fees_in_per_week",
+        "description": "total fees in per week [sat / week]",
+        "width": 7,
+        "format": "7.2f",
         "align": ">",
         "convert": lambda x: float(x) / 1000,
     },
@@ -337,11 +353,27 @@ PRINT_PEERS_FORMAT = {
         "format": "5.2f",
         "align": ">",
     },
-    "f/w": {
-        "dict_key": "fees_total_per_week",
-        "description": "total fees per week [sat / week]",
-        "width": 6,
-        "format": "6.2f",
+    "fio": {
+        "dict_key": "fees_in_out",
+        "description": "total fees in and out [sat]",
+        "width": 7,
+        "format": "7.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
+    },
+    "fo/w": {
+        "dict_key": "fees_out_per_week",
+        "description": "total fees out per week [sat / week]",
+        "width": 7,
+        "format": "7.2f",
+        "align": ">",
+        "convert": lambda x: float(x) / 1000,
+    },
+    "fi/w": {
+        "dict_key": "fees_in_per_week",
+        "description": "total fees per in week [sat / week]",
+        "width": 7,
+        "format": "7.2f",
         "align": ">",
         "convert": lambda x: float(x) / 1000,
     },
@@ -720,7 +752,7 @@ class ListChannels(object):
         _print_objects(
             channels,
             PRINT_CHANNELS_FORMAT,
-            columns="cid,nfwd,age,fees,f/w,flow,ub,bwd,r,"
+            columns="cid,nfwd,age,fees,fo/w,fi/w,flow,ub,bwd,r,"
             "cap,pbf,pfr,annotation,alias",
             sort_dict=sort_dict,
         )
@@ -741,7 +773,7 @@ class ListChannels(object):
         _print_objects(
             channels,
             PRINT_CHANNELS_FORMAT,
-            columns="cid,age,ini,nfwd/a,nfwd,f/w,ulr,lb,cap,lfr,pfr,annotation,alias",
+            columns="cid,age,ini,nfwd/a,nfwd,fo/w,ulr,lb,cap,lfr,pfr,annotation,alias",
             sort_dict=sort_dict,
         )
 
@@ -825,7 +857,7 @@ class ListPeers(object):
         self,
         time_interval_start: float,
         time_interval_end: float,
-        sort_string: str = "f/w",
+        sort_string: str = "fo/w",
     ):
         """Prints nodes with forwarding statistics."""
 
@@ -844,7 +876,7 @@ class ListPeers(object):
         _print_objects(
             nodes,
             PRINT_PEERS_FORMAT,
-            columns="nid,alias,nc,na,np,nfwd,flow,ub,f/w,mpc,lb,rb,in,out,lfr,rfr",
+            columns="nid,alias,nc,na,np,nfwd,flow,ub,fo/w,fi/w,mpc,lb,rb,in,out,lfr,rfr",
             sort_dict=sort_dict,
         )
 
@@ -862,5 +894,5 @@ if __name__ == "__main__":
     lp.print_all_nodes(
         time_interval_start=time.time() - 3600 * 24 * 14,
         time_interval_end=time.time(),
-        sort_string="f/w",
+        sort_string="fo/w",
     )

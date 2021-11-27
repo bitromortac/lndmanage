@@ -117,7 +117,7 @@ class Parser(object):
             '--to-days-ago', default=0, type=int,
             help='time interval end (days ago)')
         parser_listchannels_forwardings.add_argument(
-            '--sort-by', default='f/w', type=str,
+            '--sort-by', default='fo/w', type=str,
             help='sort by column (look at description)')
 
         # subcmd: listchannels hygiene
@@ -140,7 +140,7 @@ class Parser(object):
             '--from-days-ago', default=60, type=int,
             help='time interval start (days ago)')
         self.parser_listpeers.add_argument(
-            '--sort-by', default='f/w', type=str,
+            '--sort-by', default='fio', type=str,
             help='sort by column (look at description)')
         listpeers_subparsers = self.parser_listpeers.add_subparsers(
             dest='subcmd')

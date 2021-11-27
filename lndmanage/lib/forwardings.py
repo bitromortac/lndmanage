@@ -68,32 +68,34 @@ class ForwardingAnalyzer(object):
                     self.node_forwarding_stats[node_id_in].inward_forwardings.append(
                         f["amt_in"]
                     )
+                    self.node_forwarding_stats[node_id_in].fees_in.append(
+                        f["fee_msat"]
+                    )
                 if node_id_out:
                     self.node_forwarding_stats[node_id_out].outward_forwardings.append(
                         f["amt_out"]
                     )
-                    self.node_forwarding_stats[node_id_out].absolute_fees.append(
+                    self.node_forwarding_stats[node_id_out].fees_out.append(
                         f["fee_msat"]
-                    )
-                    self.node_forwarding_stats[node_id_out].effective_fees.append(
-                        f["effective_fee"]
                     )
                     self.node_forwarding_stats[node_id_out].timestamps.append(
                         f["timestamp"]
                     )
 
                 # channel statistics
+                # inward channel:
                 self.channel_forwarding_stats[channel_id_in].inward_forwardings.append(
                     f["amt_in"]
                 )
+                self.channel_forwarding_stats[channel_id_in].fees_in.append(
+                    f["fee_msat"]
+                )
+                # outward channel:
                 self.channel_forwarding_stats[
                     channel_id_out
                 ].outward_forwardings.append(f["amt_out"])
-                self.channel_forwarding_stats[channel_id_out].absolute_fees.append(
+                self.channel_forwarding_stats[channel_id_out].fees_out.append(
                     f["fee_msat"]
-                )
-                self.channel_forwarding_stats[channel_id_out].effective_fees.append(
-                    f["effective_fee"]
                 )
                 self.channel_forwarding_stats[channel_id_out].timestamps.append(
                     f["timestamp"]
@@ -113,8 +115,9 @@ class ForwardingAnalyzer(object):
 
         for k, c in self.channel_forwarding_stats.items():
             channel_statistics[k] = {
-                "effective_fee": c.effective_fee(),
-                "fees_total": c.fees_total(),
+                "fees_out": c.total_fees_out(),
+                "fees_in": c.total_fees_in(),
+                "fees_in_out": c.total_fees_in() + c.total_fees_out(),
                 "flow_direction": c.flow_direction(),
                 "mean_forwarding_in": c.mean_forwarding_in(),
                 "mean_forwarding_out": c.mean_forwarding_out(),
@@ -148,8 +151,9 @@ class ForwardingAnalyzer(object):
         for nid, node_stats in self.node_forwarding_stats.items():
             tot_in = node_stats.total_forwarding_in()
             tot_out = node_stats.total_forwarding_out()
-            forwarding_stats[nid]["effective_fee"] = node_stats.effective_fee()
-            forwarding_stats[nid]["fees_total"] = node_stats.fees_total()
+            forwarding_stats[nid]["fees_out"] = node_stats.total_fees_out()
+            forwarding_stats[nid]["fees_in"] = node_stats.total_fees_in()
+            forwarding_stats[nid]["fees_in_out"] = node_stats.total_fees_in() + node_stats.total_fees_out()
             forwarding_stats[nid]["flow_direction"] = (
                 -((float(tot_in) / (tot_in + tot_out)) - 0.5) / 0.5
             )
@@ -496,8 +500,8 @@ class ForwardingStatistics(object):
         self.inward_forwardings = []
         self.outward_forwardings = []
         self.timestamps = []
-        self.absolute_fees = []
-        self.effective_fees = []
+        self.fees_out = []
+        self.fees_in = []
 
     def total_forwarding_in(self) -> int:
         return sum(self.inward_forwardings)
@@ -517,11 +521,11 @@ class ForwardingStatistics(object):
     def median_forwarding_out(self) -> float:
         return np.median(self.outward_forwardings)
 
-    def fees_total(self) -> int:
-        return sum(self.absolute_fees)
+    def total_fees_out(self) -> int:
+        return sum(self.fees_out)
 
-    def effective_fee(self) -> float:
-        return np.mean(self.effective_fees)
+    def total_fees_in(self) -> int:
+        return sum(self.fees_in)
 
     def largest_forwarding_amount_out(self) -> int:
         return max(self.outward_forwardings, default=float("nan"))
@@ -648,8 +652,9 @@ def get_node_properites(
         except KeyError:  # we don't have forwarding data, populate with defaults
             node_properties_forwardings[node_id].update(
                 {
-                    "effective_fee": float("nan"),
-                    "fees_total": 0,
+                    "fees_out": 0,
+                    "fees_in": 0,
+                    "fees_in_out": 0,
                     "flow_direction": float("nan"),
                     "largest_forwarding_amount_in": float("nan"),
                     "largest_forwarding_amount_out": float("nan"),
@@ -668,12 +673,20 @@ def get_node_properites(
 
         try:
             node_properties_forwardings[node_id][
-                "fees_total_per_week"
-            ] = node_properties_forwardings[node_id]["fees_total"] / (
+                "fees_out_per_week"
+            ] = node_properties_forwardings[node_id]["fees_out"] / (
                 forwarding_analyzer.max_time_interval_days / 7
             )
         except ZeroDivisionError:
-            node_properties_forwardings[node_id]["fees_total_per_week"] = float("nan")
+            node_properties_forwardings[node_id]["fees_out_per_week"] = float("nan")
+        try:
+            node_properties_forwardings[node_id][
+                "fees_in_per_week"
+            ] = node_properties_forwardings[node_id]["fees_in"] / (
+                    forwarding_analyzer.max_time_interval_days / 7
+            )
+        except ZeroDivisionError:
+            node_properties_forwardings[node_id]["fees_in_per_week"] = float("nan")
 
     return node_properties_forwardings
 
@@ -713,13 +726,21 @@ def get_channel_properties(
             )
             / c["capacity"]
         )
-        c["fees_total"] = chan_stats.get("fees_total", 0)
+        c["fees_out"] = chan_stats.get("fees_out", 0)
+        c["fees_in"] = chan_stats.get("fees_in", 0)
+        c["fees_in_out"] = chan_stats.get("fees_in_out", 0)
         try:
-            c["fees_total_per_week"] = chan_stats.get("fees_total", 0) / (
+            c["fees_out_per_week"] = chan_stats.get("fees_out", 0) / (
                 forwarding_analyzer.max_time_interval_days / 7
             )
         except ZeroDivisionError:
-            c["fees_total_per_week"] = float("nan")
+            c["fees_out_per_week"] = float("nan")
+        try:
+            c["fees_in_per_week"] = chan_stats.get("fees_in", 0) / (
+                    forwarding_analyzer.max_time_interval_days / 7
+            )
+        except ZeroDivisionError:
+            c["fees_in_per_week"] = float("nan")
         c["flow_direction"] = chan_stats.get("flow_direction", float("nan"))
         c["median_forwarding_in"] = chan_stats.get("median_forwarding_in", float("nan"))
         c["median_forwarding_out"] = chan_stats.get(
