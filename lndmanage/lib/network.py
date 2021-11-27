@@ -76,7 +76,7 @@ class Network(object):
 
             self.graph.add_node(
                 n.pub_key,
-                alias=n.alias,
+                alias=n.alias.encode("ascii", "ignore").decode(),  # we remove non-ascii chars
                 last_update=n.last_update,
                 address=address,
                 color=n.color)

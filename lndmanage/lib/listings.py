@@ -844,7 +844,7 @@ class ListPeers(object):
         _print_objects(
             nodes,
             PRINT_PEERS_FORMAT,
-            columns="nid,nc,na,np,nfwd,flow,ub,f/w,in,out,mpc,lb,mlb,rb,mrb,lfr,rfr,alias",
+            columns="nid,alias,nc,na,np,nfwd,flow,ub,f/w,mpc,lb,rb,in,out,lfr,rfr",
             sort_dict=sort_dict,
         )
 
