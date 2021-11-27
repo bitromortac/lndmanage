@@ -467,8 +467,7 @@ class Parser(object):
 
         # look in lndmanage home folder after lncli
         if os.access(lncli_candidate, os.X_OK):
-            if self.lncli_path:
-                self.lncli_path = lncli_candidate
+            self.lncli_path = lncli_candidate
         # look in PATH
         else:
             path = spawn.find_executable('lncli')
