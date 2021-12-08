@@ -5,6 +5,8 @@ import pickle
 import networkx as nx
 
 from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
+from lndmanage.lib.liquidityhints import LiquidityHintMgr
+from lndmanage.lib.rating import ChannelRater
 from lndmanage import settings
 
 import logging
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class Network(object):
+class Network:
     """
     Contains the network graph.
 
@@ -26,8 +28,10 @@ class Network(object):
         logger.info("Initializing network graph.")
         self.node = node
         self.edges = {}
-        self.graph = nx.MultiDiGraph()
+        self.graph = nx.MultiGraph()
         self.cached_reading_graph_edges()
+        self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
+        self.channel_rater = ChannelRater(self)
 
     def cached_reading_graph_edges(self):
         """
@@ -90,45 +94,46 @@ class Network(object):
                 'last_update': e.last_update,
                 'channel_id': e.channel_id,
                 'chan_point': e.chan_point,
-                'node1_policy': {
-                    'time_lock_delta': e.node1_policy.time_lock_delta,
-                    'fee_base_msat': e.node1_policy.fee_base_msat,
-                    'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
-                    'last_update': e.node1_policy.last_update,
-                    'disabled': e.node1_policy.disabled
-                },
-                'node2_policy': {
-                    'time_lock_delta': e.node2_policy.time_lock_delta,
-                    'fee_base_msat': e.node2_policy.fee_base_msat,
-                    'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
-                    'last_update': e.node2_policy.last_update,
-                    'disabled': e.node2_policy.disabled
-                }}
+                'policies': {
+                    e.node1_pub > e.node2_pub: {
+                        'time_lock_delta': e.node1_policy.time_lock_delta,
+                        'fee_base_msat': e.node1_policy.fee_base_msat,
+                        'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
+                        'last_update': e.node1_policy.last_update,
+                        'disabled': e.node1_policy.disabled
+                    },
+                    e.node2_pub > e.node1_pub: {
+                        'time_lock_delta': e.node2_policy.time_lock_delta,
+                        'fee_base_msat': e.node2_policy.fee_base_msat,
+                        'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
+                        'last_update': e.node2_policy.last_update,
+                        'disabled': e.node2_policy.disabled
+                    }
+                }
+            }
 
             # add vertices to network graph for edge-based lookups
             self.graph.add_edge(
-                e.node2_pub,
-                e.node1_pub,
-                channel_id=e.channel_id,
-                last_update=e.last_update,
-                capacity=e.capacity,
-                fees={
-                    'time_lock_delta': e.node2_policy.time_lock_delta,
-                    'fee_base_msat': e.node2_policy.fee_base_msat,
-                    'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
-                    'disabled': e.node2_policy.disabled
-                })
-            self.graph.add_edge(
                 e.node1_pub,
                 e.node2_pub,
                 channel_id=e.channel_id,
                 last_update=e.last_update,
                 capacity=e.capacity,
                 fees={
-                    'time_lock_delta': e.node1_policy.time_lock_delta,
-                    'fee_base_msat': e.node1_policy.fee_base_msat,
-                    'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
-                    'disabled': e.node1_policy.disabled
+                    e.node2_pub > e.node1_pub:
+                        {
+                            'time_lock_delta': e.node2_policy.time_lock_delta,
+                            'fee_base_msat': e.node2_policy.fee_base_msat,
+                            'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
+                            'disabled': e.node2_policy.disabled
+                        },
+                    e.node1_pub > e.node2_pub:
+                        {
+                            'time_lock_delta': e.node1_policy.time_lock_delta,
+                            'fee_base_msat': e.node1_policy.fee_base_msat,
+                            'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
+                            'disabled': e.node1_policy.disabled
+                        },
                 })
 
     def number_channels(self, node_pub_key):
@@ -254,6 +259,6 @@ if __name__ == '__main__':
     logging.config.dictConfig(settings.logger_config)
 
     from lndmanage.lib.node import LndNode
-    nd = LndNode()
+    nd = LndNode('')
     print(f"Graph size: {nd.network.graph.size()}")
     print(f"Number of channels: {len(nd.network.edges.keys())}")

@@ -1,6 +1,6 @@
 import re
 import datetime
-from typing import Tuple
+from typing import Tuple, Dict
 
 from lndmanage.lib.network_info import NetworkAnalysis
 from lndmanage.lib import ln_utilities
@@ -140,12 +140,11 @@ class Info(object):
 
         return channel_id, node_pub_key
 
-    def print_channel_info(self, general_info):
+    def print_channel_info(self, general_info: Dict):
         """
         Prints the channel info with peer information.
 
         :param general_info: information about the channel in the public graph
-        :type general_info: dict
         """
 
         logger.info("-------- Channel info --------")
@@ -189,8 +188,9 @@ class Info(object):
         logger.info(f"{general_info['node1_alias']:^{COL_WIDTH}} | "
                     f"{general_info['node2_alias']:^{COL_WIDTH}}")
 
-        np1 = general_info['node1_policy']
-        np2 = general_info['node2_policy']
+        policies = general_info['policies']
+        np1 = policies[general_info['node1_pub'] > general_info['node2_pub']]
+        np2 = policies[general_info['node2_pub'] > general_info['node1_pub']]
         last_update_1 = np1['last_update']
         last_update_2 = np2['last_update']
 

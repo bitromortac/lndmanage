@@ -22,23 +22,15 @@ class RebalanceFailure(Exception):
     pass
 
 
-class RoutesExhausted(RebalanceFailure):
-    pass
-
-
-class RebalanceCandidatesExhausted(RebalanceFailure):
-    pass
-
-
 class NoRebalanceCandidates(RebalanceFailure):
     pass
 
 
-class RebalancingTrialsExhausted(RebalanceFailure):
+class NotEconomic(RebalanceFailure):
     pass
 
 
-class MultichannelInboundRebalanceFailure(RebalanceFailure):
+class RebalancingTrialsExhausted(RebalanceFailure):
     pass
 
 
@@ -71,6 +63,12 @@ class RouterRPCError(RPCError):
 
 
 class TemporaryChannelFailure(PaymentFailure):
+    def __init__(self, payment):
+        self.payment = payment
+        super().__init__()
+
+
+class TemporaryNodeFailure(PaymentFailure):
     def __init__(self, payment):
         self.payment = payment
         super().__init__()

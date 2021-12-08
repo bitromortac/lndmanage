@@ -7,11 +7,10 @@ from unittest import TestCase
 from lndmanage import settings
 from lndmanage.lib import openchannels
 
-from test.testnetwork import TestNetwork
-
 from test.testing_common import (
     lndmanage_home,
     test_graphs_paths,
+    TestNetwork,
 )
 
 import logging.config

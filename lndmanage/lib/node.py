@@ -61,7 +61,6 @@ class Node(object):
         self.total_private_channels = 0
         self.total_active_channels = 0
         self.blockheight = 0
-        self.channels = []
 
 
 class LndNode(Node):
@@ -90,9 +89,10 @@ class LndNode(Node):
         self._routerrpc = None
         self.connect_rpcs()
 
-        self.network = Network(self)
-        self.update_blockheight()
         self.set_info()
+        self.network = Network(self)
+        self.set_channel_summary()
+        self.update_blockheight()
 
     def connect_rpcs(self):
         """
@@ -252,6 +252,8 @@ class LndNode(Node):
                 raise OurNodeFailure("Not enough funds?")
             if failure.code == 15:
                 raise exceptions.TemporaryChannelFailure(payment)
+            elif failure.code == 19:
+                raise exceptions.TemporaryNodeFailure(payment)
             elif failure.code == 14:
                 raise exceptions.ChannelDisabled(payment)
             elif failure.code == 18:
@@ -296,6 +298,7 @@ class LndNode(Node):
         self.num_active_channels = raw_info.num_active_channels
         self.num_peers = raw_info.num_peers
 
+    def set_channel_summary(self):
         # TODO: remove the following code and implement an advanced status
         all_channels = self.get_open_channels(
             active_only=False, public_only=False)
@@ -353,23 +356,28 @@ class LndNode(Node):
                 # age could be zero right after channel becomes pending
                 sent_received_per_week = 0
 
-            # determine policy
+            # determine policy:
             try:
                 edge_info = self.network.edges[c.chan_id]
                 # interested in node2
+                policies = edge_info['policies']
                 if edge_info['node1_pub'] == self.pub_key:
-                    policy_peer = edge_info['node2_policy']
-                    policy_local = edge_info['node1_policy']
+                    policy_peer = policies[edge_info['node2_pub'] > edge_info['node1_pub']]
+                    policy_local = policies[edge_info['node1_pub'] > edge_info['node2_pub']]
                 else:  # interested in node1
-                    policy_peer = edge_info['node1_policy']
-                    policy_local = edge_info['node2_policy']
+                    policy_peer = policies[edge_info['node1_pub'] > edge_info['node2_pub']]
+                    policy_local = policies[edge_info['node2_pub'] > edge_info['node1_pub']]
             except KeyError:
                 # if channel is unknown in describegraph
                 # we need to set the fees to some error value
-                policy_peer = {'fee_base_msat': float(-999),
-                               'fee_rate_milli_msat': float(999)}
-                policy_local = {'fee_base_msat': float(-999),
-                                'fee_rate_milli_msat': float(999)}
+                policy_peer = {
+                    'fee_base_msat': float(-999),
+                    'fee_rate_milli_msat': float(999)
+                }
+                policy_local = {
+                    'fee_base_msat': float(-999),
+                    'fee_rate_milli_msat': float(999)
+                }
 
             # calculate last update (days ago)
             def convert_to_days_ago(timestamp):
@@ -410,6 +418,8 @@ class LndNode(Node):
                 'peer_fee_rate': policy_peer['fee_rate_milli_msat'],
                 'local_base_fee': policy_local['fee_base_msat'],
                 'local_fee_rate': policy_local['fee_rate_milli_msat'],
+                'local_chan_reserve_sat': c.local_chan_reserve_sat,
+                'remote_chan_reserve_sat': c.remote_chan_reserve_sat,
                 'initiator': c.initiator,
                 'last_update': last_update,
                 'last_update_local': last_update_local,
@@ -450,7 +460,7 @@ class LndNode(Node):
         channels = self.get_open_channels(public_only=False, active_only=False)
         return {k: c for k, c in channels.items() if not c['active']}
 
-    def get_all_channels(self):
+    def get_all_channels(self, excluded_channels: List[int] = None):
         """
         Returns all active and inactive channels.
 
@@ -459,7 +469,7 @@ class LndNode(Node):
         channels = self.get_open_channels(public_only=False, active_only=False)
         return channels
 
-    def get_unbalanced_channels(self, unbalancedness_greater_than=0.0):
+    def get_unbalanced_channels(self, unbalancedness_greater_than=0.0, excluded_channels: List[int] = None, public_only=True, active_only=True):
         """
         Gets all channels which have an absolute unbalancedness
         (-1...1, -1 for outbound unbalanced, 1 for inbound unbalanced)
@@ -469,12 +479,13 @@ class LndNode(Node):
         :return: all channels which are more unbalanced than the specified interval
         """
         self.public_active_channels = \
-            self.get_open_channels(public_only=True, active_only=True)
-        unbalanced_channels = {
+            self.get_open_channels(public_only=public_only, active_only=active_only)
+        channels = {
             k: c for k, c in self.public_active_channels.items()
             if abs(c['unbalancedness']) >= unbalancedness_greater_than
         }
-        return unbalanced_channels
+        channels = {k: v for k, v in channels.items() if k not in (excluded_channels if excluded_channels else [])}
+        return channels
 
     def get_channel_fee_policies(self):
         """
