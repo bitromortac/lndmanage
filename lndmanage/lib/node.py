@@ -47,7 +47,6 @@ OPEN_EXPIRY_TIME_MINUTES = 8
 class Node(object):
     """Bare node object with attributes."""
     def __init__(self):
-        logger.info("Initializing node interface.")
         self.alias = ''
         self.pub_key = ''
         self.total_capacity = 0

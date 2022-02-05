@@ -158,6 +158,7 @@ class Rebalancer(object):
                     logger.debug(f"Preimage: {result.preimage.hex()}")
                     logger.info("Success!\n")
                     report_success_up_to_failed_hop(failed_hop_index=None)
+                    self.node.network.save_liquidty_hints()
                     return route.total_fee_msat
 
                 if failed_hop:
@@ -186,6 +187,7 @@ class Rebalancer(object):
 
                     # report all the previous hops that they could route the amount
                     report_success_up_to_failed_hop(failed_hop)
+                    self.node.network.save_liquidty_hints()
             else:
                 raise DryRun
 

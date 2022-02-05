@@ -17,7 +17,7 @@ def new_test_graph(graph: Dict):
         pub_key = 'A'
 
     # we disable cached graph reading
-    with mock.patch.object(Network, 'cached_reading_graph_edges', return_value=None):
+    with mock.patch.object(Network, 'load_graph', return_value=None):
         network = Network(MockNode())
 
     # add nodes

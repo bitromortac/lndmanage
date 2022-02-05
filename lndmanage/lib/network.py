@@ -1,17 +1,30 @@
 import os
 import time
 import pickle
+from typing import Dict, TYPE_CHECKING
 
 import networkx as nx
 
+from lndmanage.lib.utilities import profiled
 from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
 from lndmanage.lib.liquidityhints import LiquidityHintMgr
 from lndmanage.lib.rating import ChannelRater
 from lndmanage import settings
 
+if TYPE_CHECKING:
+    from lndmanage.lib.node import LndNode
+
 import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+
+def make_cache_filename(filename: str):
+    """Creates the cache directory and gives back the absolute path to it for filename."""
+    cache_dir = os.path.join(settings.home_dir, 'cache')
+    if not os.path.exists(cache_dir):
+        os.mkdir(cache_dir)
+    return os.path.join(cache_dir, filename)
 
 
 class Network:
@@ -20,29 +33,26 @@ class Network:
 
     The graph is received from the LND API or from a cached file,
     which contains the graph younger than `settings.CACHING_RETENTION_MINUTES`.
-
-    :param node: :class:`lib.node.LndNode` object
     """
+    node: 'LndNode'
+    edges: Dict
+    graph: nx.MultiGraph
+    liquidity_hints: LiquidityHintMgr
 
-    def __init__(self, node):
-        logger.info("Initializing network graph.")
+    def __init__(self, node: 'LndNode'):
         self.node = node
-        self.edges = {}
-        self.graph = nx.MultiGraph()
-        self.cached_reading_graph_edges()
-        self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
+        self.load_graph()
+        self.load_liquidity_hints()
         self.channel_rater = ChannelRater(self)
 
-    def cached_reading_graph_edges(self):
+    @profiled
+    def load_graph(self):
         """
         Checks if networkx and edges dictionary pickles are present. If they are older than
         CACHING_RETENTION_MINUTES, make fresh pickles, else read them from the files.
         """
-        cache_dir = os.path.join(settings.home_dir, 'cache')
-        if not os.path.exists(cache_dir):
-            os.mkdir(cache_dir)
-        cache_edges_filename = os.path.join(cache_dir, 'graph.gpickle')
-        cache_graph_filename = os.path.join(cache_dir, 'edges.gpickle')
+        cache_edges_filename = make_cache_filename('graph.gpickle')
+        cache_graph_filename = make_cache_filename('edges.gpickle')
 
         try:
             timestamp_graph = os.path.getmtime(cache_graph_filename)
@@ -50,23 +60,45 @@ class Network:
             timestamp_graph = 0  # set very old timestamp
 
         if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
-            logger.info(f"Saved graph is too old. Fetching new one.")
+            logger.info(f"Cached graph is too old. Fetching new one.")
             self.set_graph_and_edges()
             nx.write_gpickle(self.graph, cache_graph_filename)
             with open(cache_edges_filename, 'wb') as file:
                 pickle.dump(self.edges, file)
         else:  # recent graph in file
-            logger.info("Reading graph from file.")
             self.graph = nx.read_gpickle(cache_graph_filename)
             with open(cache_edges_filename, 'rb') as file:
                 self.edges = pickle.load(file)
+            logger.info(f"> Loaded graph from file: {len(self.graph)} nodes, {len(self.edges)} channels.")
 
+    @profiled
+    def load_liquidity_hints(self):
+        cache_hints_filename = make_cache_filename('liquidity_hints.gpickle')
+        try:
+            with open(cache_hints_filename, 'rb') as file:
+                self.liquidity_hints = pickle.load(file)
+                number_failures = len([f for f in self.liquidity_hints._failure_hints.values() if f])
+            logger.info(f"> Loaded liquidty hints: {len(self.liquidity_hints._liquidity_hints)} hints, {number_failures} failures.")
+        except FileNotFoundError:
+            self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
+        except Exception as e:
+            logger.exception(e)
+
+    @profiled
+    def save_liquidty_hints(self):
+        cache_hints_filename = make_cache_filename('liquidity_hints.gpickle')
+        with open(cache_hints_filename, 'wb') as file:
+            pickle.dump(self.liquidity_hints, file)
+
+    @profiled
     def set_graph_and_edges(self):
         """
         Reads in the networkx graph and edges dictionary.
 
         :return: nx graph and edges dict
         """
+        self.edges = {}
+        self.graph = nx.MultiGraph()
         raw_graph = self.node.get_raw_network_graph()
 
         for n in raw_graph.nodes:
