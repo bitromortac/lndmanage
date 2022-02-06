@@ -29,7 +29,6 @@ DEFAULT_AMOUNT_SAT = 500000
 RESERVED_REBALANCE_FEE_RATE = 50
 
 
-
 class Rebalancer(object):
     """Implements methods for rebalancing."""
 
@@ -94,6 +93,7 @@ class Rebalancer(object):
             count += 1
             if count > settings.REBALANCING_TRIALS:
                 raise RebalancingTrialsExhausted
+            logger.info(f">>> Trying to rebalance with {amt_sat} sat (attempt number {count}).")
 
             route = self.router.get_route(send_channels, receive_channels, amt_msat)
             if not route:
@@ -101,7 +101,7 @@ class Rebalancer(object):
 
             effective_fee_rate = route.total_fee_msat / route.total_amt_msat
             logger.info(
-                f">>> Route summary: amount: {(route.total_amt_msat - route.total_fee_msat) / 1000:3.3f} "
+                f"  > Route summary: amount: {(route.total_amt_msat - route.total_fee_msat) / 1000:3.3f} "
                 f"sat, total fee: {route.total_fee_msat / 1000:3.3f} sat, "
                 f"fee rate: {effective_fee_rate:1.6f}, "
                 f"number of hops: {len(route.channel_hops)}")
@@ -117,7 +117,7 @@ class Rebalancer(object):
 
             # check economics
             fee_rate_margin = (illiquid_channel['local_fee_rate'] - liquid_channel['local_fee_rate']) / 1_000_000
-            logger.info(f"    expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
+            logger.info(f"  > Expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
             if (effective_fee_rate > fee_rate_margin) and not self.force:
                 raise NotEconomic("This rebalance attempt doesn't lead to enough expected earnings.")
 
@@ -176,10 +176,10 @@ class Rebalancer(object):
                             f"Failing channel: {failed_channel_id}")
 
                     # determine the nodes involved in the channel
-                    logger.info(f"   Failed: hop: {failed_hop + 1}, channel: {failed_channel_id}")
-                    logger.info(f"   Could not reach {failed_target} ({self.node.network.node_alias(failed_target)})\n")
-                    logger.debug(f"   Node hops {route.node_hops}")
-                    logger.debug(f"   Channel hops {route.channel_hops}")
+                    logger.info(f"  > Failed: hop: {failed_hop + 1}, channel: {failed_channel_id}")
+                    logger.info(f"  > Could not reach {failed_target} ({self.node.network.node_alias(failed_target)})\n")
+                    logger.debug(f"  > Node hops {route.node_hops}")
+                    logger.debug(f"  > Channel hops {route.channel_hops}")
 
                     # report that channel could not route the amount to liquidity hints
                     self.node.network.liquidity_hints.update_cannot_send(
