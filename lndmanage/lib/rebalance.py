@@ -15,6 +15,7 @@ from lndmanage.lib.exceptions import (
     PaymentTimeOut,
     TooExpensive,
 )
+from lndmanage.lib.ln_utilities import unbalancedness_to_local_balance
 from lndmanage import settings
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 DEFAULT_MAX_FEE_RATE = 0.001000
-DEFAULT_AMOUNT_SAT = 500000
+DEFAULT_AMOUNT_SAT = 100000
 # MIN_FEE_RATE_AFFORDABLE is the minimal effective fee rate a rebalance attempt can cost
 RESERVED_REBALANCE_FEE_RATE = 50
 
@@ -225,9 +226,17 @@ class Rebalancer(object):
             k: c for k, c in self.channels.items() if k not in removed_channels}
 
         # filter channels, which can't receive/send the amount
-        candidate_balance = 'remote_balance' if local_balance_change < 0 else 'local_balance'
-        # TODO: include channel reserve
-        rebalance_candidates = {k: c for k, c in rebalance_candidates.items() if c[candidate_balance] > abs(local_balance_change)}
+        candidates_send = True if local_balance_change > 0 else False
+        rebalance_candidates_with_funds = {}
+        for k, c in rebalance_candidates.items():
+            if candidates_send:
+                maximal_can_send = self._maximal_local_balance_change(False, c)
+                if maximal_can_send > abs(local_balance_change):
+                    rebalance_candidates_with_funds[k] = c
+            else:
+                maximal_can_receive = self._maximal_local_balance_change(True, c)
+                if maximal_can_receive > abs(local_balance_change):
+                    rebalance_candidates_with_funds[k] = c
 
         # We only include rebalance candidates for which it makes economically sense to
         # rebalance. This is determined by the difference in fee rates:
@@ -237,7 +246,7 @@ class Rebalancer(object):
         #   fee_rate[rebalance_channel] - fee_rate[candidate_channel],
         #   it always needs to be positive at least
         rebalance_candidates_filtered = {}
-        for k, c in rebalance_candidates.items():
+        for k, c in rebalance_candidates_with_funds.items():
             if not self.force:  # we allow only economic candidates
                 if local_balance_change < 0:  # we take liquidity out of the channel
                     fee_rate_margin = c['local_fee_rate'] - channel_fee_rate_milli_msat
@@ -305,7 +314,7 @@ class Rebalancer(object):
 
     @staticmethod
     def _maximal_local_balance_change(
-            unbalancedness_target: float,
+            increase_local_balance: bool,
             unbalanced_channel_info: dict
     ) -> int:
         """Tries to find out the amount to maximally send/receive given the
@@ -326,61 +335,26 @@ class Rebalancer(object):
         """
         # both parties need to maintain a channel reserve of 1%
         # according to BOLT 2
-        channel_reserve = int(0.01 * unbalanced_channel_info['capacity'])
 
-        if unbalancedness_target:
-            # a commit fee needs to be only respected by the channel initiator
-            commit_fee = 0 if not unbalanced_channel_info['initiator'] \
-                else unbalanced_channel_info['commit_fee']
+        local_balance = unbalanced_channel_info['local_balance']
+        remote_balance = unbalanced_channel_info['remote_balance']
+        remote_channel_reserve = unbalanced_channel_info['remote_chan_reserve_sat']
+        local_channel_reserve = unbalanced_channel_info['local_chan_reserve_sat']
 
-            # first naively calculate the local balance change to
-            # fulfill the requested target
-            local_balance_target = int(
-                unbalanced_channel_info['capacity'] * 0.5 *
-                (-unbalancedness_target + 1.0) - commit_fee)
-            local_balance_change = local_balance_target - \
-                unbalanced_channel_info['local_balance']
+        if increase_local_balance:  # we want to add funds to the channel
+            local_balance_change = remote_balance
+            local_balance_change -= remote_channel_reserve
+        else:  # we want to decrease funds
+            local_balance_change = local_balance
+            local_balance_change -= local_channel_reserve
 
-            # TODO: clarify exact definitions of dust and htlc_cost
-            # related: https://github.com/lightningnetwork/lnd/issues/1076
-            # https://github.com/lightningnetwork/lightning-rfc/blob/master/03-transactions.md#fees
+        # the local balance already reflects commitment transaction fees
+        # in principle we should account for the HTLC output here
+        local_balance_change -= 172 * unbalanced_channel_info['fee_per_kw'] / 1000
 
-            dust = 700
-            htlc_weight = 172
-            number_htlcs = 2
-            htlc_cost = int(
-                number_htlcs * htlc_weight *
-                unbalanced_channel_info['fee_per_kw'] / 1000)
-            logger.debug(f">>> Assuming a dust limit of {dust} sat and an "
-                         f"HTLC cost of {htlc_cost} sat.")
-
-            # we can only send the local balance less the channel reserve
-            # (if above the dust limit), less the cost to enforce the HTLC
-            can_send = max(0, unbalanced_channel_info['local_balance']
-                           - max(dust, channel_reserve) - htlc_cost - 1)
-
-            # we can only receive the remote balance less the channel reserve
-            # (if above the dust limit)
-            can_receive = max(0, unbalanced_channel_info['remote_balance']
-                              - max(dust, channel_reserve) - 1)
-
-            logger.debug(f">>> Channel can send {can_send} sat and receive "
-                         f"{can_receive} sat.")
-
-            # check that we respect and enforce the channel reserve
-            if (local_balance_change > 0 and
-                    abs(local_balance_change)) > can_receive:
-                local_balance_change = can_receive
-            if (local_balance_change < 0 and
-                    abs(local_balance_change)) > can_send:
-                local_balance_change = -can_send
-
-            amt_target_original = int(local_balance_change)
-        else:
-            # use the already calculated optimal amount for 50:50 balancedness
-            amt_target_original = unbalanced_channel_info['amt_to_balanced']
-
-        return amt_target_original
+        # TODO: buffer for all the rest of costs which is why
+        #  local_balance_change can be negative
+        return max(0, int(local_balance_change))
 
     def _node_is_multiple_connected(self, pub_key: str) -> bool:
         """Checks if the node is connected to us via several channels.
@@ -446,19 +420,33 @@ class Rebalancer(object):
 
         # 0. determine the amount we want to send/receive on the channel
         if target is not None:
-            # if a target is given and it is set close to -1 or 1,
-            # then we need to think about the channel reserve
-            # TODO: check maximal local balance change
-            initial_local_balance_change = self._maximal_local_balance_change(
-                target, unbalanced_channel_info)
+            if target < unbalanced_channel_info['unbalancedness']:
+                increase_local_balance = True
+            else:
+                increase_local_balance = False
+
+            maximal_abs_local_balance_change = self._maximal_local_balance_change(
+                increase_local_balance, unbalanced_channel_info)
+            target_local_balance, _ = unbalancedness_to_local_balance(
+                target,
+                unbalanced_channel_info['capacity'],
+                unbalanced_channel_info['commit_fee'],
+                unbalanced_channel_info['initiator']
+            )
+            abs_local_balance_change = abs(target_local_balance - unbalanced_channel_info['local_balance'])
+            initial_local_balance_change = min(abs_local_balance_change, maximal_abs_local_balance_change)
+            # encode the sign to send (< 0) or receive (> 0)
+            initial_local_balance_change *= 1 if increase_local_balance else -1
+
             if abs(initial_local_balance_change) <= 10_000:
                 logger.info(f"Channel already balanced.")
                 return 0
-        # if no target is given, we enforce some default amount
-        else:
-            if not amount_sat:
-                amount_sat = DEFAULT_AMOUNT_SAT
+        # if no target is given, we enforce some default amount in the opposite direction of unbalancedness
+        elif not amount_sat:
+            amount_sat = DEFAULT_AMOUNT_SAT
             initial_local_balance_change = int(math.copysign(1, unbalanced_channel_info['unbalancedness']) * amount_sat)
+        else:
+            initial_local_balance_change = amount_sat
 
         # determine budget and fee rate from local balance change:
         # budget fee_rate  result

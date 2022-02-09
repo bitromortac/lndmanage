@@ -25,7 +25,7 @@ from lndmanage.lib.ln_utilities import (
     extract_short_channel_id_from_string,
     convert_short_channel_id_to_channel_id,
     convert_channel_id_to_short_channel_id,
-    channel_unbalancedness_and_commit_fee
+    local_balance_to_unbalancedness
 )
 from lndmanage.lib.psbt import extract_psbt_inputs_outputs
 from lndmanage.lib.data_types import UTXO, AddressType
@@ -395,7 +395,7 @@ class LndNode(Node):
 
             # define unbalancedness |ub| large means very unbalanced
             channel_unbalancedness, our_commit_fee = \
-                channel_unbalancedness_and_commit_fee(
+                local_balance_to_unbalancedness(
                     c.local_balance, c.capacity, c.commit_fee, c.initiator)
             try:
                 uptime_lifetime_ratio = c.uptime / c.lifetime

@@ -166,8 +166,8 @@ class Parser(object):
             help='Sets the maximal fees in satoshis to be paid.')
         self.parser_rebalance.add_argument(
             '--amount-sat', type=int, default=DEFAULT_AMOUNT_SAT,
-            help='Specifies the rebalance amount in satoshis. The direction is '
-                 'determined automatically.')
+            help='Specifies the increase in local balance in sat. The amount can be'
+                 'negative to decrease the local balance.')
         self.parser_rebalance.add_argument(
             '--max-fee-rate', type=range_limited_float_type, default=DEFAULT_MAX_FEE_RATE,
             help='Sets the maximal effective fee rate to be paid.'

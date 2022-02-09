@@ -1,4 +1,5 @@
 """Contains Lightning network specific conversion utilities."""
+from typing import Tuple
 
 import re
 import time
@@ -38,23 +39,21 @@ def extract_short_channel_id_from_string(string):
     return groups
 
 
-def channel_unbalancedness_and_commit_fee(local_balance, capacity, commit_fee,
-                                          initiator):
-    """
-    Calculates the unbalancedness.
+def local_balance_to_unbalancedness(local_balance: int, capacity: int, commit_fee: int,
+                                    initiator: bool) -> Tuple[float, int]:
+    """Calculates the unbalancedness.
 
-    :param local_balance: int
-    :param capacity: int
-    :param commit_fee: int
-    :param initiator: bool
     :return: float:
         in [-1.0, 1.0]
     """
     # inverse of the formula:
-    # c.local_balance = c.capacity * 0.5 * (-unbalancedness + 1) - commit_fee
     commit_fee = 0 if not initiator else commit_fee
-    return -(2 * float(local_balance + commit_fee) / capacity - 1), commit_fee
+    return -(2 * (local_balance + commit_fee) / capacity - 1), commit_fee
 
+
+def unbalancedness_to_local_balance(unbalancedness: float, capacity: int, commit_fee: int, initiator: bool) -> Tuple[int, int]:
+    commit_fee = 0 if not initiator else commit_fee
+    return -int(capacity * (unbalancedness - 1) / 2) - commit_fee, commit_fee
 
 def height_to_timestamp(node, close_height):
     now = time.time()

@@ -6,7 +6,7 @@ from typing import Optional
 
 from lndmanage import settings
 from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
 from lndmanage.lib.exceptions import NoRebalanceCandidates
 
 from test.testing_common import (
@@ -76,7 +76,7 @@ class RebalanceTest(TestNetwork):
         channel_data_after = graph_after['A'][test_channel_number]
         amount_sent = channel_data_before['local_balance'] - channel_data_after['local_balance']
 
-        channel_unbalancedness, _ = channel_unbalancedness_and_commit_fee(
+        channel_unbalancedness, _ = local_balance_to_unbalancedness(
             channel_data_after['local_balance'],
             channel_data_after['capacity'],
             channel_data_after['commit_fee'],
@@ -149,9 +149,9 @@ class TestLiquidRebalance(RebalanceTest):
         test_channel_number = 2
         self.rebalance_and_check(test_channel_number, target=0.0, amount_sat=None, allow_uneconomic=True, places=2)
 
-    def test_init_amount(self):
+    def test_init_default_amount(self):
         test_channel_number = 1
-        self.rebalance_and_check(test_channel_number, target=None, amount_sat=500_000, allow_uneconomic=True, places=-1)
+        self.rebalance_and_check(test_channel_number, target=None, amount_sat=None, allow_uneconomic=True, places=-1)
 
     def test_shuffle_arround(self):
         """Shuffles sats around in channel 6."""

@@ -7,7 +7,7 @@ import numpy as np
 
 from lndmanage.lib.data_types import NodeProperties
 from lndmanage.lib.node import LndNode
-from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
 from lndmanage import settings
 
 logger = logging.getLogger(__name__)
@@ -641,7 +641,7 @@ def get_node_properites(
             "max_public_capacity": max(properties.public_capacities)
             if properties.public_capacities
             else 0,
-            "unbalancedness": channel_unbalancedness_and_commit_fee(
+            "unbalancedness": local_balance_to_unbalancedness(
                 local_balance, capacity, 0, False
             )[0],
         }
