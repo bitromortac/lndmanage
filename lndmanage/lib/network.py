@@ -77,8 +77,8 @@ class Network:
         try:
             with open(cache_hints_filename, 'rb') as file:
                 self.liquidity_hints = pickle.load(file)
-                number_failures = len([f for f in self.liquidity_hints._failure_hints.values() if f])
-            logger.info(f"> Loaded liquidty hints: {len(self.liquidity_hints._liquidity_hints)} hints, {number_failures} failures.")
+                num_badness_hints = len([f for f in self.liquidity_hints._badness_hints.values() if f])
+            logger.info(f"> Loaded liquidty hints: {len(self.liquidity_hints._liquidity_hints)} hints, {num_badness_hints} badness hints.")
         except FileNotFoundError:
             self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
         except Exception as e:

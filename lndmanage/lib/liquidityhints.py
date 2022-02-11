@@ -11,7 +11,8 @@ DEFAULT_PENALTY_BASE_MSAT = 1000  # how much base fee we apply for unknown sendi
 DEFAULT_PENALTY_PROPORTIONAL_MILLIONTH = 100  # how much relative fee we apply for unknown sending capability of a channel
 BLACKLIST_DURATION = 3600  # how long (in seconds) a channel remains blacklisted
 HINT_DURATION = 3600  # how long (in seconds) a liquidity hint remains valid
-ATTEMPTS_TO_FAIL = 4  # if a node fails this often to forward a payment, we won't use it anymore
+ATTEMPTS_TO_FAIL = 10  # if a node fails this often to forward a payment, we won't use it anymore
+FAILURE_FEE_MSAT = 10_000
 
 
 class ShortChannelID(int):
@@ -166,7 +167,7 @@ class LiquidityHintMgr:
     def __init__(self, source_node: str):
         self.source_node = source_node
         self._liquidity_hints: Dict[ShortChannelID, LiquidityHint] = {}
-        self._failure_hints: Dict[NodeID, int] = defaultdict(int)
+        self._badness_hints: Dict[NodeID, int] = defaultdict(int)
 
     def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
         hint = self._liquidity_hints.get(channel_id)
@@ -182,9 +183,12 @@ class LiquidityHintMgr:
 
     def update_cannot_send(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID, amount: int):
         logger.debug(f"    report: cannot send {amount // 1000} sat over channel {channel_id}")
-        self._failure_hints[node_from] += 1
         hint = self.get_hint(channel_id)
         hint.update_cannot_send(node_from < node_to, amount)
+
+    def update_badness_hint(self, node: NodeID, badness):
+        self._badness_hints[node] += badness
+        logger.debug(f"    report: update badness {badness} +=> {self._badness_hints[node]} (node: {node})")
 
     def add_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
         hint = self.get_hint(channel_id)
@@ -216,7 +220,7 @@ class LiquidityHintMgr:
         base and relative fees.
         """
         # we assume that our node can always route:
-        if self.source_node in [node_from, node_to]:
+        if self.source_node in [node_from, ]:
             return 0
         # we only evaluate hints here, so use dict get (to not create many hints with self.get_hint)
         hint = self._liquidity_hints.get(edge['channel_id'])
@@ -238,13 +242,13 @@ class LiquidityHintMgr:
         log_penalty = - log((cannot_send - (amount_msat - can_send)) / cannot_send)
         # we give a base penalty if we haven't tried the channel yet
         penalty = fee_rate_milli_msat * amount_msat // 1_000_000
-        # all the so-far successful channels would be tried over and over until all
-        # of the last successful node's channels are explored
-        # as a tie-breaker, we add another penalty that increases with the number of
-        # failures
-        failure_fee = self._failure_hints[node_from] * penalty // ATTEMPTS_TO_FAIL
 
-        return 5 * (log_penalty * penalty + failure_fee)
+        return log_penalty * penalty
+
+    def badness_penalty(self, node_from: NodeID, amount: int) -> float:
+        """We blacklist a node if the attempts to fail are exhausted. Otherwise we just
+        scale up the effective fee proportional to the failed attempts."""
+        return amount * self._badness_hints[node_from]
 
     def add_to_blacklist(self, channel_id: ShortChannelID):
         hint = self.get_hint(channel_id)

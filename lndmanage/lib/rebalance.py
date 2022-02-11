@@ -3,6 +3,7 @@ import logging
 import math
 from typing import TYPE_CHECKING, Optional, Tuple, Dict
 
+from lndmanage.lib.rating import node_badness
 from lndmanage.lib.routing import Router
 from lndmanage.lib import exceptions
 from lndmanage.lib.exceptions import (
@@ -138,6 +139,12 @@ class Rebalancer(object):
                     source_node = route.node_hops[hop]
                     target_node = route.node_hops[hop + 1]
                     self.node.network.liquidity_hints.update_can_send(source_node, target_node, channel['chan_id'], amt_msat)
+
+                # symmetrically penalize failed hop (decreasing away from the failed hop):
+                if failed_hop_index:
+                    for node_number, node in enumerate(route.node_hops):
+                        badness = node_badness(node_number, failed_hop_index)
+                        self.node.network.liquidity_hints.update_badness_hint(node, badness)
 
             if not dry:
                 try:

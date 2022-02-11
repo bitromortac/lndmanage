@@ -39,8 +39,8 @@ class Route(object):
         final_cltv = 144
         fees_msat_container = [0]
         cltv_delta = [0]
-        node_right = node_dest
-        node_left = None
+        node_to = node_dest
+        node_from = None
         policy = None
 
         logger.debug("Route construction starting.")
@@ -54,20 +54,20 @@ class Route(object):
                 raise RouteWithTooSmallCapacity(f"Amount too large for channel.")
 
             policies = channel_data['policies']
-            if node_right == channel_data['node2_pub']:
+            if node_to == channel_data['node2_pub']:
                 try:
                     policy = policies[channel_data['node1_pub'] > channel_data['node2_pub']]
-                    node_left = channel_data['node1_pub']
+                    node_from = channel_data['node1_pub']
                 except KeyError:
                     logger.exception(f"No channel {channel_data}")
             else:
                 policy = policies[channel_data['node2_pub'] > channel_data['node1_pub']]
-                node_left = channel_data['node2_pub']
+                node_from = channel_data['node2_pub']
 
-            self._node_hops.append(node_left)
+            self._node_hops.append(node_from)
             hop = len(channel_hops) - ichannel
             logger.info(f"    Hop {hop}: {channel_id} (cap: {channel_data['capacity']} sat): "
-                        f"{self.node.network.node_alias(node_right)} <- {self.node.network.node_alias(node_left)} ")
+                        f"{self.node.network.node_alias(node_to)} <- {self.node.network.node_alias(node_from)} ")
             logger.debug(f"      Policy of forwarding node: {policy}")
 
             fees_msat = policy['fee_base_msat'] + policy['fee_rate_milli_msat'] * forward_msat // 1000000
@@ -77,7 +77,8 @@ class Route(object):
             logger.info(f"      Fees: {fees_msat / 1000 if not hop == 1 else 0:3.3f} sat")
             logger.debug(f"      Fees container {fees_msat_container}")
             logger.debug(f"      Forward: {forward_msat / 1000:3.3f} sat")
-            logger.info(f"      Liquidity penalty: {self.node.network.liquidity_hints.penalty(node_left, node_right, channel_data, amt_msat, self.node.network.channel_rater.reference_fee_rate_milli_msat) / 1000: 3.3f} sat")
+            logger.info(f"      Liquidity penalty: {self.node.network.liquidity_hints.penalty(node_from, node_to, channel_data, amt_msat, self.node.network.channel_rater.reference_fee_rate_milli_msat) / 1000: 3.3f} sat")
+            logger.info(f"      Badness penalty: {self.node.network.liquidity_hints.badness_penalty(node_from, amt_msat) / 1000: 3.3f} sat")
 
             self._hops.append({
                 'chan_id': channel_data['channel_id'],
@@ -90,7 +91,7 @@ class Route(object):
             })
 
             cltv_delta.append(policy['time_lock_delta'])
-            node_right = node_left
+            node_to = node_from
 
         self.hops = list(reversed(self._hops))
         self.node_hops = list(reversed(self._node_hops))

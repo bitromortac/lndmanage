@@ -15,7 +15,7 @@ def dijkstra(graph: nx.Graph, source: str, target: str, weight: Callable) -> Lis
     :param graph: networkx graph
     :param source: find a path from this key
     :param target: to this key
-    :param weight: weight function, takes u (pubkey from), v (pubkey to), e (edge information) as arguments
+    :param weight: weight function, takes node_from (pubkey from), node_to (pubkey to), channel_info (edge information) as arguments
 
     :return: hops in terms of the node keys
     """
