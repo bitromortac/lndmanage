@@ -168,6 +168,7 @@ class LiquidityHintMgr:
         self.source_node = source_node
         self._liquidity_hints: Dict[ShortChannelID, LiquidityHint] = {}
         self._badness_hints: Dict[NodeID, int] = defaultdict(int)
+        self._route_participations: Dict[NodeID, int] = defaultdict(int)
 
     def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
         hint = self._liquidity_hints.get(channel_id)
@@ -189,6 +190,11 @@ class LiquidityHintMgr:
     def update_badness_hint(self, node: NodeID, badness):
         self._badness_hints[node] += badness
         logger.debug(f"    report: update badness {badness} +=> {self._badness_hints[node]} (node: {node})")
+        self.update_route_participation(node)
+
+    def update_route_participation(self, node: NodeID):
+        self._route_participations[node] += 1
+        logger.debug(f"    report: update route participation to {self._route_participations[node]} (node: {node})")
 
     def add_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
         hint = self.get_hint(channel_id)

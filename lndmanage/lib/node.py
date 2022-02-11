@@ -249,16 +249,18 @@ class LndNode(Node):
             logger.debug(f"Routing failure: {failure}")
             if failure.failure_source_index == 0:
                 raise OurNodeFailure("Not enough funds?")
-            if failure.code == 15:
-                raise exceptions.TemporaryChannelFailure(payment)
-            elif failure.code == 19:
-                raise exceptions.TemporaryNodeFailure(payment)
+            if failure.code == 12:
+                raise exceptions.FeeInsufficient(payment)
+            elif failure.code == 13:
+                raise exceptions.IncorrectCLTVExpiry(payment)
             elif failure.code == 14:
                 raise exceptions.ChannelDisabled(payment)
+            elif failure.code == 15:
+                raise exceptions.TemporaryChannelFailure(payment)
             elif failure.code == 18:
                 raise exceptions.UnknownNextPeer(payment)
-            elif failure.code == 12:
-                raise exceptions.FeeInsufficient(payment)
+            elif failure.code == 19:
+                raise exceptions.TemporaryNodeFailure(payment)
             else:
                 logger.info(failure)
                 raise Exception(f"Unknown error: code {failure.code}")
