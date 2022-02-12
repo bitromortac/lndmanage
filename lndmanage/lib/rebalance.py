@@ -1,11 +1,13 @@
 """Module for channel rebalancing."""
 import logging
 import math
-from typing import TYPE_CHECKING, Optional, Tuple, Dict
+from typing import TYPE_CHECKING, Optional, Dict
+import time
 
 from lndmanage.lib.rating import node_badness
 from lndmanage.lib.routing import Router
 from lndmanage.lib import exceptions
+from lndmanage.lib.forwardings import get_channel_properties
 from lndmanage.lib.exceptions import (
     RebalanceFailure,
     NoRoute,
@@ -27,8 +29,9 @@ logger.addHandler(logging.NullHandler())
 
 DEFAULT_MAX_FEE_RATE = 0.001000
 DEFAULT_AMOUNT_SAT = 100000
-# MIN_FEE_RATE_AFFORDABLE is the minimal effective fee rate a rebalance attempt can cost
-RESERVED_REBALANCE_FEE_RATE = 50
+RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT = 50  # a buffer for the fee rate a rebalance route can cost
+FORWARDING_STATS_DAYS = 30  # how many days will be taken into account when determining the rebalance direction
+MIN_REBALANCE_AMOUNT_SAT = 20_000
 
 
 class Rebalancer(object):
@@ -265,7 +268,7 @@ class Rebalancer(object):
                     fee_rate_margin = channel_fee_rate_milli_msat - c['local_fee_rate']
                 # We enforce a mimimum amount of an acceptable fee rate,
                 # because we need to also pay for rebalancing.
-                if fee_rate_margin > RESERVED_REBALANCE_FEE_RATE:
+                if fee_rate_margin > RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT:
                     c['fee_rate_margin'] = fee_rate_margin / 1_000_000
                     rebalance_candidates_filtered[k] = c
             else:  # otherwise, we can afford very high fee rates
@@ -328,25 +331,7 @@ class Rebalancer(object):
             increase_local_balance: bool,
             unbalanced_channel_info: dict
     ) -> int:
-        """Tries to find out the amount to maximally send/receive given the
-        relative target and channel reserve constraints for channel balance
-        candidates.
-
-        The target is expressed as a relative quantity between -1 and 1:
-        -1: channel has only local balance
-        0: 50:50 balanced
-        1: channel has only remote balance
-
-        :param unbalancedness_target:
-            interpreted in terms of unbalancedness [-1...1]
-        :param unbalanced_channel_info: fees, capacity, initiator info
-
-        :return: positive or negative amount in sat (encodes
-            the decrease/increase in the local balance)
-        """
-        # both parties need to maintain a channel reserve of 1%
-        # according to BOLT 2
-
+        """Finds the amount to maximally send/receive via the channel."""
         local_balance = unbalanced_channel_info['local_balance']
         remote_balance = unbalanced_channel_info['remote_balance']
         remote_channel_reserve = unbalanced_channel_info['remote_chan_reserve_sat']
@@ -419,6 +404,7 @@ class Rebalancer(object):
             candidates
         :raises TooExpensive: the rebalance became too expensive
         """
+        # TODO: allow and convert to pubkey-based rebalancing
         if target and not (-1.0 <= target <= 1.0):
             raise ValueError("Target must be between -1.0 and 1.0.")
 
@@ -452,11 +438,43 @@ class Rebalancer(object):
             if abs(initial_local_balance_change) <= 10_000:
                 logger.info(f"Channel already balanced.")
                 return 0
-        # if no target is given, we enforce some default amount in the opposite direction of unbalancedness
-        elif not amount_sat:
-            amount_sat = DEFAULT_AMOUNT_SAT
-            initial_local_balance_change = int(math.copysign(1, unbalanced_channel_info['unbalancedness']) * amount_sat)
-        else:
+        elif not amount_sat:  # if no target is given, we enforce some default amount
+            now_sec = time.time()
+            then_sec = now_sec - FORWARDING_STATS_DAYS * 24 * 3600
+            forwarding_properties = get_channel_properties(self.node, then_sec, now_sec)
+            channel_properties = forwarding_properties.get(channel_id)
+            fees_in = channel_properties['fees_in']
+            fees_out = channel_properties['fees_out']
+            ub = unbalanced_channel_info['unbalancedness']
+            flow = channel_properties['flow_direction']
+
+            if abs(ub) > 0.95:  # there's no other option
+                initial_local_balance_change = int(math.copysign(1, ub) * DEFAULT_AMOUNT_SAT)
+                logger.debug("Default amount due to strong unbalancedness.")
+            elif fees_in or fees_out:  # based on type of earnings
+                if fees_out > fees_in:  # then we want to increase balance in channel
+                    initial_local_balance_change = DEFAULT_AMOUNT_SAT
+                else:
+                    initial_local_balance_change = -DEFAULT_AMOUNT_SAT
+                logger.debug("Default amount due to fees.")
+            elif not math.isnan(flow):  # counter the flow, probably not executed
+                initial_local_balance_change = int(math.copysign(1, flow) * DEFAULT_AMOUNT_SAT)
+                logger.debug("Default amount due to flow.")
+            else:  # fall back to unbalancedness
+                initial_local_balance_change = int(math.copysign(1, ub) * DEFAULT_AMOUNT_SAT)
+                logger.debug("Default amount due to unbalancedness.")
+        else:  # based on manual amount, checking bounds
+            increase_local_balance = True if amount_sat > 0 else False
+            maximal_change = self._maximal_local_balance_change(
+                increase_local_balance=increase_local_balance,
+                unbalanced_channel_info=unbalanced_channel_info
+            )
+            if abs(amount_sat) > maximal_change:
+                raise ValueError(
+                    f"Channel cannot {'receive' if increase_local_balance else 'send'} "
+                    f"(maximal value: {int(math.copysign(1, amount_sat) * maximal_change)} sat)."
+                    f" lb: {unbalanced_channel_info['local_balance']} sat"
+                    f" rb: {unbalanced_channel_info['remote_balance']} sat")
             initial_local_balance_change = amount_sat
 
         # determine budget and fee rate from local balance change:
@@ -616,7 +634,7 @@ class Rebalancer(object):
                 # with the current amount. To improve the success rate, we split the
                 # amount.
                 amount_sat //= 2
-                if abs(amount_sat) < 30_000:
+                if abs(amount_sat) < MIN_REBALANCE_AMOUNT_SAT:
                     raise RebalanceFailure(
                         "It is unlikely we can rebalance the channel. Attempts with "
                         "small amounts already failed.\n")

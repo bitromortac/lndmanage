@@ -165,9 +165,9 @@ class Parser(object):
             '--max-fee-sat', type=int, default=None,
             help='Sets the maximal fees in satoshis to be paid.')
         self.parser_rebalance.add_argument(
-            '--amount-sat', type=int, default=DEFAULT_AMOUNT_SAT,
+            '--amount-sat', type=int, default=None,
             help='Specifies the increase in local balance in sat. The amount can be'
-                 'negative to decrease the local balance.')
+                 f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
         self.parser_rebalance.add_argument(
             '--max-fee-rate', type=range_limited_float_type, default=DEFAULT_MAX_FEE_RATE,
             help='Sets the maximal effective fee rate to be paid.'
@@ -181,8 +181,7 @@ class Parser(object):
             help=f"Allow rebalances that are uneconomic.",
             action='store_true')
         self.parser_rebalance.add_argument(
-            '--target', help=f'This feature is still experimental! '
-            f'The unbalancedness target is between [-1, 1]. '
+            '--target', help=f'The unbalancedness target is between [-1, 1]. '
             f'A target of -1 leads to a maximal local balance, a target of 0 '
             f'to a 50:50 balanced channel and a target of 1 to a maximal '
             f'remote balance. Default is a target of 0.',
@@ -520,6 +519,8 @@ class Parser(object):
                     target=args.target,
                     amount_sat=args.amount_sat
                 )
+            except ValueError as e:
+                logger.error(e)
             except TooExpensive as e:
                 logger.error(f"Too expensive: {e}")
             except RebalanceFailure as e:
