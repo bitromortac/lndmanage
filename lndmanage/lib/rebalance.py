@@ -95,6 +95,7 @@ class Rebalancer(object):
 
         count = 0
         while True:
+            start_time = time.time()
             count += 1
             if count > settings.REBALANCING_TRIALS:
                 raise RebalancingTrialsExhausted
@@ -136,11 +137,13 @@ class Rebalancer(object):
 
             def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
                 """Reports routing success to liquidity hints up to failed index, exclusively."""
+                length_until_failed = failed_hop_index if failed_hop_index else len(route.hops)
                 for hop, channel in enumerate(route.hops):
-                    if failed_hop_index and hop == failed_hop_index:
-                        break
                     source_node = route.node_hops[hop]
                     target_node = route.node_hops[hop + 1]
+                    self.node.network.liquidity_hints.update_elapsed_time(source_node, elapsed_time / length_until_failed)
+                    if failed_hop_index and hop == failed_hop_index:
+                        break
                     self.node.network.liquidity_hints.update_can_send(source_node, target_node, channel['chan_id'], amt_msat)
 
                 # symmetrically penalize failed hop (decreasing away from the failed hop):
@@ -175,6 +178,10 @@ class Rebalancer(object):
                     report_success_up_to_failed_hop(failed_hop_index=None)
                     self.node.network.save_liquidty_hints()
                     return route.total_fee_msat
+
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                logger.debug(f"  > time elapsed: {elapsed_time:3.1f} s")
 
                 if failed_hop:
                     failed_channel_id = route.hops[failed_hop]['chan_id']

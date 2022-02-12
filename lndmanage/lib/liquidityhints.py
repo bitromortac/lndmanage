@@ -169,6 +169,7 @@ class LiquidityHintMgr:
         self._liquidity_hints: Dict[ShortChannelID, LiquidityHint] = {}
         self._badness_hints: Dict[NodeID, int] = defaultdict(int)
         self._route_participations: Dict[NodeID, int] = defaultdict(int)
+        self._elapsed_time: Dict[NodeID, int] = defaultdict(int)
 
     def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
         hint = self._liquidity_hints.get(channel_id)
@@ -187,7 +188,7 @@ class LiquidityHintMgr:
         hint = self.get_hint(channel_id)
         hint.update_cannot_send(node_from < node_to, amount)
 
-    def update_badness_hint(self, node: NodeID, badness):
+    def update_badness_hint(self, node: NodeID, badness: float):
         self._badness_hints[node] += badness
         logger.debug(f"    report: update badness {badness} +=> {self._badness_hints[node]} (node: {node})")
         self.update_route_participation(node)
@@ -195,6 +196,12 @@ class LiquidityHintMgr:
     def update_route_participation(self, node: NodeID):
         self._route_participations[node] += 1
         logger.debug(f"    report: update route participation to {self._route_participations[node]} (node: {node})")
+
+    def update_elapsed_time(self, node: NodeID, elapsed_time: float):
+        self._elapsed_time[node] += elapsed_time
+        part = self._route_participations[node]
+        avg_time = self._elapsed_time[node] / part if part else 0
+        logger.debug(f"    report: update elapsed time {elapsed_time} +=> {self._elapsed_time[node]} (avg: {avg_time}) (node: {node})")
 
     def add_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
         hint = self.get_hint(channel_id)
