@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 import time
 from typing import Set, Dict
@@ -167,9 +168,18 @@ class LiquidityHintMgr:
     def __init__(self, source_node: str):
         self.source_node = source_node
         self._liquidity_hints: Dict[ShortChannelID, LiquidityHint] = {}
-        self._badness_hints: Dict[NodeID, int] = defaultdict(int)
+        # could_not_route tracks node's failures to route
+        self._could_not_route: Dict[NodeID, int] = defaultdict(int)
+        # could_route tracks node's successes to route
+        self._could_route: Dict[NodeID, int] = defaultdict(int)
+        # elapsed_time is the cumulative time of payemtens up to the failing hop
+        self._elapsed_time: Dict[NodeID, float] = defaultdict(float)
+        # route_participations is the cumulative number of times a node was part of a
+        # payment route
         self._route_participations: Dict[NodeID, int] = defaultdict(int)
-        self._elapsed_time: Dict[NodeID, int] = defaultdict(int)
+        # badness_hints track the cumulative penalty (in units of a fee rate), which is
+        # large for nodes that are close to failure sources along a path
+        self._badness_hints: Dict[NodeID, float] = defaultdict(float)
 
     def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
         hint = self._liquidity_hints.get(channel_id)
@@ -182,15 +192,20 @@ class LiquidityHintMgr:
         logger.debug(f"    report: can send {amount_msat // 1000} sat over channel {channel_id}")
         hint = self.get_hint(channel_id)
         hint.update_can_send(node_from < node_to, amount_msat)
+        self._could_route[node_from] += 1
 
     def update_cannot_send(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID, amount: int):
         logger.debug(f"    report: cannot send {amount // 1000} sat over channel {channel_id}")
         hint = self.get_hint(channel_id)
         hint.update_cannot_send(node_from < node_to, amount)
+        self._could_not_route[node_from] += 1
 
     def update_badness_hint(self, node: NodeID, badness: float):
         self._badness_hints[node] += badness
-        logger.debug(f"    report: update badness {badness} +=> {self._badness_hints[node]} (node: {node})")
+        part = self._route_participations[node]
+        badness = self._badness_hints[node]
+        avg = badness / part if part else 0
+        logger.debug(f"    report: update badness {badness} +=> badness (avg: {avg}) (node: {node})")
         self.update_route_participation(node)
 
     def update_route_participation(self, node: NodeID):
@@ -199,8 +214,8 @@ class LiquidityHintMgr:
 
     def update_elapsed_time(self, node: NodeID, elapsed_time: float):
         self._elapsed_time[node] += elapsed_time
-        part = self._route_participations[node]
-        avg_time = self._elapsed_time[node] / part if part else 0
+        nfwd = self._could_route[node]
+        avg_time = self._elapsed_time[node] / nfwd if nfwd else 0
         logger.debug(f"    report: update elapsed time {elapsed_time} +=> {self._elapsed_time[node]} (avg: {avg_time}) (node: {node})")
 
     def add_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
@@ -257,6 +272,17 @@ class LiquidityHintMgr:
         penalty = fee_rate_milli_msat * amount_msat // 1_000_000
 
         return log_penalty * penalty
+
+    def time_penalty(self, node, amount) -> float:
+        nfwd = self._could_route[node]
+        elapsed_time = self._elapsed_time[node]
+        avg_time = elapsed_time / nfwd if nfwd else 0
+        estimated_error = avg_time / elapsed_time if elapsed_time else float('inf')
+        # only give a time penalty if we have some certainty about it
+        if avg_time and estimated_error < 0.2:
+            return 0.000010 * math.exp(avg_time / 10 - 1) * amount
+        else:
+            return 0.000010 * amount
 
     def badness_penalty(self, node_from: NodeID, amount: int) -> float:
         """We blacklist a node if the attempts to fail are exhausted. Otherwise we just

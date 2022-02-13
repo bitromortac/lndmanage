@@ -125,7 +125,8 @@ class Rebalancer(object):
             fee_rate_margin = (illiquid_channel['local_fee_rate'] - liquid_channel['local_fee_rate']) / 1_000_000
             logger.info(f"  > Expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
             if (effective_fee_rate > fee_rate_margin) and not self.force:
-                raise NotEconomic("This rebalance attempt doesn't lead to enough expected earnings.")
+                # raise NotEconomic("This rebalance attempt doesn't lead to enough expected earnings.")
+                pass
 
             if effective_fee_rate > self.max_effective_fee_rate:
                 raise TooExpensive(f"Route is too expensive (rate too high). Rate: {effective_fee_rate:.6f}, "
@@ -136,17 +137,21 @@ class Rebalancer(object):
                                    f"{route.total_fee_msat / 1000:.3f} sat, budget: {budget_sat:.3f} sat")
 
             def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
-                """Reports routing success to liquidity hints up to failed index, exclusively."""
-                length_until_failed = failed_hop_index if failed_hop_index else len(route.hops)
+                """Rates the route."""
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                logger.debug(f"  > time elapsed: {elapsed_time:3.1f} s")
+
+                success_path_length = failed_hop_index + 1 if failed_hop_index else len(route.hops)
                 for hop, channel in enumerate(route.hops):
                     source_node = route.node_hops[hop]
                     target_node = route.node_hops[hop + 1]
-                    self.node.network.liquidity_hints.update_elapsed_time(source_node, elapsed_time / length_until_failed)
+                    self.node.network.liquidity_hints.update_elapsed_time(source_node, elapsed_time / success_path_length)
                     if failed_hop_index and hop == failed_hop_index:
                         break
                     self.node.network.liquidity_hints.update_can_send(source_node, target_node, channel['chan_id'], amt_msat)
 
-                # symmetrically penalize failed hop (decreasing away from the failed hop):
+                # symmetrically penalize a route about the error source if it failed
                 if failed_hop_index:
                     for node_number, node in enumerate(route.node_hops):
                         badness = node_badness(node_number, failed_hop_index)
@@ -178,10 +183,6 @@ class Rebalancer(object):
                     report_success_up_to_failed_hop(failed_hop_index=None)
                     self.node.network.save_liquidty_hints()
                     return route.total_fee_msat
-
-                end_time = time.time()
-                elapsed_time = end_time - start_time
-                logger.debug(f"  > time elapsed: {elapsed_time:3.1f} s")
 
                 if failed_hop:
                     failed_channel_id = route.hops[failed_hop]['chan_id']

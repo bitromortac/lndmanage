@@ -79,6 +79,7 @@ class Route(object):
             logger.debug(f"      Forward: {forward_msat / 1000:3.3f} sat")
             logger.info(f"      Liquidity penalty: {self.node.network.liquidity_hints.penalty(node_from, node_to, channel_data, amt_msat, self.node.network.channel_rater.reference_fee_rate_milli_msat) / 1000: 3.3f} sat")
             logger.info(f"      Badness penalty: {self.node.network.liquidity_hints.badness_penalty(node_from, amt_msat) / 1000: 3.3f} sat")
+            logger.info(f"      Time penalty: {self.node.network.liquidity_hints.time_penalty(node_from, amt_msat) / 1000: 3.3f} sat")
 
             self._hops.append({
                 'chan_id': channel_data['channel_id'],

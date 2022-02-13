@@ -688,6 +688,8 @@ def get_node_properites(
         except ZeroDivisionError:
             node_properties_forwardings[node_id]["fees_in_per_week"] = float("nan")
 
+    # TODO: unify with information from liquidity hints
+
     return node_properties_forwardings
 
 

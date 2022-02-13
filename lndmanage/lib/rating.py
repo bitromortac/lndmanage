@@ -89,8 +89,15 @@ class ChannelRater:
         # for small amounts
         route_length_fee_msat = 2_000
 
+        # we discount on badness if we know that the channel can route
+        if liquidity_penalty == 0:
+            badness_penalty /= 2
+
+        # time penalty
+        time_penalty = self.network.liquidity_hints.time_penalty(node_from, amt_msat)
+
         # linear combination of components
-        weight = fees + liquidity_penalty + badness_penalty + route_length_fee_msat
+        weight = fees + liquidity_penalty + badness_penalty + route_length_fee_msat + time_penalty
 
         return weight
 
