@@ -44,7 +44,7 @@ class ForwardingAnalyzer(object):
         :param time_start: time interval start, unix timestamp
         :param time_end: time interval end, unix timestamp
         """
-        channel_id_to_node_id = self.node.get_channel_id_to_node_id()
+        channel_id_to_node_id = self.node.channel_id_to_node_id()
         self.channel_forwarding_stats = defaultdict(ForwardingStatistics)
         self.node_forwarding_stats = defaultdict(ForwardingStatistics)
 
@@ -565,7 +565,7 @@ def get_node_properites(
         f"Time interval (between first and last forwarding) is "
         f"{forwarding_analyzer.max_time_interval_days:6.2f} days."
     )
-    channel_id_to_node_id = node.get_channel_id_to_node_id(open_only=True)
+    channel_id_to_node_id = node.channel_id_to_node_id(open_only=True)
     node_ids_with_open_channels = {nid for nid in channel_id_to_node_id.values()}
     open_channels = node.get_open_channels()
 

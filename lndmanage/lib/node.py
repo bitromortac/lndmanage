@@ -442,7 +442,7 @@ class LndNode(Node):
             sorted(channels.items(), key=lambda x: x[1]['alias']))
         return sorted_dict
 
-    def get_channel_id_to_node_id(self, open_only=False) -> Dict[int, str]:
+    def channel_id_to_node_id(self, open_only=False) -> Dict[int, str]:
         channel_id_to_node_id = {}
         closed_channels = self.get_closed_channels()
         open_channels = self.get_open_channels()
@@ -452,6 +452,12 @@ class LndNode(Node):
             for cid, c in closed_channels.items():
                 channel_id_to_node_id[cid] = c['remote_pubkey']
         return channel_id_to_node_id
+
+    def node_id_to_channel_ids(self, open_only=False) -> Dict[str, List[int]]:
+        node_channels_mapping = defaultdict(list)
+        for cid, nid in self.channel_id_to_node_id(open_only=open_only).items():
+            node_channels_mapping[nid].append(cid)
+        return node_channels_mapping
 
     def get_inactive_channels(self):
         """

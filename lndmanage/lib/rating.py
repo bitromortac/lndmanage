@@ -79,7 +79,6 @@ class ChannelRater:
         )
 
         # routing fees
-        # TODO: play with offsets
         fees = (
             abs(policy["fee_base_msat"])
             + amt_msat * abs(policy["fee_rate_milli_msat"]) // 1_000_000

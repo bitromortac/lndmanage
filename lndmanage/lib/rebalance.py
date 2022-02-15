@@ -12,13 +12,12 @@ from lndmanage.lib.exceptions import (
     RebalanceFailure,
     NoRoute,
     NoRebalanceCandidates,
-    NotEconomic,
     RebalancingTrialsExhausted,
     DryRun,
     PaymentTimeOut,
     TooExpensive,
 )
-from lndmanage.lib.ln_utilities import unbalancedness_to_local_balance
+from lndmanage.lib.ln_utilities import unbalancedness_to_local_balance, parse_nodeid_channelid
 from lndmanage import settings
 
 if TYPE_CHECKING:
@@ -241,7 +240,7 @@ class Rebalancer(object):
 
         # need to make sure we don't rebalance with the same channel or other channels
         # of the same node
-        map_channel_id_node_id = self.node.get_channel_id_to_node_id()
+        map_channel_id_node_id = self.node.channel_id_to_node_id()
         rebalance_node_id = map_channel_id_node_id[channel_id]
         removed_channels = [cid for cid, nid in map_channel_id_node_id.items() if nid == rebalance_node_id]
         rebalance_candidates = {
@@ -378,7 +377,7 @@ class Rebalancer(object):
 
     def rebalance(
             self,
-            channel_id: int,
+            node_id_channel_id: str,
             dry=False,
             target: float = None,
             amount_sat: int = None,
@@ -397,7 +396,7 @@ class Rebalancer(object):
         2. try to rebalance with the cheapest route (taking into account different metrics including fees)
         3. if it doesn't work for several attempts, go to 1. with a reduced amount
 
-        :param channel_id: the id of the channel to be rebalanced
+        :param node_id_channel_id: the id of the peer or channel to be rebalanced
         :param dry: if set, it's a dry run
         :param target: specifies unbalancedness after rebalancing in [-1, 1]
         :param amount_sat: rebalance amount (target takes precedence)
@@ -412,12 +411,19 @@ class Rebalancer(object):
             candidates
         :raises TooExpensive: the rebalance became too expensive
         """
-        # TODO: allow and convert to pubkey-based rebalancing
         if target and not (-1.0 <= target <= 1.0):
             raise ValueError("Target must be between -1.0 and 1.0.")
 
-        # get a fresh channel list
+        # convert the node id to a channel id if possible
         self.channels = self.node.get_unbalanced_channels()
+        channel_id, node_id = parse_nodeid_channelid(node_id_channel_id)
+        if node_id:
+            node_id_to_channel_ids_map = self.node.node_id_to_channel_ids()
+            for nid, cs in node_id_to_channel_ids_map.items():
+                if nid == node_id:
+                    if len(cs) > 1:
+                        raise ValueError("Several channels correspond to node id, please specify channel id.")
+                    channel_id = cs[0]
         try:
             unbalanced_channel_info = self.channels[channel_id]
         except KeyError:

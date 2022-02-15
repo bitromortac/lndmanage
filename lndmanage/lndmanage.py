@@ -159,13 +159,13 @@ class Parser(object):
         self.parser_rebalance = subparsers.add_parser(
             'rebalance', help='rebalance a channel',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_rebalance.add_argument('channel', type=int,
-                                           help='channel_id')
+        self.parser_rebalance.add_argument('node_channel', type=str,
+                                           help='node id or channel id')
         self.parser_rebalance.add_argument(
             '--max-fee-sat', type=int, default=None,
             help='Sets the maximal fees in satoshis to be paid.')
         self.parser_rebalance.add_argument(
-            '--amount-sat', type=int, default=None,
+            '--amount', type=int, default=None,
             help='Specifies the increase in local balance in sat. The amount can be'
                  f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
         self.parser_rebalance.add_argument(
@@ -514,10 +514,10 @@ class Parser(object):
             rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat, args.force)
             try:
                 rebalancer.rebalance(
-                    args.channel,
+                    args.node_channel,
                     dry=not args.reckless,
                     target=args.target,
-                    amount_sat=args.amount_sat
+                    amount_sat=args.amount
                 )
             except ValueError as e:
                 logger.error(e)
