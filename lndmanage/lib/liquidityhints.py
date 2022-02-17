@@ -8,12 +8,10 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-DEFAULT_PENALTY_BASE_MSAT = 1000  # how much base fee we apply for unknown sending capability of a channel
-DEFAULT_PENALTY_PROPORTIONAL_MILLIONTH = 100  # how much relative fee we apply for unknown sending capability of a channel
 BLACKLIST_DURATION = 3600  # how long (in seconds) a channel remains blacklisted
 HINT_DURATION = 3600  # how long (in seconds) a liquidity hint remains valid
-ATTEMPTS_TO_FAIL = 10  # if a node fails this often to forward a payment, we won't use it anymore
-FAILURE_FEE_MSAT = 10_000
+BADNESS_DECAY_ADJUSTMENT_SEC = 10 * 60  # adjustment interval for badness hints
+BADNESS_DECAY_SEC = 24 * 3600  # exponential decay time for badness
 
 
 class ShortChannelID(int):
@@ -180,6 +178,13 @@ class LiquidityHintMgr:
         # badness_hints track the cumulative penalty (in units of a fee rate), which is
         # large for nodes that are close to failure sources along a path
         self._badness_hints: Dict[NodeID, float] = defaultdict(float)
+        # badness hints have an exponential decay time of BADNESS_DECAY_SEC updated
+        # every BADNESS_DECAY_ADJUSTMENT_SEC
+        self._badness_timestamps: Dict[NodeID, float] = defaultdict(float)
+
+    @property
+    def now(self):
+        return time.time()
 
     def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
         hint = self._liquidity_hints.get(channel_id)
@@ -202,10 +207,11 @@ class LiquidityHintMgr:
 
     def update_badness_hint(self, node: NodeID, badness: float):
         self._badness_hints[node] += badness
-        part = self._route_participations[node]
+        participations = self._route_participations[node]
         badness = self._badness_hints[node]
-        avg = badness / part if part else 0
-        logger.debug(f"    report: update badness {badness} +=> badness (avg: {avg}) (node: {node})")
+        average = badness / participations if participations else 0
+        logger.debug(f"    report: update badness {badness} +=> badness (avg: {average}) (node: {node})")
+        self._badness_timestamps[node] = time.time()
         self.update_route_participation(node)
 
     def update_route_participation(self, node: NodeID):
@@ -285,8 +291,17 @@ class LiquidityHintMgr:
             return 0.000010 * amount
 
     def badness_penalty(self, node_from: NodeID, amount: int) -> float:
-        """We blacklist a node if the attempts to fail are exhausted. Otherwise we just
-        scale up the effective fee proportional to the failed attempts."""
+        """The badness penalty indicates how close a node was to the failing hop of
+        payment routes in units of a fee rate. This fee rate can accumulate and may
+        lead to complete ignoring of the node, which is why we let the badness penalty
+        decay in time to open up these payment paths again."""
+        badness_timestamp = self._badness_timestamps[node_from]
+        if badness_timestamp:
+            time_delta = self.now - badness_timestamp
+            # only adjust after some time has passed, we don't want to evaluate this
+            # for every badness_penalty request
+            if time_delta > BADNESS_DECAY_ADJUSTMENT_SEC:
+                self._badness_hints[node_from] *= math.exp(-time_delta / BADNESS_DECAY_SEC)
         return amount * self._badness_hints[node_from]
 
     def add_to_blacklist(self, channel_id: ShortChannelID):

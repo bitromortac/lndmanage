@@ -2,6 +2,7 @@ from typing import Callable, List
 
 import networkx as nx
 
+from lndmanage.lib.utilities import profiled
 from lndmanage import settings
 
 import logging
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+@profiled
 def dijkstra(graph: nx.Graph, source: str, target: str, weight: Callable) -> List[str]:
     """Wrapper for calculating a shortest path given a weight function.
 
