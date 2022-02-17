@@ -12,6 +12,9 @@ BLACKLIST_DURATION = 3600  # how long (in seconds) a channel remains blacklisted
 HINT_DURATION = 3600  # how long (in seconds) a liquidity hint remains valid
 BADNESS_DECAY_ADJUSTMENT_SEC = 10 * 60  # adjustment interval for badness hints
 BADNESS_DECAY_SEC = 24 * 3600  # exponential decay time for badness
+TIME_EXPECTATION_ACCURACY = 0.2  # the relative error in estimating node reaction times
+TIME_PENALTY_RATE = 0.000_010  # the default penalty for reaction time
+TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow
 
 
 class ShortChannelID(int):
@@ -280,15 +283,18 @@ class LiquidityHintMgr:
         return log_penalty * penalty
 
     def time_penalty(self, node, amount) -> float:
-        nfwd = self._could_route[node]
+        """Gives a penalty for slow nodes in units of amount."""
+        number_forwardings = self._could_route[node]
         elapsed_time = self._elapsed_time[node]
-        avg_time = elapsed_time / nfwd if nfwd else 0
+        avg_time = elapsed_time / number_forwardings if number_forwardings else 0
         estimated_error = avg_time / elapsed_time if elapsed_time else float('inf')
-        # only give a time penalty if we have some certainty about it
-        if avg_time and estimated_error < 0.2:
-            return 0.000010 * math.exp(avg_time / 10 - 1) * amount
+        if avg_time and estimated_error < TIME_EXPECTATION_ACCURACY:
+            # if we are able to estimate the node reaction time accurately,
+            # we penalize nodes that do have a reaction time larger than TIME_NODE_IS_SLOW
+            return TIME_PENALTY_RATE * math.exp(avg_time / TIME_NODE_IS_SLOW_SEC - 1) * amount
         else:
-            return 0.000010 * amount
+            # otherwise give a default penalty
+            return TIME_PENALTY_RATE * amount
 
     def badness_penalty(self, node_from: NodeID, amount: int) -> float:
         """The badness penalty indicates how close a node was to the failing hop of
