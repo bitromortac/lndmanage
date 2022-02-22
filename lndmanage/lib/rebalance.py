@@ -9,12 +9,13 @@ from lndmanage.lib.routing import Router
 from lndmanage.lib import exceptions
 from lndmanage.lib.forwardings import get_channel_properties
 from lndmanage.lib.exceptions import (
-    RebalanceFailure,
-    NoRoute,
-    NoRebalanceCandidates,
-    RebalancingTrialsExhausted,
     DryRun,
+    NoRebalanceCandidates,
+    NoRoute,
+    NotEconomic,
     PaymentTimeOut,
+    RebalanceFailure,
+    RebalancingTrialsExhausted,
     TooExpensive,
 )
 from lndmanage.lib.ln_utilities import unbalancedness_to_local_balance, parse_nodeid_channelid
@@ -31,6 +32,7 @@ DEFAULT_AMOUNT_SAT = 100000
 RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT = 50  # a buffer for the fee rate a rebalance route can cost
 FORWARDING_STATS_DAYS = 30  # how many days will be taken into account when determining the rebalance direction
 MIN_REBALANCE_AMOUNT_SAT = 20_000
+MAX_UNBALANCEDNESS_FOR_CANDIDATES = 0.2  # sending rebalance candidates will not have an unbalancedness higher than this
 
 
 class Rebalancer(object):
@@ -124,7 +126,8 @@ class Rebalancer(object):
             fee_rate_margin = (illiquid_channel['local_fee_rate'] - liquid_channel['local_fee_rate']) / 1_000_000
             logger.info(f"  > Expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
             if (effective_fee_rate > fee_rate_margin) and not self.force:
-                # raise NotEconomic("This rebalance attempt doesn't lead to enough expected earnings.")
+                # TODO: We could look for the hop that charges the highest fee
+                #  and blacklist it, to ignore it in the next path.
                 pass
 
             if effective_fee_rate > self.max_effective_fee_rate:
@@ -252,11 +255,13 @@ class Rebalancer(object):
         for k, c in rebalance_candidates.items():
             if candidates_send:
                 maximal_can_send = self._maximal_local_balance_change(False, c)
-                if maximal_can_send > abs(local_balance_change):
+                if maximal_can_send > abs(local_balance_change) and \
+                        c['unbalancedness'] < MAX_UNBALANCEDNESS_FOR_CANDIDATES:
                     rebalance_candidates_with_funds[k] = c
             else:
                 maximal_can_receive = self._maximal_local_balance_change(True, c)
-                if maximal_can_receive > abs(local_balance_change):
+                if maximal_can_receive > abs(local_balance_change) and \
+                        c['unbalancedness'] > -MAX_UNBALANCEDNESS_FOR_CANDIDATES:
                     rebalance_candidates_with_funds[k] = c
 
         # We only include rebalance candidates for which it makes economically sense to
