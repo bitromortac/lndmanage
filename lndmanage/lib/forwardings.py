@@ -7,7 +7,7 @@ import numpy as np
 
 from lndmanage.lib.data_types import NodeProperties
 from lndmanage.lib.node import LndNode
-from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
 from lndmanage import settings
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class ForwardingAnalyzer(object):
         :param time_start: time interval start, unix timestamp
         :param time_end: time interval end, unix timestamp
         """
-        channel_id_to_node_id = self.node.get_channel_id_to_node_id()
+        channel_id_to_node_id = self.node.channel_id_to_node_id()
         self.channel_forwarding_stats = defaultdict(ForwardingStatistics)
         self.node_forwarding_stats = defaultdict(ForwardingStatistics)
 
@@ -565,7 +565,7 @@ def get_node_properites(
         f"Time interval (between first and last forwarding) is "
         f"{forwarding_analyzer.max_time_interval_days:6.2f} days."
     )
-    channel_id_to_node_id = node.get_channel_id_to_node_id(open_only=True)
+    channel_id_to_node_id = node.channel_id_to_node_id(open_only=True)
     node_ids_with_open_channels = {nid for nid in channel_id_to_node_id.values()}
     open_channels = node.get_open_channels()
 
@@ -641,7 +641,7 @@ def get_node_properites(
             "max_public_capacity": max(properties.public_capacities)
             if properties.public_capacities
             else 0,
-            "unbalancedness": channel_unbalancedness_and_commit_fee(
+            "unbalancedness": local_balance_to_unbalancedness(
                 local_balance, capacity, 0, False
             )[0],
         }
@@ -687,6 +687,8 @@ def get_node_properites(
             )
         except ZeroDivisionError:
             node_properties_forwardings[node_id]["fees_in_per_week"] = float("nan")
+
+    # TODO: unify with information from liquidity hints
 
     return node_properties_forwardings
 

@@ -1,8 +1,7 @@
 """
 Integration tests for lndmanage.
 """
-from test.testnetwork import TestNetwork
-from test.testing_common import test_graphs_paths
+from test.testing_common import test_graphs_paths, TestNetwork
 
 
 class NewNode(TestNetwork):

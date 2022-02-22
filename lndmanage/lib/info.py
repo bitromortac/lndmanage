@@ -1,9 +1,12 @@
-import re
 import datetime
-from typing import Tuple
+from typing import Dict
 
 from lndmanage.lib.network_info import NetworkAnalysis
-from lndmanage.lib import ln_utilities
+from lndmanage.lib.ln_utilities import (
+    parse_nodeid_channelid,
+    convert_channel_id_to_short_channel_id,
+    height_to_timestamp
+)
 from lndmanage import settings
 
 import logging
@@ -64,7 +67,7 @@ class Info(object):
 
         # analyzer = NetworkAnalysis(self.node)
         try:
-            channel_id, node_pub_key = self.parse(info)
+            channel_id, node_pub_key = parse_nodeid_channelid(info)
         except ValueError:
             logger.info("Info didn't represent neither a channel nor a node.")
             return
@@ -84,9 +87,9 @@ class Info(object):
             general_info['node2_alias'] = \
                 self.node.network.node_alias(general_info['node2_pub'])
             general_info['blockheight'] = \
-                ln_utilities.convert_channel_id_to_short_channel_id(
+                convert_channel_id_to_short_channel_id(
                     channel_id)[0]
-            general_info['open_timestamp'] = ln_utilities.height_to_timestamp(
+            general_info['open_timestamp'] = height_to_timestamp(
                 self.node, general_info['blockheight'])
 
             # TODO: if it's our channel, add extra info
@@ -106,46 +109,11 @@ class Info(object):
 
             self.print_node_info(general_info)
 
-    def parse(self, info: str) -> Tuple[int, str]:
-        """Parse whether info contains a channel id or node public key and hand
-        it back. If no info could be extracted, raise a ValueError.
-
-        :return: channel_id, node_pub_key
-        """
-        exp_channel_id = re.compile("^[0-9]{13,20}$")
-        exp_short_channel_id = re.compile("^[0-9]{6}x[0-9]{3}x[0-9]$")
-        exp_chan_point = re.compile("^[a-z0-9]{64}:[0-9]$")
-        exp_node_id = re.compile("^[a-z0-9]{66}$")
-
-        channel_id = None
-        node_pub_key = None
-
-        # prepare input string info
-        if exp_channel_id.match(info) is not None:
-            logger.debug("Info represents channel id.")
-            channel_id = int(info)
-        elif exp_short_channel_id.match(info) is not None:
-            logger.debug("Info represents short channel id.")
-            # TODO: convert short channel id to channel id
-            channel_id = 0
-        elif exp_chan_point.match(info) is not None:
-            # TODO: convert chan point to channel id
-            logger.debug("Info represents short channel id.")
-            channel_id = 0
-        elif exp_node_id.match(info) is not None:
-            logger.debug("Info represents node public key.")
-            node_pub_key = info
-        else:
-            raise ValueError("Info string doesn't match any pattern.")
-
-        return channel_id, node_pub_key
-
-    def print_channel_info(self, general_info):
+    def print_channel_info(self, general_info: Dict):
         """
         Prints the channel info with peer information.
 
         :param general_info: information about the channel in the public graph
-        :type general_info: dict
         """
 
         logger.info("-------- Channel info --------")
@@ -189,8 +157,9 @@ class Info(object):
         logger.info(f"{general_info['node1_alias']:^{COL_WIDTH}} | "
                     f"{general_info['node2_alias']:^{COL_WIDTH}}")
 
-        np1 = general_info['node1_policy']
-        np2 = general_info['node2_policy']
+        policies = general_info['policies']
+        np1 = policies[general_info['node1_pub'] > general_info['node2_pub']]
+        np2 = policies[general_info['node2_pub'] > general_info['node1_pub']]
         last_update_1 = np1['last_update']
         last_update_2 = np2['last_update']
 

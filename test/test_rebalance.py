@@ -2,18 +2,19 @@
 Integration tests for rebalancing of channels.
 """
 import time
+from typing import Optional
 
 from lndmanage import settings
-from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.ln_utilities import channel_unbalancedness_and_commit_fee
-from lndmanage.lib.exceptions import RebalanceCandidatesExhausted
-from test.testnetwork import TestNetwork
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
+from lndmanage.lib.exceptions import NoRebalanceCandidates
 
 from test.testing_common import (
     lndmanage_home,
     test_graphs_paths,
-    SLEEP_SEC_AFTER_REBALANCING)
+    SLEEP_SEC_AFTER_REBALANCING,
+    TestNetwork
+)
 
 import logging.config
 settings.set_lndmanage_home_dir(lndmanage_home)
@@ -27,60 +28,68 @@ class RebalanceTest(TestNetwork):
     """
     Implements an abstract testing class for channel rebalancing.
     """
-    def rebalance_and_check(self, test_channel_number, target,
-                            allow_unbalancing, places=5):
+    def rebalance_and_check(
+            self,
+            test_channel_number: int,
+            target: Optional[float],
+            amount_sat: Optional[int],
+            allow_uneconomic: bool,
+            places: int = 5,
+    ):
         """
         Test function for rebalancing to a specific target unbalancedness and
         asserts afterwards that the target was reached.
 
         :param test_channel_number: channel id
-        :type test_channel_number: int
         :param target: unbalancedness target
-        :type target: float
-        :param allow_unbalancing: if unbalancing should be allowed
-        :type allow_unbalancing: bool
-        :param places: accuracy of the comparison between expected and tested
-            values
+        :param amount_sat: rebalancing amount
+        :param allow_uneconomic: if uneconomic rebalancing should be allowed
+        :param places: accuracy of the comparison between expected and tested values
         :type places: int
         """
+        graph_before = self.testnet.assemble_graph()
+
         rebalancer = Rebalancer(
             self.lndnode,
-            max_effective_fee_rate=50,
-            budget_sat=20
+            max_effective_fee_rate=5E-6,
+            budget_sat=20,
+            force=allow_uneconomic,
         )
 
         channel_id = self.testnet.channel_mapping[
             test_channel_number]['channel_id']
 
-        try:
-            fees_msat = rebalancer.rebalance(
-                channel_id,
-                dry=False,
-                chunksize=1.0,
-                target=target,
-                allow_unbalancing=allow_unbalancing
-            )
-        except Exception as e:
-            raise e
+        fees_msat = rebalancer.rebalance(
+            channel_id,
+            dry=False,
+            target=target,
+            amount_sat=amount_sat,
+        )
 
         # sleep a bit to let LNDs update their balances
         time.sleep(SLEEP_SEC_AFTER_REBALANCING)
 
         # check if graph has the desired channel balances
-        graph = self.testnet.assemble_graph()
-        channel_data = graph['A'][test_channel_number]
-        listchannels = ListChannels(self.lndnode)
-        listchannels.print_all_channels('rev_alias')
+        graph_after = self.testnet.assemble_graph()
 
-        channel_unbalancedness, _ = channel_unbalancedness_and_commit_fee(
-            channel_data['local_balance'],
-            channel_data['capacity'],
-            channel_data['commit_fee'],
-            channel_data['initiator']
+        channel_data_before = graph_before['A'][test_channel_number]
+        channel_data_after = graph_after['A'][test_channel_number]
+        amount_sent = channel_data_before['local_balance'] - channel_data_after['local_balance']
+
+        channel_unbalancedness, _ = local_balance_to_unbalancedness(
+            channel_data_after['local_balance'],
+            channel_data_after['capacity'],
+            channel_data_after['commit_fee'],
+            channel_data_after['initiator']
         )
 
-        self.assertAlmostEqual(
-            target, channel_unbalancedness, places=places)
+        if target is not None:
+            self.assertAlmostEqual(
+                target, channel_unbalancedness, places=places)
+
+        elif amount_sat is not None:
+            self.assertAlmostEqual(
+                amount_sat, amount_sent, places=places)
 
         return fees_msat
 
@@ -106,52 +115,54 @@ class TestLiquidRebalance(RebalanceTest):
     def graph_test(self):
         self.assertEqual(6, len(self.master_node_graph_view))
 
-    def test_rebalance_channel_6(self):
+    def test_non_init_balanced(self):
         test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.0, False)
+        self.rebalance_and_check(test_channel_number, target=0.0, amount_sat=None, allow_uneconomic=True)
 
-    def test_small_positive_target_channel_6(self):
+    def test_non_init_small_positive_target(self):
         test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.2, False)
+        self.rebalance_and_check(test_channel_number, target=0.2, amount_sat=None, allow_uneconomic=True)
 
-    def test_large_positive_channel_6(self):
+    def test_non_init_max_target(self):
         test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, 0.8, False)
+        self.rebalance_and_check(test_channel_number, target=1.0, amount_sat=None, allow_uneconomic=True)
 
-    def test_small_negative_target_channel_6_fail(self):
+    def test_non_init_negative_target(self):
+        # this test should fail when unbalancing is not allowed, as it would
+        # unbalance another channel if the full target would be accounted for
+        test_channel_number = 6
+        self.rebalance_and_check(test_channel_number, target=-0.2, amount_sat=None, allow_uneconomic=True)
+
+    def test_non_init_fail_due_to_economic(self):
         # this test should fail when unbalancing is not allowed, as it would
         # unbalance another channel if the full target would be accounted for
         test_channel_number = 6
         self.assertRaises(
-            RebalanceCandidatesExhausted,
-            self.rebalance_and_check, test_channel_number, -0.2, False)
+            NoRebalanceCandidates,
+            self.rebalance_and_check, test_channel_number, target=-0.2, amount_sat=None, allow_uneconomic=False)
 
-    def test_small_negative_target_channel_6_succeed(self):
-        # this test should fail when unbalancing is not allowed, as it would
-        # unbalance another channel if the full target would be accounted for
-        test_channel_number = 6
-        self.rebalance_and_check(test_channel_number, -0.2, True)
-
-    def test_rebalance_channel_1(self):
+    def test_init_balanced(self):
         test_channel_number = 1
-        self.rebalance_and_check(test_channel_number, 0.0, False, places=2)
+        self.rebalance_and_check(test_channel_number, target=0.0, amount_sat=None, allow_uneconomic=True, places=1)
 
-    def test_rebalance_channel_2(self):
+    def test_init_already_balanced(self):
         test_channel_number = 2
-        self.rebalance_and_check(test_channel_number, 0.0, False, places=1)
+        self.rebalance_and_check(test_channel_number, target=0.0, amount_sat=None, allow_uneconomic=True, places=2)
+
+    def test_init_default_amount(self):
+        test_channel_number = 1
+        self.rebalance_and_check(test_channel_number, target=None, amount_sat=None, allow_uneconomic=True, places=-1)
 
     def test_shuffle_arround(self):
-        """
-        Shuffles sat around in channel 6.
-        """
+        """Shuffles sats around in channel 6."""
         first_target_amount = -0.1
         second_target_amount = 0.1
         test_channel_number = 6
 
         self.rebalance_and_check(
-            test_channel_number, first_target_amount, True)
+            test_channel_number, target=first_target_amount, amount_sat=None, allow_uneconomic=True)
         self.rebalance_and_check(
-            test_channel_number, second_target_amount, True)
+            test_channel_number, target=second_target_amount, amount_sat=None, allow_uneconomic=True)
 
 
 class TestUnbalancedRebalance(RebalanceTest):
@@ -166,12 +177,11 @@ class TestUnbalancedRebalance(RebalanceTest):
     def graph_test(self):
         self.assertEqual(10, len(self.master_node_graph_view))
 
-    def test_rebalance_channel_1(self):
+    def test_channel_1(self):
         """tests multiple rebalance of one channel"""
         test_channel_number = 1
-        # TODO: find out why not exact rebalancing target is reached
         print(self.rebalance_and_check(
-            test_channel_number, -0.05, False, places=1))
+            test_channel_number, target=-0.05, amount_sat=None, allow_uneconomic=True, places=1))
 
 
 class TestIlliquidRebalance(RebalanceTest):
@@ -186,23 +196,10 @@ class TestIlliquidRebalance(RebalanceTest):
     def graph_test(self):
         self.assertEqual(10, len(self.master_node_graph_view))
 
-    def test_rebalance_channel_1(self):
-        """
-        Tests multiple payment attempt rebalancing.
-        """
+    def test_channel_1_splitting(self):
+        """Tests multiple payment attempts with splitting."""
         test_channel_number = 1
-        # TODO: find out why not exact rebalancing target is reached
         fees_msat = self.rebalance_and_check(
-            test_channel_number, -0.05, False, places=1)
-        self.assertEqual(2623, fees_msat)
+            test_channel_number, target=-0.05, amount_sat=None, allow_uneconomic=True, places=1)
+        self.assertAlmostEqual(2000, fees_msat, places=-3)
 
-    def test_rebalance_channel_1_fail(self):
-        """
-        Tests if there are no rebalance candidates, because the target
-        requested doesn't match with the other channels.
-        """
-        test_channel_number = 1
-        self.assertRaises(
-            RebalanceCandidatesExhausted, self.rebalance_and_check,
-            test_channel_number, 0.3, False, places=1
-        )

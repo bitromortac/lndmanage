@@ -20,7 +20,7 @@ from lndmanage.lib.listings import ListChannels, ListPeers
 from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.openchannels import ChannelOpener
-from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.rebalance import Rebalancer, DEFAULT_MAX_FEE_RATE, DEFAULT_AMOUNT_SAT
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
 from lndmanage import settings
@@ -159,18 +159,17 @@ class Parser(object):
         self.parser_rebalance = subparsers.add_parser(
             'rebalance', help='rebalance a channel',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_rebalance.add_argument('channel', type=int,
-                                           help='channel_id')
+        self.parser_rebalance.add_argument('node_channel', type=str,
+                                           help='node id or channel id')
         self.parser_rebalance.add_argument(
-            '--max-fee-sat', type=int, default=20,
+            '--max-fee-sat', type=int, default=None,
             help='Sets the maximal fees in satoshis to be paid.')
         self.parser_rebalance.add_argument(
-            '--chunksize', type=float, default=1.0,
-            help='Specifies if the individual rebalance attempts should be '
-                 'split into smaller relative amounts. This increases success'
-                 ' rates, but also increases costs!')
+            '--amount', type=int, default=None,
+            help='Specifies the increase in local balance in sat. The amount can be'
+                 f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
         self.parser_rebalance.add_argument(
-            '--max-fee-rate', type=range_limited_float_type, default=5E-5,
+            '--max-fee-rate', type=range_limited_float_type, default=DEFAULT_MAX_FEE_RATE,
             help='Sets the maximal effective fee rate to be paid.'
                  ' The effective fee rate is defined by '
                  '(base_fee + amt * fee_rate) / amt.')
@@ -178,45 +177,15 @@ class Parser(object):
             '--reckless', help='Execute action in the network.',
             action='store_true')
         self.parser_rebalance.add_argument(
-            '--allow-unbalancing',
-            help=f'Allow channels to get an unbalancedness'
-            f' up to +-{settings.UNBALANCED_CHANNEL}.',
+            '--force',
+            help=f"Allow rebalances that are uneconomic.",
             action='store_true')
         self.parser_rebalance.add_argument(
-            '--target', help=f'This feature is still experimental! '
-            f'The unbalancedness target is between [-1, 1]. '
+            '--target', help=f'The unbalancedness target is between [-1, 1]. '
             f'A target of -1 leads to a maximal local balance, a target of 0 '
             f'to a 50:50 balanced channel and a target of 1 to a maximal '
             f'remote balance. Default is a target of 0.',
-            type=unbalanced_float, default=0.0)
-        rebalancing_strategies = ['most-affordable-first',
-                                  'lowest-feerate-first', 'match-unbalanced']
-        self.parser_rebalance.add_argument(
-            '--strategy',
-            help=f'Rebalancing strategy.',
-            choices=rebalancing_strategies, type=str, default=None)
-
-        # cmd: circle
-        self.parser_circle = subparsers.add_parser(
-            'circle', help='circular self-payment',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_circle.add_argument('channel_from', type=int,
-                                        help='channel_from')
-        self.parser_circle.add_argument('channel_to', type=int,
-                                        help='channel_from')
-        self.parser_circle.add_argument('amt_sat', type=int,
-                                        help='amount in satoshis')
-        self.parser_circle.add_argument(
-            '--max-fee-sat', type=int, default=20,
-            help='Sets the maximal fees in satoshis to be paid.')
-        self.parser_circle.add_argument(
-            '--max-fee-rate', type=range_limited_float_type, default=5E-5,
-            help='Sets the maximal effective fee rate to be paid. '
-                 'The effective fee rate is defined by '
-                 '(base_fee + amt * fee_rate) / amt.')
-        self.parser_circle.add_argument(
-            '--reckless', help='Execute action in the network.',
-            action='store_true')
+            type=unbalanced_float, default=None)
 
         # cmd: recommend-nodes
         self.parser_recommend_nodes = subparsers.add_parser(
@@ -542,44 +511,22 @@ class Parser(object):
             if args.target:
                 logger.warning("Warning: Target is set, this is still an "
                                "experimental feature.")
-            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
+            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat, args.force)
             try:
                 rebalancer.rebalance(
-                    args.channel,
+                    args.node_channel,
                     dry=not args.reckless,
-                    chunksize=args.chunksize,
                     target=args.target,
-                    allow_unbalancing=args.allow_unbalancing,
-                    strategy=args.strategy)
+                    amount_sat=args.amount
+                )
+            except ValueError as e:
+                logger.error(e)
             except TooExpensive as e:
                 logger.error(f"Too expensive: {e}")
             except RebalanceFailure as e:
                 logger.error(f"Rebalance failure: {e}")
             except KeyboardInterrupt:
                 pass
-
-        elif args.cmd == 'circle':
-            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat)
-            invoice = node.get_rebalance_invoice(memo='circular payment')
-            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
-            try:
-                rebalancer.rebalance_two_channels(
-                    args.channel_from, args.channel_to,
-                    args.amt_sat, payment_hash, payment_address,
-                    args.max_fee_sat,
-                    dry=not args.reckless)
-            except DryRun:
-                logger.info("This was just a dry run.")
-            except TooExpensive:
-                logger.error(
-                    "Too expensive: consider to raise --max-fee-sat or "
-                    "--max-fee-rate.")
-            except RebalancingTrialsExhausted:
-                logger.error(
-                    f"Rebalancing trials exhausted (number of trials: "
-                    f"{settings.REBALANCING_TRIALS}).")
-            except PaymentTimeOut:
-                logger.error("Payment failed because the payment timed out.")
 
         elif args.cmd == 'recommend-nodes':
             if not args.subcmd:

@@ -28,8 +28,7 @@ NUMBER_CHANNELS_DEFINING_HUB = 200
 UNBALANCED_CHANNEL = 0.2
 # rebalancing will be done with CHUNK_SIZE of the minimal capacity
 # of the to be balanced channels
-CHUNK_SIZE = 1.0
-REBALANCING_TRIALS = 30
+REBALANCING_TRIALS = 10
 
 
 logger_config = None
