@@ -118,6 +118,24 @@ class Network:
                 color=n.color)
 
         for e in raw_graph.edges:
+            policy1 = {
+                'time_lock_delta': e.node1_policy.time_lock_delta,
+                'fee_base_msat': e.node1_policy.fee_base_msat,
+                'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
+                'last_update': e.node1_policy.last_update,
+                'disabled': e.node1_policy.disabled,
+                'min_htlc': e.node1_policy.min_htlc,
+                'max_htlc_msat': e.node1_policy.max_htlc_msat
+            }
+            policy2 = {
+                'time_lock_delta': e.node2_policy.time_lock_delta,
+                'fee_base_msat': e.node2_policy.fee_base_msat,
+                'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
+                'last_update': e.node2_policy.last_update,
+                'disabled': e.node2_policy.disabled,
+                'min_htlc': e.node2_policy.min_htlc,
+                'max_htlc_msat': e.node2_policy.max_htlc_msat
+            }
             # create a dictionary for channel_id lookups
             self.edges[e.channel_id] = {
                 'node1_pub': e.node1_pub,
@@ -127,20 +145,8 @@ class Network:
                 'channel_id': e.channel_id,
                 'chan_point': e.chan_point,
                 'policies': {
-                    e.node1_pub > e.node2_pub: {
-                        'time_lock_delta': e.node1_policy.time_lock_delta,
-                        'fee_base_msat': e.node1_policy.fee_base_msat,
-                        'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
-                        'last_update': e.node1_policy.last_update,
-                        'disabled': e.node1_policy.disabled
-                    },
-                    e.node2_pub > e.node1_pub: {
-                        'time_lock_delta': e.node2_policy.time_lock_delta,
-                        'fee_base_msat': e.node2_policy.fee_base_msat,
-                        'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
-                        'last_update': e.node2_policy.last_update,
-                        'disabled': e.node2_policy.disabled
-                    }
+                    e.node1_pub > e.node2_pub: policy1,
+                    e.node2_pub > e.node1_pub: policy2
                 }
             }
 
@@ -152,20 +158,8 @@ class Network:
                 last_update=e.last_update,
                 capacity=e.capacity,
                 fees={
-                    e.node2_pub > e.node1_pub:
-                        {
-                            'time_lock_delta': e.node2_policy.time_lock_delta,
-                            'fee_base_msat': e.node2_policy.fee_base_msat,
-                            'fee_rate_milli_msat': e.node2_policy.fee_rate_milli_msat,
-                            'disabled': e.node2_policy.disabled
-                        },
-                    e.node1_pub > e.node2_pub:
-                        {
-                            'time_lock_delta': e.node1_policy.time_lock_delta,
-                            'fee_base_msat': e.node1_policy.fee_base_msat,
-                            'fee_rate_milli_msat': e.node1_policy.fee_rate_milli_msat,
-                            'disabled': e.node1_policy.disabled
-                        },
+                    e.node1_pub > e.node2_pub: policy1,
+                    e.node2_pub > e.node1_pub: policy2,
                 })
 
     def number_channels(self, node_pub_key):

@@ -61,6 +61,14 @@ class ChannelRater:
         if amt_msat // 1000 > channel_info["capacity"]:
             return math.inf
 
+        # we don't send if the minimal htlc amount is not respected
+        if amt_msat < channel_info.get("fees")[node_from > node_to]['min_htlc']:
+            return math.inf
+
+        # we don't send if the max_htlc_msat is not respected
+        if amt_msat > channel_info.get("fees")[node_from > node_to]['max_htlc_msat']:
+            return math.inf
+
         # we don't send over channel if it is disabled
         policy = channel_info.get("fees")[node_from > node_to]
         if policy["disabled"]:
