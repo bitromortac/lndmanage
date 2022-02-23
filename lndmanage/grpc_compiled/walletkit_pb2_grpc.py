@@ -107,6 +107,11 @@ class WalletKitStub(object):
                 request_serializer=walletkit__pb2.FundPsbtRequest.SerializeToString,
                 response_deserializer=walletkit__pb2.FundPsbtResponse.FromString,
                 )
+        self.SignPsbt = channel.unary_unary(
+                '/walletrpc.WalletKit/SignPsbt',
+                request_serializer=walletkit__pb2.SignPsbtRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.SignPsbtResponse.FromString,
+                )
         self.FinalizePsbt = channel.unary_unary(
                 '/walletrpc.WalletKit/FinalizePsbt',
                 request_serializer=walletkit__pb2.FinalizePsbtRequest.SerializeToString,
@@ -361,6 +366,24 @@ class WalletKitServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SignPsbt(self, request, context):
+        """
+        SignPsbt expects a partial transaction with all inputs and outputs fully
+        declared and tries to sign all unsigned inputs that have all required fields
+        (UTXO information, BIP32 derivation information, witness or sig scripts)
+        set.
+        If no error is returned, the PSBT is ready to be given to the next signer or
+        to be finalized if lnd was the last signer.
+
+        NOTE: This RPC only signs inputs (and only those it can sign), it does not
+        perform any other tasks (such as coin selection, UTXO locking or
+        input/output/fee value validation, PSBT finalization). Any input that is
+        incomplete will be skipped.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def FinalizePsbt(self, request, context):
         """
         FinalizePsbt expects a partial transaction with all inputs and outputs fully
@@ -471,6 +494,11 @@ def add_WalletKitServicer_to_server(servicer, server):
                     servicer.FundPsbt,
                     request_deserializer=walletkit__pb2.FundPsbtRequest.FromString,
                     response_serializer=walletkit__pb2.FundPsbtResponse.SerializeToString,
+            ),
+            'SignPsbt': grpc.unary_unary_rpc_method_handler(
+                    servicer.SignPsbt,
+                    request_deserializer=walletkit__pb2.SignPsbtRequest.FromString,
+                    response_serializer=walletkit__pb2.SignPsbtResponse.SerializeToString,
             ),
             'FinalizePsbt': grpc.unary_unary_rpc_method_handler(
                     servicer.FinalizePsbt,
@@ -792,6 +820,23 @@ class WalletKit(object):
         return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/FundPsbt',
             walletkit__pb2.FundPsbtRequest.SerializeToString,
             walletkit__pb2.FundPsbtResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SignPsbt(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/SignPsbt',
+            walletkit__pb2.SignPsbtRequest.SerializeToString,
+            walletkit__pb2.SignPsbtResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
