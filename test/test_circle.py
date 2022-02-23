@@ -320,8 +320,7 @@ class TestCircleIlliquid(CircleTest):
         )
 
     def test_circle_1_2_fail_no_route_multi_trials(self):
-        """Test if NoRoute is raised.
-        """
+        """Test if NoRoute is raised."""
         channel_numbers_from = [1]
         channel_numbers_to = [2]
         amount_sat = 450000

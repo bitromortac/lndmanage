@@ -37,12 +37,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 1_000_000_000,
                     },
                     'B' > 'A': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 1_000_000_000,
                     }
                 }
             },
@@ -57,12 +61,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 2_000_000_000,
                     },
                     'D' > 'A': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 2_000_000_000,
                     }
                 }
             },
@@ -84,18 +92,22 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 3_000_000_000,
                     },
                     'E' > 'B': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 3_000_000_000,
                     }
                 }
             },
             1: {
                 'to': 'C',
-                'capacity': 10000000,
+                'capacity': 10_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
                 'policies': {
@@ -104,12 +116,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 10_000_000_000,
                     },
                     'C' > 'B': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 10_000_000_000,
                     }
                 }
             },
@@ -122,7 +138,7 @@ nodes = {
         'channels': {
             7: {
                 'to': 'E',
-                'capacity': 1000000,
+                'capacity': 1_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
                 'policies': {
@@ -131,12 +147,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 1_000_000_000,
                     },
                     'E' > 'C': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 1_000_000_000,
                     }
                 }
             },
@@ -151,12 +171,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 2_000_000_000,
                     },
                     'D' > 'C': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 2_000_000_000,
                     }
                 }
             },
@@ -178,12 +202,16 @@ nodes = {
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 3_000_000_000,
                     },
                     'E' > 'D': {
                         'fee_base_msat': 1000,
                         'fee_rate_milli_msat': 100,
                         'time_lock_delta': 40,
                         'disabled': False,
+                        'min_htlc': 0,
+                        'max_htlc_msat': 3_000_000_000,
                     }
                 }
             },

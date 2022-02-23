@@ -1,4 +1,5 @@
 import os
+import shutil
 from unittest import TestCase
 
 from lnregtest.lib.network import Network
@@ -52,6 +53,13 @@ class TestNetwork(TestCase):
             raise NotImplementedError("A network definition path needs to be "
                                       "given.")
 
+        # we delete previous test data
+        try:
+            shutil.rmtree(lndmanage_home)
+        except FileNotFoundError:
+            pass
+        os.mkdir(lndmanage_home)
+
         self.testnet = Network(
             binary_folder=bin_dir,
             network_definition_location=self.network_definition,
@@ -72,6 +80,7 @@ class TestNetwork(TestCase):
 
         master_node_data_dir = self.testnet.master_node.data_dir
         master_node_port = self.testnet.master_node._grpc_port
+
         self.master_node_graph_view = self.testnet.master_node_graph_view()
 
         self.lndnode = LndNode(
