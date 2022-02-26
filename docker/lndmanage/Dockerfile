@@ -3,15 +3,19 @@
 
 FROM python:3 as builder
 
-RUN python -m venv /root/.venv
+RUN python -m venv /root/.venv && mkdir lndmanage
 
 ENV PATH="/root/.venv/bin:$PATH"
 
 ARG LNDMANAGE_HOST_SRC_PATH
 
 COPY "$LNDMANAGE_HOST_SRC_PATH/requirements.txt" .
+COPY "$LNDMANAGE_HOST_SRC_PATH/pyproject.toml" .
+COPY "$LNDMANAGE_HOST_SRC_PATH/setup.py" .
+COPY "$LNDMANAGE_HOST_SRC_PATH/README.md" .
+COPY "$LNDMANAGE_HOST_SRC_PATH/lndmanage/__init__.py" ./lndmanage/
 
-RUN pip install wheel && pip install -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && pip install .
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
@@ -41,7 +45,7 @@ ARG LNDMANAGE_HOST_SRC_PATH
 COPY "$LNDMANAGE_HOST_SRC_PATH" .
 
 # this should be fast because it is cached from builder image
-RUN pip install -r requirements.txt
+RUN pip install .
 
 WORKDIR /root
 COPY "home" .
