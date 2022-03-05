@@ -32,6 +32,8 @@ ENTRYPOINT ["/tini", "--"]
 COPY --from=builder /root/.venv /root/.venv
 
 ENV PATH="/root/.venv/bin:$PATH:/root"
+env TLS_CERT_FILE /root/aux/tls.cert
+env ADMIN_MACAROON_FILE /root/aux/admin.macaroon
 
 # copy sources under /root/lndmanage
 WORKDIR /root/lndmanage
