@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z/github.com/lightningnetwork/lnd/lnrpc/walletrpc',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fwalletkit.proto\x12\twalletrpc\x1a\x0flightning.proto\x1a\x0csigner.proto\"K\n\x12ListUnspentRequest\x12\x11\n\tmin_confs\x18\x01 \x01(\x05\x12\x11\n\tmax_confs\x18\x02 \x01(\x05\x12\x0f\n\x07\x61\x63\x63ount\x18\x03 \x01(\t\"1\n\x13ListUnspentResponse\x12\x1a\n\x05utxos\x18\x01 \x03(\x0b\x32\x0b.lnrpc.Utxo\"_\n\x12LeaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x1a\n\x12\x65xpiration_seconds\x18\x03 \x01(\x04\")\n\x13LeaseOutputResponse\x12\x12\n\nexpiration\x18\x01 \x01(\x04\"E\n\x14ReleaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\"\x17\n\x15ReleaseOutputResponse\"6\n\x06KeyReq\x12\x18\n\x10key_finger_print\x18\x01 \x01(\x05\x12\x12\n\nkey_family\x18\x02 \x01(\x05\"T\n\x0b\x41\x64\x64rRequest\x12\x0f\n\x07\x61\x63\x63ount\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x0e\n\x06\x63hange\x18\x03 \x01(\x08\"\x1c\n\x0c\x41\x64\x64rResponse\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\"\xe7\x01\n\x07\x41\x63\x63ount\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x1b\n\x13\x65xtended_public_key\x18\x03 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x04 \x01(\x0c\x12\x17\n\x0f\x64\x65rivation_path\x18\x05 \x01(\t\x12\x1a\n\x12\x65xternal_key_count\x18\x06 \x01(\r\x12\x1a\n\x12internal_key_count\x18\x07 \x01(\r\x12\x12\n\nwatch_only\x18\x08 \x01(\x08\"Q\n\x13ListAccountsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"<\n\x14ListAccountsResponse\x12$\n\x08\x61\x63\x63ounts\x18\x01 \x03(\x0b\x32\x12.walletrpc.Account\"\xa0\x01\n\x14ImportAccountRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1b\n\x13\x65xtended_public_key\x18\x02 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x03 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x04 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x0f\n\x07\x64ry_run\x18\x05 \x01(\x08\"|\n\x15ImportAccountResponse\x12#\n\x07\x61\x63\x63ount\x18\x01 \x01(\x0b\x32\x12.walletrpc.Account\x12\x1e\n\x16\x64ry_run_external_addrs\x18\x02 \x03(\t\x12\x1e\n\x16\x64ry_run_internal_addrs\x18\x03 \x03(\t\"Z\n\x16ImportPublicKeyRequest\x12\x12\n\npublic_key\x18\x01 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"\x19\n\x17ImportPublicKeyResponse\",\n\x0bTransaction\x12\x0e\n\x06tx_hex\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\"(\n\x0fPublishResponse\x12\x15\n\rpublish_error\x18\x01 \x01(\t\"\x86\x01\n\x12SendOutputsRequest\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\x12\x1f\n\x07outputs\x18\x02 \x03(\x0b\x32\x0e.signrpc.TxOut\x12\r\n\x05label\x18\x03 \x01(\t\x12\x11\n\tmin_confs\x18\x04 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x05 \x01(\x08\"%\n\x13SendOutputsResponse\x12\x0e\n\x06raw_tx\x18\x01 \x01(\x0c\")\n\x12\x45stimateFeeRequest\x12\x13\n\x0b\x63onf_target\x18\x01 \x01(\x05\")\n\x13\x45stimateFeeResponse\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\"\xd2\x02\n\x0cPendingSweep\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12,\n\x0cwitness_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.WitnessType\x12\x12\n\namount_sat\x18\x03 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x04 \x01(\rB\x02\x18\x01\x12\x1a\n\x12\x62roadcast_attempts\x18\x05 \x01(\r\x12\x1d\n\x15next_broadcast_height\x18\x06 \x01(\r\x12\x1d\n\x15requested_conf_target\x18\x08 \x01(\r\x12\"\n\x16requested_sat_per_byte\x18\t \x01(\rB\x02\x18\x01\x12\x15\n\rsat_per_vbyte\x18\n \x01(\x04\x12\x1f\n\x17requested_sat_per_vbyte\x18\x0b \x01(\x04\x12\r\n\x05\x66orce\x18\x07 \x01(\x08\"\x16\n\x14PendingSweepsRequest\"H\n\x15PendingSweepsResponse\x12/\n\x0epending_sweeps\x18\x01 \x03(\x0b\x32\x17.walletrpc.PendingSweep\"\x88\x01\n\x0e\x42umpFeeRequest\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x13\n\x0btarget_conf\x18\x02 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x03 \x01(\rB\x02\x18\x01\x12\r\n\x05\x66orce\x18\x04 \x01(\x08\x12\x15\n\rsat_per_vbyte\x18\x05 \x01(\x04\"\x11\n\x0f\x42umpFeeResponse\"$\n\x11ListSweepsRequest\x12\x0f\n\x07verbose\x18\x01 \x01(\x08\"\xcc\x01\n\x12ListSweepsResponse\x12\x38\n\x13transaction_details\x18\x01 \x01(\x0b\x32\x19.lnrpc.TransactionDetailsH\x00\x12G\n\x0ftransaction_ids\x18\x02 \x01(\x0b\x32,.walletrpc.ListSweepsResponse.TransactionIDsH\x00\x1a)\n\x0eTransactionIDs\x12\x17\n\x0ftransaction_ids\x18\x01 \x03(\tB\x08\n\x06sweeps\"I\n\x17LabelTransactionRequest\x12\x0c\n\x04txid\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\x12\x11\n\toverwrite\x18\x03 \x01(\x08\"\x1a\n\x18LabelTransactionResponse\"\xca\x01\n\x0f\x46undPsbtRequest\x12\x0e\n\x04psbt\x18\x01 \x01(\x0cH\x00\x12$\n\x03raw\x18\x02 \x01(\x0b\x32\x15.walletrpc.TxTemplateH\x00\x12\x15\n\x0btarget_conf\x18\x03 \x01(\rH\x01\x12\x17\n\rsat_per_vbyte\x18\x04 \x01(\x04H\x01\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\x12\x11\n\tmin_confs\x18\x06 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x07 \x01(\x08\x42\n\n\x08templateB\x06\n\x04\x66\x65\x65s\"p\n\x10\x46undPsbtResponse\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x1b\n\x13\x63hange_output_index\x18\x02 \x01(\x05\x12*\n\x0clocked_utxos\x18\x03 \x03(\x0b\x32\x14.walletrpc.UtxoLease\"\x92\x01\n\nTxTemplate\x12\x1f\n\x06inputs\x18\x01 \x03(\x0b\x32\x0f.lnrpc.OutPoint\x12\x33\n\x07outputs\x18\x02 \x03(\x0b\x32\".walletrpc.TxTemplate.OutputsEntry\x1a.\n\x0cOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\"N\n\tUtxoLease\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x12\n\nexpiration\x18\x03 \x01(\x04\";\n\x13\x46inalizePsbtRequest\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\"A\n\x14\x46inalizePsbtResponse\x12\x13\n\x0bsigned_psbt\x18\x01 \x01(\x0c\x12\x14\n\x0craw_final_tx\x18\x02 \x01(\x0c\"\x13\n\x11ListLeasesRequest\"@\n\x12ListLeasesResponse\x12*\n\x0clocked_utxos\x18\x01 \x03(\x0b\x32\x14.walletrpc.UtxoLease*z\n\x0b\x41\x64\x64ressType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x17\n\x13WITNESS_PUBKEY_HASH\x10\x01\x12\x1e\n\x1aNESTED_WITNESS_PUBKEY_HASH\x10\x02\x12%\n!HYBRID_NESTED_WITNESS_PUBKEY_HASH\x10\x03*\x99\x03\n\x0bWitnessType\x12\x13\n\x0fUNKNOWN_WITNESS\x10\x00\x12\x18\n\x14\x43OMMITMENT_TIME_LOCK\x10\x01\x12\x17\n\x13\x43OMMITMENT_NO_DELAY\x10\x02\x12\x15\n\x11\x43OMMITMENT_REVOKE\x10\x03\x12\x17\n\x13HTLC_OFFERED_REVOKE\x10\x04\x12\x18\n\x14HTLC_ACCEPTED_REVOKE\x10\x05\x12%\n!HTLC_OFFERED_TIMEOUT_SECOND_LEVEL\x10\x06\x12&\n\"HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL\x10\x07\x12\x1f\n\x1bHTLC_OFFERED_REMOTE_TIMEOUT\x10\x08\x12 \n\x1cHTLC_ACCEPTED_REMOTE_SUCCESS\x10\t\x12\x1c\n\x18HTLC_SECOND_LEVEL_REVOKE\x10\n\x12\x14\n\x10WITNESS_KEY_HASH\x10\x0b\x12\x1b\n\x17NESTED_WITNESS_KEY_HASH\x10\x0c\x12\x15\n\x11\x43OMMITMENT_ANCHOR\x10\r2\xb2\x0b\n\tWalletKit\x12L\n\x0bListUnspent\x12\x1d.walletrpc.ListUnspentRequest\x1a\x1e.walletrpc.ListUnspentResponse\x12L\n\x0bLeaseOutput\x12\x1d.walletrpc.LeaseOutputRequest\x1a\x1e.walletrpc.LeaseOutputResponse\x12R\n\rReleaseOutput\x12\x1f.walletrpc.ReleaseOutputRequest\x1a .walletrpc.ReleaseOutputResponse\x12I\n\nListLeases\x12\x1c.walletrpc.ListLeasesRequest\x1a\x1d.walletrpc.ListLeasesResponse\x12:\n\rDeriveNextKey\x12\x11.walletrpc.KeyReq\x1a\x16.signrpc.KeyDescriptor\x12\x38\n\tDeriveKey\x12\x13.signrpc.KeyLocator\x1a\x16.signrpc.KeyDescriptor\x12;\n\x08NextAddr\x12\x16.walletrpc.AddrRequest\x1a\x17.walletrpc.AddrResponse\x12O\n\x0cListAccounts\x12\x1e.walletrpc.ListAccountsRequest\x1a\x1f.walletrpc.ListAccountsResponse\x12R\n\rImportAccount\x12\x1f.walletrpc.ImportAccountRequest\x1a .walletrpc.ImportAccountResponse\x12X\n\x0fImportPublicKey\x12!.walletrpc.ImportPublicKeyRequest\x1a\".walletrpc.ImportPublicKeyResponse\x12H\n\x12PublishTransaction\x12\x16.walletrpc.Transaction\x1a\x1a.walletrpc.PublishResponse\x12L\n\x0bSendOutputs\x12\x1d.walletrpc.SendOutputsRequest\x1a\x1e.walletrpc.SendOutputsResponse\x12L\n\x0b\x45stimateFee\x12\x1d.walletrpc.EstimateFeeRequest\x1a\x1e.walletrpc.EstimateFeeResponse\x12R\n\rPendingSweeps\x12\x1f.walletrpc.PendingSweepsRequest\x1a .walletrpc.PendingSweepsResponse\x12@\n\x07\x42umpFee\x12\x19.walletrpc.BumpFeeRequest\x1a\x1a.walletrpc.BumpFeeResponse\x12I\n\nListSweeps\x12\x1c.walletrpc.ListSweepsRequest\x1a\x1d.walletrpc.ListSweepsResponse\x12[\n\x10LabelTransaction\x12\".walletrpc.LabelTransactionRequest\x1a#.walletrpc.LabelTransactionResponse\x12\x43\n\x08\x46undPsbt\x12\x1a.walletrpc.FundPsbtRequest\x1a\x1b.walletrpc.FundPsbtResponse\x12O\n\x0c\x46inalizePsbt\x12\x1e.walletrpc.FinalizePsbtRequest\x1a\x1f.walletrpc.FinalizePsbtResponseB1Z/github.com/lightningnetwork/lnd/lnrpc/walletrpcb\x06proto3'
+  serialized_pb=b'\n\x0fwalletkit.proto\x12\twalletrpc\x1a\x0flightning.proto\x1a\x0csigner.proto\"K\n\x12ListUnspentRequest\x12\x11\n\tmin_confs\x18\x01 \x01(\x05\x12\x11\n\tmax_confs\x18\x02 \x01(\x05\x12\x0f\n\x07\x61\x63\x63ount\x18\x03 \x01(\t\"1\n\x13ListUnspentResponse\x12\x1a\n\x05utxos\x18\x01 \x03(\x0b\x32\x0b.lnrpc.Utxo\"_\n\x12LeaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x1a\n\x12\x65xpiration_seconds\x18\x03 \x01(\x04\")\n\x13LeaseOutputResponse\x12\x12\n\nexpiration\x18\x01 \x01(\x04\"E\n\x14ReleaseOutputRequest\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\"\x17\n\x15ReleaseOutputResponse\"6\n\x06KeyReq\x12\x18\n\x10key_finger_print\x18\x01 \x01(\x05\x12\x12\n\nkey_family\x18\x02 \x01(\x05\"T\n\x0b\x41\x64\x64rRequest\x12\x0f\n\x07\x61\x63\x63ount\x18\x01 \x01(\t\x12$\n\x04type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x0e\n\x06\x63hange\x18\x03 \x01(\x08\"\x1c\n\x0c\x41\x64\x64rResponse\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\"\xe7\x01\n\x07\x41\x63\x63ount\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x1b\n\x13\x65xtended_public_key\x18\x03 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x04 \x01(\x0c\x12\x17\n\x0f\x64\x65rivation_path\x18\x05 \x01(\t\x12\x1a\n\x12\x65xternal_key_count\x18\x06 \x01(\r\x12\x1a\n\x12internal_key_count\x18\x07 \x01(\r\x12\x12\n\nwatch_only\x18\x08 \x01(\x08\"Q\n\x13ListAccountsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"<\n\x14ListAccountsResponse\x12$\n\x08\x61\x63\x63ounts\x18\x01 \x03(\x0b\x32\x12.walletrpc.Account\"\xa0\x01\n\x14ImportAccountRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1b\n\x13\x65xtended_public_key\x18\x02 \x01(\t\x12\x1e\n\x16master_key_fingerprint\x18\x03 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x04 \x01(\x0e\x32\x16.walletrpc.AddressType\x12\x0f\n\x07\x64ry_run\x18\x05 \x01(\x08\"|\n\x15ImportAccountResponse\x12#\n\x07\x61\x63\x63ount\x18\x01 \x01(\x0b\x32\x12.walletrpc.Account\x12\x1e\n\x16\x64ry_run_external_addrs\x18\x02 \x03(\t\x12\x1e\n\x16\x64ry_run_internal_addrs\x18\x03 \x03(\t\"Z\n\x16ImportPublicKeyRequest\x12\x12\n\npublic_key\x18\x01 \x01(\x0c\x12,\n\x0c\x61\x64\x64ress_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.AddressType\"\x19\n\x17ImportPublicKeyResponse\",\n\x0bTransaction\x12\x0e\n\x06tx_hex\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\"(\n\x0fPublishResponse\x12\x15\n\rpublish_error\x18\x01 \x01(\t\"\x86\x01\n\x12SendOutputsRequest\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\x12\x1f\n\x07outputs\x18\x02 \x03(\x0b\x32\x0e.signrpc.TxOut\x12\r\n\x05label\x18\x03 \x01(\t\x12\x11\n\tmin_confs\x18\x04 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x05 \x01(\x08\"%\n\x13SendOutputsResponse\x12\x0e\n\x06raw_tx\x18\x01 \x01(\x0c\")\n\x12\x45stimateFeeRequest\x12\x13\n\x0b\x63onf_target\x18\x01 \x01(\x05\")\n\x13\x45stimateFeeResponse\x12\x12\n\nsat_per_kw\x18\x01 \x01(\x03\"\xd2\x02\n\x0cPendingSweep\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12,\n\x0cwitness_type\x18\x02 \x01(\x0e\x32\x16.walletrpc.WitnessType\x12\x12\n\namount_sat\x18\x03 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x04 \x01(\rB\x02\x18\x01\x12\x1a\n\x12\x62roadcast_attempts\x18\x05 \x01(\r\x12\x1d\n\x15next_broadcast_height\x18\x06 \x01(\r\x12\x1d\n\x15requested_conf_target\x18\x08 \x01(\r\x12\"\n\x16requested_sat_per_byte\x18\t \x01(\rB\x02\x18\x01\x12\x15\n\rsat_per_vbyte\x18\n \x01(\x04\x12\x1f\n\x17requested_sat_per_vbyte\x18\x0b \x01(\x04\x12\r\n\x05\x66orce\x18\x07 \x01(\x08\"\x16\n\x14PendingSweepsRequest\"H\n\x15PendingSweepsResponse\x12/\n\x0epending_sweeps\x18\x01 \x03(\x0b\x32\x17.walletrpc.PendingSweep\"\x88\x01\n\x0e\x42umpFeeRequest\x12!\n\x08outpoint\x18\x01 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x13\n\x0btarget_conf\x18\x02 \x01(\r\x12\x18\n\x0csat_per_byte\x18\x03 \x01(\rB\x02\x18\x01\x12\r\n\x05\x66orce\x18\x04 \x01(\x08\x12\x15\n\rsat_per_vbyte\x18\x05 \x01(\x04\"\x11\n\x0f\x42umpFeeResponse\"$\n\x11ListSweepsRequest\x12\x0f\n\x07verbose\x18\x01 \x01(\x08\"\xcc\x01\n\x12ListSweepsResponse\x12\x38\n\x13transaction_details\x18\x01 \x01(\x0b\x32\x19.lnrpc.TransactionDetailsH\x00\x12G\n\x0ftransaction_ids\x18\x02 \x01(\x0b\x32,.walletrpc.ListSweepsResponse.TransactionIDsH\x00\x1a)\n\x0eTransactionIDs\x12\x17\n\x0ftransaction_ids\x18\x01 \x03(\tB\x08\n\x06sweeps\"I\n\x17LabelTransactionRequest\x12\x0c\n\x04txid\x18\x01 \x01(\x0c\x12\r\n\x05label\x18\x02 \x01(\t\x12\x11\n\toverwrite\x18\x03 \x01(\x08\"\x1a\n\x18LabelTransactionResponse\"\xca\x01\n\x0f\x46undPsbtRequest\x12\x0e\n\x04psbt\x18\x01 \x01(\x0cH\x00\x12$\n\x03raw\x18\x02 \x01(\x0b\x32\x15.walletrpc.TxTemplateH\x00\x12\x15\n\x0btarget_conf\x18\x03 \x01(\rH\x01\x12\x17\n\rsat_per_vbyte\x18\x04 \x01(\x04H\x01\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\x12\x11\n\tmin_confs\x18\x06 \x01(\x05\x12\x19\n\x11spend_unconfirmed\x18\x07 \x01(\x08\x42\n\n\x08templateB\x06\n\x04\x66\x65\x65s\"p\n\x10\x46undPsbtResponse\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x1b\n\x13\x63hange_output_index\x18\x02 \x01(\x05\x12*\n\x0clocked_utxos\x18\x03 \x03(\x0b\x32\x14.walletrpc.UtxoLease\"\x92\x01\n\nTxTemplate\x12\x1f\n\x06inputs\x18\x01 \x03(\x0b\x32\x0f.lnrpc.OutPoint\x12\x33\n\x07outputs\x18\x02 \x03(\x0b\x32\".walletrpc.TxTemplate.OutputsEntry\x1a.\n\x0cOutputsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\"N\n\tUtxoLease\x12\n\n\x02id\x18\x01 \x01(\x0c\x12!\n\x08outpoint\x18\x02 \x01(\x0b\x32\x0f.lnrpc.OutPoint\x12\x12\n\nexpiration\x18\x03 \x01(\x04\"&\n\x0fSignPsbtRequest\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\"\'\n\x10SignPsbtResponse\x12\x13\n\x0bsigned_psbt\x18\x01 \x01(\x0c\";\n\x13\x46inalizePsbtRequest\x12\x13\n\x0b\x66unded_psbt\x18\x01 \x01(\x0c\x12\x0f\n\x07\x61\x63\x63ount\x18\x05 \x01(\t\"A\n\x14\x46inalizePsbtResponse\x12\x13\n\x0bsigned_psbt\x18\x01 \x01(\x0c\x12\x14\n\x0craw_final_tx\x18\x02 \x01(\x0c\"\x13\n\x11ListLeasesRequest\"@\n\x12ListLeasesResponse\x12*\n\x0clocked_utxos\x18\x01 \x03(\x0b\x32\x14.walletrpc.UtxoLease*z\n\x0b\x41\x64\x64ressType\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x17\n\x13WITNESS_PUBKEY_HASH\x10\x01\x12\x1e\n\x1aNESTED_WITNESS_PUBKEY_HASH\x10\x02\x12%\n!HYBRID_NESTED_WITNESS_PUBKEY_HASH\x10\x03*\x99\x03\n\x0bWitnessType\x12\x13\n\x0fUNKNOWN_WITNESS\x10\x00\x12\x18\n\x14\x43OMMITMENT_TIME_LOCK\x10\x01\x12\x17\n\x13\x43OMMITMENT_NO_DELAY\x10\x02\x12\x15\n\x11\x43OMMITMENT_REVOKE\x10\x03\x12\x17\n\x13HTLC_OFFERED_REVOKE\x10\x04\x12\x18\n\x14HTLC_ACCEPTED_REVOKE\x10\x05\x12%\n!HTLC_OFFERED_TIMEOUT_SECOND_LEVEL\x10\x06\x12&\n\"HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL\x10\x07\x12\x1f\n\x1bHTLC_OFFERED_REMOTE_TIMEOUT\x10\x08\x12 \n\x1cHTLC_ACCEPTED_REMOTE_SUCCESS\x10\t\x12\x1c\n\x18HTLC_SECOND_LEVEL_REVOKE\x10\n\x12\x14\n\x10WITNESS_KEY_HASH\x10\x0b\x12\x1b\n\x17NESTED_WITNESS_KEY_HASH\x10\x0c\x12\x15\n\x11\x43OMMITMENT_ANCHOR\x10\r2\xf7\x0b\n\tWalletKit\x12L\n\x0bListUnspent\x12\x1d.walletrpc.ListUnspentRequest\x1a\x1e.walletrpc.ListUnspentResponse\x12L\n\x0bLeaseOutput\x12\x1d.walletrpc.LeaseOutputRequest\x1a\x1e.walletrpc.LeaseOutputResponse\x12R\n\rReleaseOutput\x12\x1f.walletrpc.ReleaseOutputRequest\x1a .walletrpc.ReleaseOutputResponse\x12I\n\nListLeases\x12\x1c.walletrpc.ListLeasesRequest\x1a\x1d.walletrpc.ListLeasesResponse\x12:\n\rDeriveNextKey\x12\x11.walletrpc.KeyReq\x1a\x16.signrpc.KeyDescriptor\x12\x38\n\tDeriveKey\x12\x13.signrpc.KeyLocator\x1a\x16.signrpc.KeyDescriptor\x12;\n\x08NextAddr\x12\x16.walletrpc.AddrRequest\x1a\x17.walletrpc.AddrResponse\x12O\n\x0cListAccounts\x12\x1e.walletrpc.ListAccountsRequest\x1a\x1f.walletrpc.ListAccountsResponse\x12R\n\rImportAccount\x12\x1f.walletrpc.ImportAccountRequest\x1a .walletrpc.ImportAccountResponse\x12X\n\x0fImportPublicKey\x12!.walletrpc.ImportPublicKeyRequest\x1a\".walletrpc.ImportPublicKeyResponse\x12H\n\x12PublishTransaction\x12\x16.walletrpc.Transaction\x1a\x1a.walletrpc.PublishResponse\x12L\n\x0bSendOutputs\x12\x1d.walletrpc.SendOutputsRequest\x1a\x1e.walletrpc.SendOutputsResponse\x12L\n\x0b\x45stimateFee\x12\x1d.walletrpc.EstimateFeeRequest\x1a\x1e.walletrpc.EstimateFeeResponse\x12R\n\rPendingSweeps\x12\x1f.walletrpc.PendingSweepsRequest\x1a .walletrpc.PendingSweepsResponse\x12@\n\x07\x42umpFee\x12\x19.walletrpc.BumpFeeRequest\x1a\x1a.walletrpc.BumpFeeResponse\x12I\n\nListSweeps\x12\x1c.walletrpc.ListSweepsRequest\x1a\x1d.walletrpc.ListSweepsResponse\x12[\n\x10LabelTransaction\x12\".walletrpc.LabelTransactionRequest\x1a#.walletrpc.LabelTransactionResponse\x12\x43\n\x08\x46undPsbt\x12\x1a.walletrpc.FundPsbtRequest\x1a\x1b.walletrpc.FundPsbtResponse\x12\x43\n\x08SignPsbt\x12\x1a.walletrpc.SignPsbtRequest\x1a\x1b.walletrpc.SignPsbtResponse\x12O\n\x0c\x46inalizePsbt\x12\x1e.walletrpc.FinalizePsbtRequest\x1a\x1f.walletrpc.FinalizePsbtResponseB1Z/github.com/lightningnetwork/lnd/lnrpc/walletrpcb\x06proto3'
   ,
   dependencies=[lightning__pb2.DESCRIPTOR,signer__pb2.DESCRIPTOR,])
 
@@ -56,8 +56,8 @@ _ADDRESSTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3442,
-  serialized_end=3564,
+  serialized_start=3523,
+  serialized_end=3645,
 )
 _sym_db.RegisterEnumDescriptor(_ADDRESSTYPE)
 
@@ -142,8 +142,8 @@ _WITNESSTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3567,
-  serialized_end=3976,
+  serialized_start=3648,
+  serialized_end=4057,
 )
 _sym_db.RegisterEnumDescriptor(_WITNESSTYPE)
 
@@ -1730,6 +1730,70 @@ _UTXOLEASE = _descriptor.Descriptor(
 )
 
 
+_SIGNPSBTREQUEST = _descriptor.Descriptor(
+  name='SignPsbtRequest',
+  full_name='walletrpc.SignPsbtRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='funded_psbt', full_name='walletrpc.SignPsbtRequest.funded_psbt', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3227,
+  serialized_end=3265,
+)
+
+
+_SIGNPSBTRESPONSE = _descriptor.Descriptor(
+  name='SignPsbtResponse',
+  full_name='walletrpc.SignPsbtResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='signed_psbt', full_name='walletrpc.SignPsbtResponse.signed_psbt', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3267,
+  serialized_end=3306,
+)
+
+
 _FINALIZEPSBTREQUEST = _descriptor.Descriptor(
   name='FinalizePsbtRequest',
   full_name='walletrpc.FinalizePsbtRequest',
@@ -1764,8 +1828,8 @@ _FINALIZEPSBTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3227,
-  serialized_end=3286,
+  serialized_start=3308,
+  serialized_end=3367,
 )
 
 
@@ -1803,8 +1867,8 @@ _FINALIZEPSBTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3288,
-  serialized_end=3353,
+  serialized_start=3369,
+  serialized_end=3434,
 )
 
 
@@ -1828,8 +1892,8 @@ _LISTLEASESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3355,
-  serialized_end=3374,
+  serialized_start=3436,
+  serialized_end=3455,
 )
 
 
@@ -1860,8 +1924,8 @@ _LISTLEASESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3376,
-  serialized_end=3440,
+  serialized_start=3457,
+  serialized_end=3521,
 )
 
 _LISTUNSPENTRESPONSE.fields_by_name['utxos'].message_type = lightning__pb2._UTXO
@@ -1942,6 +2006,8 @@ DESCRIPTOR.message_types_by_name['FundPsbtRequest'] = _FUNDPSBTREQUEST
 DESCRIPTOR.message_types_by_name['FundPsbtResponse'] = _FUNDPSBTRESPONSE
 DESCRIPTOR.message_types_by_name['TxTemplate'] = _TXTEMPLATE
 DESCRIPTOR.message_types_by_name['UtxoLease'] = _UTXOLEASE
+DESCRIPTOR.message_types_by_name['SignPsbtRequest'] = _SIGNPSBTREQUEST
+DESCRIPTOR.message_types_by_name['SignPsbtResponse'] = _SIGNPSBTRESPONSE
 DESCRIPTOR.message_types_by_name['FinalizePsbtRequest'] = _FINALIZEPSBTREQUEST
 DESCRIPTOR.message_types_by_name['FinalizePsbtResponse'] = _FINALIZEPSBTRESPONSE
 DESCRIPTOR.message_types_by_name['ListLeasesRequest'] = _LISTLEASESREQUEST
@@ -2211,6 +2277,20 @@ UtxoLease = _reflection.GeneratedProtocolMessageType('UtxoLease', (_message.Mess
   })
 _sym_db.RegisterMessage(UtxoLease)
 
+SignPsbtRequest = _reflection.GeneratedProtocolMessageType('SignPsbtRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SIGNPSBTREQUEST,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.SignPsbtRequest)
+  })
+_sym_db.RegisterMessage(SignPsbtRequest)
+
+SignPsbtResponse = _reflection.GeneratedProtocolMessageType('SignPsbtResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SIGNPSBTRESPONSE,
+  '__module__' : 'walletkit_pb2'
+  # @@protoc_insertion_point(class_scope:walletrpc.SignPsbtResponse)
+  })
+_sym_db.RegisterMessage(SignPsbtResponse)
+
 FinalizePsbtRequest = _reflection.GeneratedProtocolMessageType('FinalizePsbtRequest', (_message.Message,), {
   'DESCRIPTOR' : _FINALIZEPSBTREQUEST,
   '__module__' : 'walletkit_pb2'
@@ -2253,8 +2333,8 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=3979,
-  serialized_end=5437,
+  serialized_start=4060,
+  serialized_end=5587,
   methods=[
   _descriptor.MethodDescriptor(
     name='ListUnspent',
@@ -2437,9 +2517,19 @@ _WALLETKIT = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='SignPsbt',
+    full_name='walletrpc.WalletKit.SignPsbt',
+    index=18,
+    containing_service=None,
+    input_type=_SIGNPSBTREQUEST,
+    output_type=_SIGNPSBTRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='FinalizePsbt',
     full_name='walletrpc.WalletKit.FinalizePsbt',
-    index=18,
+    index=19,
     containing_service=None,
     input_type=_FINALIZEPSBTREQUEST,
     output_type=_FINALIZEPSBTRESPONSE,

@@ -1,7 +1,7 @@
 #!/bin/bash
 git clone https://github.com/googleapis/googleapis.git
 pip install grpcio grpcio-tools googleapis-common-protos
-tag="v0.14.0-beta"
+tag="v0.14.2-beta"
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/lightning.proto" -O lightning.proto
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/routerrpc/router.proto" -O router.proto
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/walletrpc/walletkit.proto" -O walletkit.proto
