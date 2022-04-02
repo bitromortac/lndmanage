@@ -8,8 +8,8 @@ with open("./lndmanage/__init__.py", "r") as f:
     VERSION = re.search(MATCH_EXPR, f.read()).group(2)
 
 # package:
-# (venv) pip install pep517 setuptools wheel sdist twine
-# (venv) python3 -m pep517.build --source --binary .
+# (venv) pip install build setuptools wheel sdist twine
+# (venv) python3 -m build
 # upload:
 # (venv) twine upload --repository testpypi dist/*
 
