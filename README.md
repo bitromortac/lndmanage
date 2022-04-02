@@ -447,7 +447,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmanage requires `>=python3.8`, `lnd v0.13.X/v0.14.0`, `python3-venv`.
+Installation of lndmanage requires `>=python3.8`, `v0.14.x`, `python3-venv`.
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
