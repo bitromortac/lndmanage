@@ -23,7 +23,7 @@ echo "Building lndmanage docker container..."
 if [[ -n "$LNDMANAGE_VERBOSE" ]]; then
   set -x
 fi
-exec sudo docker build \
+exec docker build \
   --build-arg LNDMANAGE_HOST_SRC_PATH=_src \
   -t lndmanage:local \
   "$@" \

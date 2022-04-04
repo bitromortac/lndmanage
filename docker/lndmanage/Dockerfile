@@ -3,7 +3,7 @@
 
 FROM python:3 as builder
 
-RUN python -m venv /root/.venv && mkdir lndmanage
+RUN python -m venv /root/.venv
 
 ENV PATH="/root/.venv/bin:$PATH"
 
@@ -15,7 +15,7 @@ COPY "$LNDMANAGE_HOST_SRC_PATH/setup.py" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/README.md" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/lndmanage/__init__.py" ./lndmanage/
 
-RUN pip install --upgrade pip setuptools wheel && pip install .
+RUN pip install .
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
@@ -36,16 +36,13 @@ ENTRYPOINT ["/tini", "--"]
 COPY --from=builder /root/.venv /root/.venv
 
 ENV PATH="/root/.venv/bin:$PATH:/root"
-env TLS_CERT_FILE /root/aux/tls.cert
-env ADMIN_MACAROON_FILE /root/aux/admin.macaroon
+ENV TLS_CERT_FILE /root/aux/tls.cert
+ENV ADMIN_MACAROON_FILE /root/aux/admin.macaroon
 
 # copy sources under /root/lndmanage
 WORKDIR /root/lndmanage
 ARG LNDMANAGE_HOST_SRC_PATH
 COPY "$LNDMANAGE_HOST_SRC_PATH" .
-
-# this should be fast because it is cached from builder image
-RUN pip install .
 
 WORKDIR /root
 COPY "home" .
