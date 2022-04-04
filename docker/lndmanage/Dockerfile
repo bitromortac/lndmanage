@@ -20,16 +20,17 @@ RUN pip install .
 
 FROM python:3 as final
 
-# install fish shell for convenience
-RUN apt-get update && apt-get install -y --no-install-recommends \
-		fish
+ARG LNDMANAGE_EXTRA_PACKAGES
+RUN ([ ! -z $LNDMANAGE_EXTRA_PACKAGES ] && \
+	apt-get update && \
+	apt-get install -y --no-install-recommends ${LNDMANAGE_EXTRA_PACKAGES} && \
+	apt-get clean && rm -rf /var/lib/apt/lists/*) || true
 
 # this is for better handling docker-compose signals
 ENV TINI_VERSION v0.18.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 ENTRYPOINT ["/tini", "--"]
-
 
 # copy python environment from builder
 COPY --from=builder /root/.venv /root/.venv
