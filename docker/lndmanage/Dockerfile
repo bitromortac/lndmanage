@@ -7,7 +7,7 @@ RUN python -m venv /root/.venv
 
 ENV PATH="/root/.venv/bin:$PATH"
 
-ARG LNDMANAGE_HOST_SRC_PATH
+ARG LNDMANAGE_HOST_SRC_PATH=.
 
 COPY "$LNDMANAGE_HOST_SRC_PATH/requirements.txt" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/pyproject.toml" .
@@ -41,8 +41,8 @@ ENV ADMIN_MACAROON_FILE /root/aux/admin.macaroon
 
 # copy sources under /root/lndmanage
 WORKDIR /root/lndmanage
-ARG LNDMANAGE_HOST_SRC_PATH
+ARG LNDMANAGE_HOST_SRC_PATH=.
 COPY "$LNDMANAGE_HOST_SRC_PATH" .
 
 WORKDIR /root
-COPY "home" .
+COPY "$LNDMANAGE_HOST_SRC_PATH/docker/lndmanage/home" .
