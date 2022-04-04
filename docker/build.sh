@@ -12,6 +12,6 @@ exec docker build \
   --build-arg LNDMANAGE_HOST_SRC_PATH="${LNDMANAGE_HOST_SRC_PATH:-.}" \
   --build-arg LNDMANAGE_EXTRA_PACKAGES="${LNDMANAGE_EXTRA_PACKAGES:-fish}" \
   -t lndmanage:local \
-  -f ./lndmanage/Dockerfile \
+  -f ./Dockerfile \
   "$@" \
   ..
