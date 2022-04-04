@@ -12,7 +12,6 @@ ARG LNDMANAGE_HOST_SRC_PATH=.
 COPY "$LNDMANAGE_HOST_SRC_PATH/requirements.txt" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/pyproject.toml" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/setup.py" .
-COPY "$LNDMANAGE_HOST_SRC_PATH/README.md" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/lndmanage/__init__.py" ./lndmanage/
 
 RUN pip install .

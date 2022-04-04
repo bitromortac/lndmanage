@@ -1,7 +1,12 @@
-import re, setuptools
+import re, setuptools, os.path
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+description = "Channel management tool for lightning network daemon (LND) "
+"operators.",
+if os.path.exists("README.md"):
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+else:
+    long_description = description
 
 with open("./lndmanage/__init__.py", "r") as f:
     MATCH_EXPR = "__version__[^'\"]+(['\"])([^'\"]+)"
@@ -18,8 +23,7 @@ setuptools.setup(
     version=VERSION,
     author="bitromortac",
     author_email="bitromortac@protonmail.com",
-    description="Channel management tool for lightning network daemon (LND) "
-    "operators.",
+    description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/bitromortac/lndmanage",
