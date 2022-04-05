@@ -21,7 +21,7 @@ from lndmanage.lib.listings import ListChannels, ListPeers
 from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.openchannels import ChannelOpener
-from lndmanage.lib.rebalance import Rebalancer, DEFAULT_MAX_FEE_RATE, DEFAULT_AMOUNT_SAT
+from lndmanage.lib.rebalance import Rebalancer, DEFAULT_AMOUNT_SAT
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
 
@@ -171,7 +171,7 @@ class Parser(object):
             help='Specifies the increase in local balance in sat. The amount can be'
                  f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
         self.parser_rebalance.add_argument(
-            '--max-fee-rate', type=range_limited_float_type, default=DEFAULT_MAX_FEE_RATE,
+            '--max-fee-rate', type=range_limited_float_type, default=None,
             help='Sets the maximal effective fee rate to be paid.'
                  ' The effective fee rate is defined by '
                  '(base_fee + amt * fee_rate) / amt.')

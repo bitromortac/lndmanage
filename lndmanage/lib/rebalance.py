@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-DEFAULT_MAX_FEE_RATE = 0.001000
 DEFAULT_AMOUNT_SAT = 100000
 RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT = 50  # a buffer for the fee rate a rebalance route can cost
 FORWARDING_STATS_DAYS = 30  # how many days will be taken into account when determining the rebalance direction
@@ -68,7 +67,7 @@ class Rebalancer(object):
         amt_sat.
 
         A prior created payment_hash has to be given. The budget_sat sets
-        the maxmimum fees in sat that will be paid. A dry run can be done.
+        the maximum fees in sat that will be paid. A dry run can be done.
 
         :param send_channels: channels for sending with info
         :param receive_channels: channels for receiving with info
@@ -129,10 +128,6 @@ class Rebalancer(object):
                 # TODO: We could look for the hop that charges the highest fee
                 #  and blacklist it, to ignore it in the next path.
                 pass
-
-            if effective_fee_rate > self.max_effective_fee_rate:
-                raise TooExpensive(f"Route is too expensive (rate too high). Rate: {effective_fee_rate:.6f}, "
-                                   f"requested max rate: {self.max_effective_fee_rate:.6f}")
 
             if route.total_fee_msat > budget_sat * 1000:
                 raise TooExpensive(f"Route is too expensive (budget exhausted). Total fee of route: "
@@ -494,29 +489,28 @@ class Rebalancer(object):
                     f" rb: {unbalanced_channel_info['remote_balance']} sat")
             initial_local_balance_change = amount_sat
 
-        # determine budget and fee rate from local balance change:
+        # determine budget from local balance change:
         # budget fee_rate  result
-        #    x      0      set fee rate
-        #    0      x      set budget
-        #    x      x      max(budget, budget from fee rate): set fee rate and budget
-        #    0      0      set defaults from a fee rate
+        #    0      0      unlimited
+        #    x      0      use budget
+        #    0      x      set budget from fee rate
+        #    x      x      min(budget, budget from fee rate)
         net_change = abs(initial_local_balance_change)
-        if self.budget_sat and not self.max_effective_fee_rate:
-            self.max_effective_fee_rate = self.budget_sat / net_change
-        elif not self.budget_sat and self.max_effective_fee_rate:
-            self.budget_sat = int(self.max_effective_fee_rate * net_change)
-        elif self.budget_sat and self.max_effective_fee_rate:
-            budget_from_fee_rate = int(net_change * self.max_effective_fee_rate)
-            budget = max(budget_from_fee_rate, self.budget_sat)
-            self.budget_sat = budget
-            self.max_effective_fee_rate = budget / net_change
-        else:
-            self.budget_sat = int(DEFAULT_MAX_FEE_RATE * net_change)
-            self.max_effective_fee_rate = DEFAULT_MAX_FEE_RATE
+        self.budget_sat = min(
+            self.budget_sat if self.budget_sat else net_change,
+            int(self.max_effective_fee_rate * net_change) if self.max_effective_fee_rate else net_change
+        )
 
-        logger.info(f">>> Trying to rebalance channel {channel_id} "
-                    f"with a max rate of {self.max_effective_fee_rate} "
-                    f"and a max fee of {self.budget_sat} sat.")
+        budget_log = [f">>> Trying to rebalance channel {channel_id}"]
+        if self.budget_sat == net_change:
+            budget_log.append("WITH NO LIMITS")
+        else:
+            budget_log.append(f"with max fee: {self.budget_sat} sat")
+        if self.max_effective_fee_rate:
+            budget_log.append(f"from max rate: {self.max_effective_fee_rate:.6f}")
+        else:
+            budget_log.append(f"(effective max rate: {self.budget_sat / net_change:.6f})")
+        logger.info(str.join(" ", budget_log) + ".")
 
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
