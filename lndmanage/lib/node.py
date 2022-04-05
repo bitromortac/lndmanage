@@ -244,6 +244,8 @@ class LndNode(Node):
             payment = self._routerrpc.SendToRouteV2(request, timeout=5 * 60)
         except _Rendezvous:
             raise PaymentTimeOut
+        except _InactiveRpcError:
+            raise PaymentTimeOut
         if payment.HasField('failure'):
             failure = payment.failure  # type: lnd.Failure.FailureCode
             logger.debug(f"Routing failure: {failure}")
