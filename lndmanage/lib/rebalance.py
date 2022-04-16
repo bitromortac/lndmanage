@@ -177,8 +177,6 @@ class Rebalancer(object):
                     failed_hop = int(e.payment.failure.failure_source_index)
                 except exceptions.IncorrectCLTVExpiry as e:
                     failed_hop = int(e.payment.failure.failure_source_index)
-                except exceptions.In as e:
-                    failed_hop = int(e.payment.failure.failure_source_index)
                 else:
                     logger.debug(f"Preimage: {result.preimage.hex()}")
                     logger.info("Success!\n")
