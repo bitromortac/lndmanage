@@ -1,34 +1,40 @@
 import os
+from ast import literal_eval
 import configparser
 from lndmanage.lib.configure import check_or_create_configuration
 from pathlib import Path
 
+def parse_env(key, default, _type=str):
+    if _type == str:
+        return os.environ.get(key, default)
+    return _type(literal_eval(os.environ.get(key, default)))
+
 # -------- graph settings --------
 # accepted age of the network graph
-CACHING_RETENTION_MINUTES = 30
+CACHING_RETENTION_MINUTES = parse_env('LNDMANAGE_RETENTION_MINUTES', '30', float)
 
 # -------- pathfinding --------
 # default penalty for non-active channels / too small channels / unbalanced channels
-PENALTY = 1E9
+PENALTY = parse_env('LNDMANAGE_DEFAULT_PENALTY', '1E9', float)
 # if a penalty should be applied for long paths
-PREFER_SHORT_PATHS = True
+PREFER_SHORT_PATHS = parse_env('LNDMANAGE_PREFER_SHORT_PATHS', 'True', bool)
 # penalty per hop in msat, used together with PREFER_SHORT_PATHS
-LONG_PATH_PENALTY_MSAT = 2000
+LONG_PATH_PENALTY_MSAT = parse_env('LNDMANAGE_LONG_PATH_PENALTY_MSAT', '2000', int)
 # exclude channels, which have less than amt * MIN_REL_CHANNEL_CAPACITY
 # this can be used to increase success rates
-MIN_REL_CHANNEL_CAPACITY = 0.75
+MIN_REL_CHANNEL_CAPACITY = parse_env('LNDMANAGE_MIN_REL_CAPACITY', '0.75', float)
 
 # -------- network analysis --------
 # a user typically has a low number of channels, this number
-NUMBER_CHANNELS_DEFINING_USER_NODE = 3
-NUMBER_CHANNELS_DEFINING_HUB = 200
+NUMBER_CHANNELS_DEFINING_USER_NODE = parse_env('LNDMANAGE_USER_NODE_CEIL', '3', int)
+NUMBER_CHANNELS_DEFINING_HUB = parse_env('LNDMNANAGE_HUB_NODE_FLOOR', '200', int)
 
 # -------- rebalancing --------
 # in terms of unbalancedness
-UNBALANCED_CHANNEL = 0.2
+UNBALANCED_CHANNEL = parse_env('LNDMANAGE_UNBALANCED_CHANNEL_CEIL', '0.2', float)
 # rebalancing will be done with CHUNK_SIZE of the minimal capacity
 # of the to be balanced channels
-REBALANCING_TRIALS = 10
+REBALANCING_TRIALS = parse_env('LNDMANAGE_REBALANCING_TRIALS', '10', int)
 
 
 logger_config = None
