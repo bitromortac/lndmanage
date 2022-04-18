@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import distutils.spawn as spawn
+from decimal import Decimal
 # readline has a desired side effect on keyword input of enabling history
 import readline
 
@@ -32,30 +33,27 @@ logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
 
 
-def range_limited_float_type(unchecked_value):
+def range_limited_decimal_type(unchecked_value, range_min=Decimal("1E-6"), range_max=Decimal(1)):
     """
     Type function for argparse - a float within some predefined bounds
 
     :param: unchecked_value: float
     """
     try:
-        value = float(unchecked_value)
+        value = Decimal(unchecked_value)
     except ValueError:
-        raise argparse.ArgumentTypeError("Must be a floating point number")
-    if value < 1E-6 or value > 1:
+        raise argparse.ArgumentTypeError("Must be a decimal number")
+    if value < range_min or value > range_max:
         raise argparse.ArgumentTypeError(
-            "Argument must be < " + str(1E-6) + " and > " + str(1))
+            f"Argument must be < {range_min} and > {range_max}")
     return value
 
 
-def unbalanced_float(x):
+def unbalanced_decimal(x):
     """
     Checks if the value is a valid unbalancedness between [-1 ... 1]
     """
-    x = float(x)
-    if x < -1.0 or x > 1.0:
-        raise argparse.ArgumentTypeError(f"{x} not in range [-1.0, 1.0]")
-    return x
+    return range_limited_decimal_type(x, -1, 1)
 
 
 class Parser(object):
@@ -171,7 +169,7 @@ class Parser(object):
             help='Specifies the increase in local balance in sat. The amount can be'
                  f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
         self.parser_rebalance.add_argument(
-            '--max-fee-rate', type=range_limited_float_type, default=None,
+            '--max-fee-rate', type=range_limited_decimal_type, default=None,
             help='Sets the maximal effective fee rate to be paid.'
                  ' The effective fee rate is defined by '
                  '(base_fee + amt * fee_rate) / amt.')
@@ -187,7 +185,7 @@ class Parser(object):
             f'A target of -1 leads to a maximal local balance, a target of 0 '
             f'to a 50:50 balanced channel and a target of 1 to a maximal '
             f'remote balance. Default is a target of 0.',
-            type=unbalanced_float, default=None)
+            type=unbalanced_decimal, default=None)
 
         # cmd: recommend-nodes
         self.parser_recommend_nodes = subparsers.add_parser(

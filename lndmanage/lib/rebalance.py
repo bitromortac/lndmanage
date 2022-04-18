@@ -3,6 +3,7 @@ import logging
 import math
 from typing import TYPE_CHECKING, Optional, Dict
 import time
+from decimal import Decimal
 
 from lndmanage.lib.rating import node_badness
 from lndmanage.lib.routing import Router
@@ -31,27 +32,21 @@ DEFAULT_AMOUNT_SAT = 100000
 RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT = 50  # a buffer for the fee rate a rebalance route can cost
 FORWARDING_STATS_DAYS = 30  # how many days will be taken into account when determining the rebalance direction
 MIN_REBALANCE_AMOUNT_SAT = 20_000
-MAX_UNBALANCEDNESS_FOR_CANDIDATES = 0.2  # sending rebalance candidates will not have an unbalancedness higher than this
+MAX_UNBALANCEDNESS_FOR_CANDIDATES = Decimal('0.2')  # sending rebalance candidates will not have an unbalancedness higher than this
 
 
 class Rebalancer(object):
     """Implements methods for rebalancing."""
 
-    def __init__(self, node: 'LndNode', max_effective_fee_rate: float, budget_sat: int, force=False):
+    def __init__(self, node: 'LndNode'):
         """
         :param node: node instance
-        :param max_effective_fee_rate: maximum effective fee rate (base_fee + fee_rate * amt)/amt paid
-        :param budget_sat: maximal rebalancing budget
-        :param force: allow uneconomic routes / rebalance candidates
         """
         self.node = node
         self.channels = {}
         self.router = Router(self.node)
         # we don't want to route over our node, so blacklist it:
         self.node.network.channel_rater.blacklist_add_node(self.node.pub_key)
-        self.max_effective_fee_rate = max_effective_fee_rate
-        self.budget_sat = budget_sat
-        self.force = force
 
     def _rebalance(
             self,
@@ -62,6 +57,7 @@ class Rebalancer(object):
             payment_address: bytes,
             budget_sat: int,
             dry=False,
+            force=False,
     ) -> int:
         """Rebalances liquidity from send_channels to receive_channels with an amount of
         amt_sat.
@@ -76,6 +72,7 @@ class Rebalancer(object):
         :param payment_address: payment secret
         :param budget_sat: budget for the rebalance in sat
         :param dry: specifies, if it is a dry run
+        :param force: allow uneconomic routes / rebalance candidates
 
         :return: total fees for the whole rebalance in msat
 
@@ -124,7 +121,7 @@ class Rebalancer(object):
             # check economics
             fee_rate_margin = (illiquid_channel['local_fee_rate'] - liquid_channel['local_fee_rate']) / 1_000_000
             logger.info(f"  > Expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
-            if (effective_fee_rate > fee_rate_margin) and not self.force:
+            if (effective_fee_rate > fee_rate_margin) and not force:
                 # TODO: We could look for the hop that charges the highest fee
                 #  and blacklist it, to ignore it in the next path.
                 pass
@@ -214,6 +211,7 @@ class Rebalancer(object):
             channel_id: int,
             channel_fee_rate_milli_msat: int,
             local_balance_change: int,
+            force: bool = False
     ) -> Dict:
         """
         Determines channels, which can be used to rebalance a channel.
@@ -240,20 +238,20 @@ class Rebalancer(object):
         rebalance_node_id = map_channel_id_node_id[channel_id]
         removed_channels = [cid for cid, nid in map_channel_id_node_id.items() if nid == rebalance_node_id]
         rebalance_candidates = {
-            k: c for k, c in self.channels.items() if k not in removed_channels}
+            k: c for k, c in self.channels.items() if k not in removed_channels
+        }
 
         # filter channels, which can't receive/send the amount
-        candidates_send = True if local_balance_change > 0 else False
+        candidates_send = local_balance_change > 0
         rebalance_candidates_with_funds = {}
         for k, c in rebalance_candidates.items():
+            max_amount = self._maximal_local_balance_change(not candidates_send, c)
             if candidates_send:
-                maximal_can_send = self._maximal_local_balance_change(False, c)
-                if maximal_can_send > abs(local_balance_change) and \
+                if max_amount > abs(local_balance_change) and \
                         c['unbalancedness'] < MAX_UNBALANCEDNESS_FOR_CANDIDATES:
                     rebalance_candidates_with_funds[k] = c
             else:
-                maximal_can_receive = self._maximal_local_balance_change(True, c)
-                if maximal_can_receive > abs(local_balance_change) and \
+                if max_amount > abs(local_balance_change) and \
                         c['unbalancedness'] > -MAX_UNBALANCEDNESS_FOR_CANDIDATES:
                     rebalance_candidates_with_funds[k] = c
 
@@ -266,36 +264,20 @@ class Rebalancer(object):
         #   it always needs to be positive at least
         rebalance_candidates_filtered = {}
         for k, c in rebalance_candidates_with_funds.items():
-            if not self.force:  # we allow only economic candidates
+            if force:
+                c['fee_rate_margin'] = Decimal('inf')
+            else:
                 if local_balance_change < 0:  # we take liquidity out of the channel
                     fee_rate_margin = c['local_fee_rate'] - channel_fee_rate_milli_msat
                 else:  # putting liquidity into the channel
                     fee_rate_margin = channel_fee_rate_milli_msat - c['local_fee_rate']
                 # We enforce a mimimum amount of an acceptable fee rate,
                 # because we need to also pay for rebalancing.
-                if fee_rate_margin > RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT:
-                    c['fee_rate_margin'] = fee_rate_margin / 1_000_000
-                    rebalance_candidates_filtered[k] = c
-            else:  # otherwise, we can afford very high fee rates
-                c['fee_rate_margin'] = float('inf')
-                rebalance_candidates_filtered[k] = c
+                if fee_rate_margin <= RESERVED_REBALANCE_FEE_RATE_MILLI_MSAT:
+                    continue
+                c['fee_rate_margin'] = fee_rate_margin / 1_000_000
+            rebalance_candidates_filtered[k] = c
         return rebalance_candidates_filtered
-
-    @staticmethod
-    def _effective_fee_rate(amt_sat: int, base_fee: float, fee_rate: float) -> float:
-        """
-        Calculates the effective fee rate: (base_fee + fee_rate * amt) / amt
-
-        :param amt_sat: amount in sat
-        :param base_fee: base fee in sat
-        :param fee_rate: fee rate
-
-        :return: effective fee rate
-        """
-        amt_msat = amt_sat * 1000
-        assert not (amt_msat == 0)
-        fee_rate = (base_fee + fee_rate * amt_msat / 1000000) / amt_msat
-        return fee_rate
 
     @staticmethod
     def _debug_rebalance_candidates(rebalance_candidates: Dict[int, dict]):
@@ -327,7 +309,7 @@ class Rebalancer(object):
                 f"l:{c['local_balance']: 9d} "
                 f"r:{c['remote_balance']: 9d} "
                 f"lbf:{c['local_base_fee']: 6d} "
-                f"lfr:{c['local_fee_rate']/1E6: 1.6f} "
+                f"lfr:{c['local_fee_rate']/Decimal('1E6'): 1.6f} "
                 f"fra:{c.get('fee_rate_margin'): 1.6f} "
                 f"a:{c['alias']}")
 
@@ -377,15 +359,18 @@ class Rebalancer(object):
             self,
             node_id_channel_id: str,
             dry=False,
-            target: float = None,
+            target: Decimal = None,
             amount_sat: int = None,
+            max_effective_fee_rate: Decimal = Decimal('0.001'),
+            budget_sat: int = None,
+            force: bool = False
     ) -> int:
         """Automatically rebalances a selected channel with a fee cap of
-        self.budget_sat and self.max_effective_fee_rate.
+        budget_sat and max_effective_fee_rate.
 
         Rebalancing candidates are selected among all channels that support the
         rebalancing operation (liquidity-wise), which are economically viable
-        (controlled through self.force) determined by fees rates of
+        (controlled through force) determined by fees rates of
         counterparty channels.
 
         The rebalancing operation is carried out in these steps:
@@ -398,6 +383,9 @@ class Rebalancer(object):
         :param dry: if set, it's a dry run
         :param target: specifies unbalancedness after rebalancing in [-1, 1]
         :param amount_sat: rebalance amount (target takes precedence)
+        :param max_effective_fee_rate: maximum effective fee rate (base_fee + fee_rate * amt)/amt paid
+        :param budget_sat: maximal rebalancing budget
+        :param force: allow uneconomic routes / rebalance candidates
 
         :return: fees in msat paid for rebalancing
 
@@ -409,8 +397,8 @@ class Rebalancer(object):
             candidates
         :raises TooExpensive: the rebalance became too expensive
         """
-        if target and not (-1.0 <= target <= 1.0):
-            raise ValueError("Target must be between -1.0 and 1.0.")
+        if target and not (-1 < target < 1):
+            raise ValueError("Target must be between -1 and 1.")
 
         # convert the node id to a channel id if possible
         self.channels = self.node.get_unbalanced_channels()
@@ -460,7 +448,7 @@ class Rebalancer(object):
             ub = unbalanced_channel_info['unbalancedness']
             flow = channel_properties['flow_direction']
 
-            if abs(ub) > 0.95:  # there's no other option
+            if abs(ub) > Decimal('0.95'):  # there's no other option
                 initial_local_balance_change = int(math.copysign(1, ub) * DEFAULT_AMOUNT_SAT)
                 logger.debug("Default amount due to strong unbalancedness.")
             elif fees_in or fees_out:  # based on type of earnings
@@ -476,7 +464,7 @@ class Rebalancer(object):
                 initial_local_balance_change = int(math.copysign(1, ub) * DEFAULT_AMOUNT_SAT)
                 logger.debug("Default amount due to unbalancedness.")
         else:  # based on manual amount, checking bounds
-            increase_local_balance = True if amount_sat > 0 else False
+            increase_local_balance = amount_sat > 0
             maximal_change = self._maximal_local_balance_change(
                 increase_local_balance=increase_local_balance,
                 unbalanced_channel_info=unbalanced_channel_info
@@ -489,28 +477,16 @@ class Rebalancer(object):
                     f" rb: {unbalanced_channel_info['remote_balance']} sat")
             initial_local_balance_change = amount_sat
 
-        # determine budget from local balance change:
-        # budget fee_rate  result
-        #    0      0      unlimited
-        #    x      0      use budget
-        #    0      x      set budget from fee rate
-        #    x      x      min(budget, budget from fee rate)
         net_change = abs(initial_local_balance_change)
-        self.budget_sat = min(
-            self.budget_sat if self.budget_sat else net_change,
-            int(self.max_effective_fee_rate * net_change) if self.max_effective_fee_rate else net_change
+        max_effective_fee_rate = min(
+            max_effective_fee_rate if max_effective_fee_rate else Decimal(1),
+            budget_sat / net_change if budget_sat else Decimal(1)
         )
 
-        budget_log = [f">>> Trying to rebalance channel {channel_id}"]
-        if self.budget_sat == net_change:
-            budget_log.append("WITH NO LIMITS")
-        else:
-            budget_log.append(f"with max fee: {self.budget_sat} sat")
-        if self.max_effective_fee_rate:
-            budget_log.append(f"from max rate: {self.max_effective_fee_rate:.6f}")
-        else:
-            budget_log.append(f"(effective max rate: {self.budget_sat / net_change:.6f})")
-        logger.info(str.join(" ", budget_log) + ".")
+        logger.info(
+            f">>> Trying to rebalance channel {channel_id} "
+            f"with max fee rate: {max_effective_fee_rate:.6f}."
+        )
 
         if dry:
             logger.info(f">>> This is a dry run, nothing to fear.")
@@ -542,7 +518,7 @@ class Rebalancer(object):
         expected_target = -2 * ((
             unbalanced_channel_info['local_balance'] +
             initial_local_balance_change + reserve_sat) /
-            float(unbalanced_channel_info['capacity'])) + 1
+            Decimal(unbalanced_channel_info['capacity'])) + 1
 
         info_str = f">>> Trying to change the local balance by " \
                    f"{initial_local_balance_change} sat.\n" \
@@ -570,11 +546,13 @@ class Rebalancer(object):
         # amount_sat is the amount we try to rebalance with, which is gradually reduced
         # to improve in rebalance success probability
         amount_sat = local_balance_change_left
-        budget_sat = self.budget_sat
 
         # we try to rebalance with amount_sat until we reach the desired total local
         # balance change
         while abs(local_balance_change_left) >= 0:
+            budget_sat = (
+                int(max_effective_fee_rate * abs(amount_sat)) if max_effective_fee_rate else abs(amount_sat)
+            ) - total_fees_paid_msat // 1000
             # 1. determine counterparty rebalance candidates
             rebalance_candidates = self._get_rebalance_candidates(
                 channel_id, fee_rate_milli_msat, amount_sat)
@@ -585,7 +563,8 @@ class Rebalancer(object):
 
             self._debug_rebalance_candidates(rebalance_candidates)
 
-            if total_fees_paid_msat >= self.budget_sat * 1000:
+            # TODO: If the rest of the checks are consistent, this should never happen?
+            if total_fees_paid_msat >= budget_sat * 1000:
                 raise TooExpensive(
                     f"Fee budget exhausted. "
                     f"Total fees {total_fees_paid_msat / 1000:.3f} sat.")
@@ -615,26 +594,25 @@ class Rebalancer(object):
             try:
                 rebalance_fees_msat = self._rebalance(
                     send_channels, receive_channels, abs(amount_sat), payment_hash,
-                    payment_address, budget_sat, dry=dry)
+                    payment_address, budget_sat, dry=dry, force=force)
 
                 # account for running costs / target
-                budget_sat -= rebalance_fees_msat // 1000
                 total_fees_paid_msat += rebalance_fees_msat
                 local_balance_change_left -= amount_sat
 
                 relative_amt_to_go = (local_balance_change_left /
                                       initial_local_balance_change)
 
-                # if we succeeded to rebalance, we start again at a higher amount
-                amount_sat = local_balance_change_left
-
                 # perfect rebalancing is not always possible,
                 # so terminate if at least 90% of amount was reached
-                if relative_amt_to_go <= 0.10:
+                if relative_amt_to_go <= Decimal('0.10'):
                     logger.info(
                         f"Goal is reached. Rebalancing done. "
                         f"Total fees were {total_fees_paid_msat / 1000:.3f} sat.")
                     return total_fees_paid_msat
+                # if we succeeded to rebalance, we start again at a higher amount
+                amount_sat = local_balance_change_left
+
             except DryRun:
                 logger.info(
                     "Would have tried this route now, but it was a dry run.\n")
