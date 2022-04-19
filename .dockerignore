@@ -1,0 +1,9 @@
+.gitignore
+.dockerignore
+.git/
+.idea/
+docker/*.sh
+docker/lndmanage/_src
+cache/
+README.md
+logo.png

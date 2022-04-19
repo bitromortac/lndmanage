@@ -3,7 +3,7 @@
 To run `lndmanage` from a docker container:
 
 ```sh
-# you should first review ./lndmanage/home/config_template.ini
+# you should first review ./home/config_template.ini
 # note that paths are relevant to situation inside docker and we run under root
 # so $HOME directory is /root
 

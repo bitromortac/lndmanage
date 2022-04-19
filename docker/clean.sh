@@ -14,8 +14,5 @@ if [[ -n "$CONTAINERS" ]]; then
   docker rm $(docker stop ${CONTAINERS})
 fi
 
-# clean source code stage
-rm -rf lndmanage/_src
-
 # clean volumes
 rm -rf _volumes
