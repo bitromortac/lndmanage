@@ -235,40 +235,36 @@ class FeeSetter(object):
 
             # calculate average base fee and fee rate
             base_fee_msat = int(cumul_base_fee / len(cs))
-            fee_rate = round(cumul_fee_rate / len(cs), 6)
+            fee_rate = cumul_fee_rate / len(cs)
 
             # FEE RATES
-            factor_demand = delta_demand(
-                self.params,
-                self.time_interval_days,
-                peer_total_forwarding_out,
-                peer_local_balance,
-                peer_capacity,
-            )
-
-            # round down to 6 digits, as this is the expected data for
-            # the api
-            fee_rate_new = round(fee_rate * factor_demand, 6)
-
-            # if the fee rate is too low, cap it, as we don't want to
-            # necessarily have too low fees, limit also from top
-            fee_rate_new = max(self.params["min_fee_rate"], fee_rate_new)
-
-            # if the fee rate is too high, cap it, as we don't want to
-            # loose channels due to other parties thinking we are too greedy
-            fee_rate_new = min(self.params["max_fee_rate"], fee_rate_new)
-
             # if we initialize the fee optimization, we want to start with
             # reasonable starting values
             if init:
                 fee_rate_new = self.params["max_fee_rate"] / 2
+            else:
+                factor_demand = delta_demand(
+                    self.params,
+                    self.time_interval_days,
+                    peer_total_forwarding_out,
+                    peer_local_balance,
+                    peer_capacity,
+                )
+                fee_rate_new = fee_rate * factor_demand
+                # if the fee rate is too low, cap it
+                fee_rate_new = max(self.params["min_fee_rate"], fee_rate_new)
+                # we don't want to lose channels from appearing greedy
+                fee_rate_new = min(self.params["max_fee_rate"], fee_rate_new)
+            # API expects 6 digits format
+            fee_rate_new = round(fee_rate_new, 6)
+            factor_demand = fee_rate_new / fee_rate if fee_rate else float("inf")
 
             # BASE FEES
-            factor_base_fee = self.factor_demand_base_fee(peer_number_forwardings_out)
-            base_fee_msat_new = base_fee_msat * factor_base_fee
             if init:
                 base_fee_msat_new = self.params["min_base_fee"]
             else:
+                factor_base_fee = self.factor_demand_base_fee(peer_number_forwardings_out)
+                base_fee_msat_new = base_fee_msat * factor_base_fee
                 # limit from below
                 base_fee_msat_new = int(
                     max(self.params["min_base_fee"], base_fee_msat_new)
@@ -277,6 +273,7 @@ class FeeSetter(object):
                 base_fee_msat_new = int(
                     min(self.params["max_base_fee"], base_fee_msat_new)
                 )
+            factor_base_fee = base_fee_msat_new / base_fee_msat if base_fee_msat else float("inf")
 
             logger.info(
                 "    Fee rate change: %1.6f -> %1.6f (factor %1.3f)",
