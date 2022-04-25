@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from lnregtest.lib.network import Network
 
-from lib.node import LndNode
+from lndmanage.lib.node import LndNode
 from lndmanage import settings
 
 settings.CACHING_RETENTION_MINUTES = 0
