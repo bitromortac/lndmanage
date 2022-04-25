@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from lnregtest.lib.network import Network
 
-from lib.node import LndNode
+from lndmanage.lib.node import LndNode
 
 import logging.config
 logger = logging.getLogger()
