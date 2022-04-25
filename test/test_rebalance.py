@@ -4,20 +4,18 @@ Integration tests for rebalancing of channels.
 import time
 from typing import Optional
 
-from lndmanage import settings
-from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
-from lndmanage.lib.exceptions import NoRebalanceCandidates
-
 from test.testing_common import (
-    lndmanage_home,
     test_graphs_paths,
     SLEEP_SEC_AFTER_REBALANCING,
     TestNetwork
 )
 
+from lndmanage import settings
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
+from lndmanage.lib.exceptions import NoRebalanceCandidates
+
 import logging.config
-settings.set_lndmanage_home_dir(lndmanage_home)
 logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

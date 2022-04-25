@@ -4,18 +4,16 @@ Integration tests for batch opening of channels.
 import time
 from unittest import TestCase
 
-from lndmanage import settings
-from lndmanage.lib import openchannels
-
 from test.testing_common import (
-    lndmanage_home,
     test_graphs_paths,
     TestNetwork,
 )
 
+from lndmanage import settings
+from lndmanage.lib import openchannels
+
 import logging.config
 
-settings.set_lndmanage_home_dir(lndmanage_home)
 logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

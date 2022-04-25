@@ -1,16 +1,4 @@
 import os
-import shutil
-from unittest import TestCase
-
-from lnregtest.lib.network import Network
-
-from lndmanage.lib.node import LndNode
-from lndmanage import settings
-
-settings.CACHING_RETENTION_MINUTES = 0
-
-# constants for testing
-SLEEP_SEC_AFTER_REBALANCING = 2
 
 # testing base folder
 test_dir = os.path.dirname(os.path.realpath(__file__))
@@ -22,6 +10,24 @@ test_data_dir = os.path.join(test_dir, 'test_data')
 # folder exists
 lndmanage_home = os.path.join(test_data_dir, 'lndmanage')
 os.makedirs(lndmanage_home, exist_ok=True)
+# create empty config and set env var to not trigger error when importing settings
+open(os.path.join(lndmanage_home, 'config.ini'), 'a').close()
+
+os.environ.setdefault('LNDMANAGE_HOME', lndmanage_home)
+
+import shutil
+from unittest import TestCase
+
+from lnregtest.lib.network import Network
+
+from lndmanage.lib.node import LndNode
+from lndmanage import settings
+
+settings.CACHING_RETENTION_MINUTES = 0
+settings.set_lndmanage_home_dir(lndmanage_home)
+
+# constants for testing
+SLEEP_SEC_AFTER_REBALANCING = 2
 
 test_graphs_paths = {
     'star_ring_3_liquid': os.path.join(

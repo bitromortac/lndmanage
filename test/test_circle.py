@@ -6,6 +6,12 @@ import time
 from typing import List
 import unittest
 
+from test.testing_common import (
+    test_graphs_paths,
+    SLEEP_SEC_AFTER_REBALANCING,
+    TestNetwork,
+)
+
 from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.exceptions import (
@@ -17,15 +23,7 @@ from lndmanage.lib.exceptions import (
 )
 from lndmanage import settings
 
-from test.testing_common import (
-    test_graphs_paths,
-    lndmanage_home,
-    SLEEP_SEC_AFTER_REBALANCING,
-    TestNetwork,
-)
-
 import logging.config
-settings.set_lndmanage_home_dir(lndmanage_home)
 logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

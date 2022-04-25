@@ -2,6 +2,7 @@ from unittest import TestCase
 import logging
 import sys
 
+from test import testing_common
 from lndmanage.lib.fee_setting import delta_demand, delta_min, optimization_parameters
 
 logger = logging.getLogger()
