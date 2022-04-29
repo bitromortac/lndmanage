@@ -3,8 +3,10 @@ from ast import literal_eval
 import configparser
 from lndmanage.lib.configure import check_or_create_configuration
 from pathlib import Path
+from typing import Type
 
-def parse_env(key, default, _type=str):
+
+def parse_env(key, default, _type: Type = str):
     if _type == str:
         return os.environ.get(key, default)
     return _type(literal_eval(os.environ.get(key, default)))
