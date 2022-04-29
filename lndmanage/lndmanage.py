@@ -28,7 +28,7 @@ from lndmanage.lib.report import Report
 from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(settings.logger_config)
+logging.config.dictConfig(settings.lndmanage_log_config)
 logger = logging.getLogger()
 
 
