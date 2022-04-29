@@ -385,6 +385,15 @@ class NetworkAnalysis(object):
 
         return distance
 
+    def is_private(self, node_id: str) -> bool:
+        """Find out whether node is a private node.
+        A private node is defined to not be a routing node, a node that has only
+        a few channels."""
+        node_info = self.node_information(node_id)
+        if node_info['degree'] < settings.NUMBER_CHANNELS_DEFINING_ROUTING_NODE:
+            return True
+        else:
+            return False
 
 if __name__ == '__main__':
     from lndmanage.lib.node import LndNode
