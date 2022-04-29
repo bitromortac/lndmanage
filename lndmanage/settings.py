@@ -44,17 +44,20 @@ CHACC_MIN_CHANNEL_SIZE_PRIVATE = parse_env('LNDMANAGED_CHACC_MIN_CHANNEL_SIZE_PR
 CHACC_MAX_CHANNEL_SIZE_PRIVATE = parse_env('LNDMANAGED_CHACC_MAX_CHANNEL_SIZE_PRIVATE', '16777215', int)
 CHACC_MIN_CHANNEL_SIZE_PUBLIC = parse_env('LNDMANAGED_CHACC_MIN_CHANNEL_SIZE_PUBLIC', '0', int)
 CHACC_MAX_CHANNEL_SIZE_PUBLIC = parse_env('LNDMANAGED_CHACC_MAX_CHANNEL_SIZE_PUBLIC', '16777215', int)
+
+# define some globals for logging
+lndmanage_log_config = None
+lndmanaged_log_config = None
 home_dir = None
 
 
 def set_lndmanage_home_dir(directory=None):
-    """
-    Sets the correct path to the lndmanage home folder.
+    """Sets the correct path to the lndmanage home folder.
 
     :param directory: home folder, overwrites default
     :type directory: str
     """
-    global home_dir, logger_config
+    global home_dir, lndmanage_log_config, lndmanaged_log_config
 
     if directory:
         home_dir = directory
@@ -78,15 +81,12 @@ def set_lndmanage_home_dir(directory=None):
         check_or_create_configuration(home_dir)
 
     # logger settings
-    logfile_path = os.path.join(home_dir, 'lndmanage.log')
-
-    logger_config = {
+    lndmanage_log_config = {
         'version': 1,
         'disable_existing_loggers': False,
         'formatters': {
             'file': {
-                'format': '[%(asctime)s %(levelname)s] %(message)s',
-                #'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
+                'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
                 'datefmt': '%Y-%m-%d %H:%M:%S'
             },
             'standard': {
@@ -104,7 +104,43 @@ def set_lndmanage_home_dir(directory=None):
                 'level': 'DEBUG',
                 'formatter': 'file',
                 'class': 'logging.FileHandler',
-                'filename': logfile_path,
+                'filename': os.path.join(home_dir, 'lndmanage.log'),
+                'encoding': 'utf-8',
+            },
+        },
+        'loggers': {
+            '': {  # root logger
+                'handlers': ['default', 'file'],
+                'level': 'DEBUG',
+                'propagate': True
+            },
+        }
+    }
+
+    lndmanaged_log_config = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'file': {
+                'format': '[%(asctime)s %(levelname)s %(name)s] %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S'
+            },
+            'standard': {
+                'format': '%(message)s',
+            },
+        },
+        'handlers': {
+            'default': {
+                'level': 'INFO',
+                'formatter': 'standard',
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout',  # Default is stderr
+            },
+            'file': {
+                'level': 'DEBUG',
+                'formatter': 'file',
+                'class': 'logging.FileHandler',
+                'filename': os.path.join(home_dir, 'lndmanaged.log'),
                 'encoding': 'utf-8',
             },
         },
