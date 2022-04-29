@@ -15,6 +15,7 @@ python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_pyth
 python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. router.proto
 python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. walletkit.proto
 python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. signer.proto
+python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. manager.proto
 
 # fix import paths
 sed -i -- 's@import lightning_pb2 as lightning__pb2@from lndmanage.grpc_compiled import lightning_pb2 as lightning__pb2@' lightning_pb2_grpc.py
@@ -30,3 +31,5 @@ sed -i -- 's@import signer_pb2 as signer__pb2@from lndmanage.grpc_compiled impor
 
 sed -i -- 's@import signer_pb2 as signer__pb2@from lndmanage.grpc_compiled import signer_pb2 as signer__pb2@' walletkit_pb2_grpc.py
 sed -i -- 's@import walletkit_pb2 as walletkit__pb2@from lndmanage.grpc_compiled import walletkit_pb2 as walletkit__pb2@' walletkit_pb2_grpc.py
+
+sed -i -- 's@import manager_pb2 as manager__pb2@from lndmanage.grpc_compiled import manager_pb2 as manager__pb2@' manager_pb2_grpc.py
