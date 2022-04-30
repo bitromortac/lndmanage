@@ -1,3 +1,4 @@
+"""Common test utilities for integration tests."""
 import os
 import shutil
 from unittest import TestCase
@@ -5,8 +6,12 @@ from unittest import TestCase
 from lnregtest.lib.network import Network
 
 from lib.node import LndNode
-from lndmanage import settings
 
+import logging.config
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+from lndmanage import settings
 settings.CACHING_RETENTION_MINUTES = 0
 
 # constants for testing

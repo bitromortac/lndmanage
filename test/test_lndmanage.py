@@ -1,6 +1,6 @@
-"""
-Integration tests for lndmanage.
-"""
+""" Integration tests for lndmanage."""
+import asyncio
+
 from test.testing_common import test_graphs_paths, TestNetwork
 
 
@@ -17,4 +17,8 @@ class NewNode(TestNetwork):
     def test_empty(self):
         # LND interface of lndmanage is initialized in setUp method of super
         # class, so nothing is needed here.
-        pass
+        async def run():
+            async with self.lndnode:
+                pass
+
+        asyncio.run(run())
