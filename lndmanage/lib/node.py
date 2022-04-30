@@ -51,6 +51,9 @@ class LndNode:
     _routerrpc: lndrouterrpc.RouterStub
     _rpc: lndrpc.LightningStub
     _walletrpc: lndwalletkitrpc.WalletKitStub
+    _async_rpc: lndrpc.LightningStub
+    _async_routerrpc: lndrouterrpc.RouterStub
+    _async_channel: grpc.aio.Channel
     _sync_channel: grpc.Channel
 
     # attributes (TODO: clean up)
@@ -136,6 +139,18 @@ class LndNode:
 
         return grpc.composite_channel_credentials(cert_creds, auth_creds)
 
+    async def connect_async_rpcs(self):
+        # This needs to be run within an async context, the loop is being used in the
+        # rpc connections.
+        logger.debug("Connecting async rpcs.")
+
+        self._async_channel = grpc.aio.secure_channel(
+            self.lnd_host, self.get_rpc_credentials(),
+            options=[('grpc.max_receive_message_length', 50 * 1024 * 1024)])
+
+        # establish async connections to rpc servers
+        self._async_rpc = lndrpc.LightningStub(self._async_channel)
+        self._async_routerrpc = lndrouterrpc.RouterStub(self._async_channel)
 
     def connect_sync_rpcs(self):
         self._sync_channel = grpc.secure_channel(
@@ -152,6 +167,7 @@ class LndNode:
 
         # connect rpcs
         self.connect_sync_rpcs()
+        await self.connect_async_rpcs()
 
         # init attributes that depend on rpc interaction
         self.set_info()
@@ -163,6 +179,7 @@ class LndNode:
         logger.debug("Disconnecting rpcs.")
 
         self._sync_channel.close()
+        await self._async_channel.close()
 
         # wait a bit to close all transports
         await asyncio.sleep(0.01)
