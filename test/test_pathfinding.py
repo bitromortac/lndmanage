@@ -4,11 +4,13 @@ from unittest import TestCase, mock
 
 import networkx as nx
 
+from test import testing_common
+
 from lndmanage.lib.network import Network
 from lndmanage.lib.rating import ChannelRater
 from lndmanage.lib.pathfinding import dijkstra
 
-from graph_definitions.routing_graph import nodes as test_graph
+from test.graph_definitions.routing_graph import nodes as test_graph
 
 
 def new_test_graph(graph: Dict):
