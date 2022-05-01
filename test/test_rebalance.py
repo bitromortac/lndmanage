@@ -3,15 +3,15 @@ import asyncio
 import time
 from typing import Optional
 
-from lndmanage.lib.rebalance import Rebalancer
-from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
-from lndmanage.lib.exceptions import NoRebalanceCandidates
-
 from test.testing_common import (
     test_graphs_paths,
     SLEEP_SEC_AFTER_REBALANCING,
     TestNetwork
 )
+
+from lndmanage.lib.rebalance import Rebalancer
+from lndmanage.lib.ln_utilities import local_balance_to_unbalancedness
+from lndmanage.lib.exceptions import NoRebalanceCandidates
 
 
 class RebalanceTest(TestNetwork):

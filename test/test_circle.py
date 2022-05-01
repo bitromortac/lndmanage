@@ -5,6 +5,12 @@ import time
 from typing import List
 import unittest
 
+from test.testing_common import (
+    test_graphs_paths,
+    SLEEP_SEC_AFTER_REBALANCING,
+    TestNetwork,
+)
+
 from lndmanage.lib.listings import ListChannels
 from lndmanage.lib.rebalance import Rebalancer
 from lndmanage.lib.exceptions import (
@@ -13,12 +19,6 @@ from lndmanage.lib.exceptions import (
     RebalancingTrialsExhausted,
     NoRoute,
     OurNodeFailure,
-)
-
-from test.testing_common import (
-    test_graphs_paths,
-    SLEEP_SEC_AFTER_REBALANCING,
-    TestNetwork,
 )
 
 from lndmanage import settings  # needed for side effect configuration
