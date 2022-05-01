@@ -95,7 +95,7 @@ class TestGraph(TestCase):
         weight_function = lambda v, u, e: cr.node_to_node_weight(v, u, e, amt_msat)
 
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
-        self.assertEqual(['A', 'D', 'E'], path)
+        self.assertEqual(['A', 'B', 'E'], path)
 
         # We report that B cannot send to E
         network.liquidity_hints.update_cannot_send('B', 'E', 2, 1_000)
@@ -105,7 +105,7 @@ class TestGraph(TestCase):
         # We report that D cannot send to E
         network.liquidity_hints.update_cannot_send('D', 'E', 5, 1_000)
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
-        self.assertEqual(['A', 'D', 'C', 'E'], path)
+        self.assertEqual(['A', 'B', 'C', 'E'], path)
 
         # We report that D can send to C
         network.liquidity_hints.update_can_send('D', 'C', 4, amt_msat + 1000)
