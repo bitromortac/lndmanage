@@ -1,12 +1,12 @@
 from unittest import TestCase
-import logging
 import sys
+import logging
 
 from lndmanage.lib.fee_setting import delta_demand, delta_min, optimization_parameters
 
-logger = logging.getLogger()
-logger.level = logging.DEBUG
-logger.addHandler(logging.StreamHandler(sys.stdout))
+import testing_common
+
+testing_common.logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class TestFeeSetter(TestCase):

@@ -1,6 +1,7 @@
+from binascii import a2b_base64
 from unittest import TestCase
+
 from lndmanage.lib import psbt
-from binascii import unhexlify, a2b_base64
 
 
 class PSBTTest(TestCase):

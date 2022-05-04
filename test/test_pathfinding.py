@@ -1,6 +1,4 @@
-"""
-Integration tests for batch opening of channels.
-"""
+"""Integration tests for internal pathfinding."""
 from typing import Dict
 from unittest import TestCase, mock
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import asyncio
 import argparse
 import time
 import os
@@ -23,6 +24,7 @@ from lndmanage.lib.openchannels import ChannelOpener
 from lndmanage.lib.rebalance import Rebalancer, DEFAULT_MAX_FEE_RATE, DEFAULT_AMOUNT_SAT
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
+
 from lndmanage import settings
 
 import logging.config
@@ -445,7 +447,7 @@ class Parser(object):
     def parse_arguments(self):
         return self.parser.parse_args()
 
-    def run_commands(self, node, args):
+    async def run_commands(self, node, args):
         # program execution
         if args.loglevel:
             # update the loglevel of the stdout handler to the user choice
@@ -603,7 +605,7 @@ class Parser(object):
             )
 
 
-def main():
+async def _main():
     parser = Parser()
 
     # config.ini is expected to be in home/.lndmanage directory
@@ -613,8 +615,10 @@ def main():
     if len(sys.argv) > 1:
         # take arguments from sys.argv
         args = parser.parse_arguments()
-        node = LndNode(config_file=config_file)
-        parser.run_commands(node, args)
+
+        lndnode = LndNode(config_file=config_file)
+        async with lndnode:
+            await parser.run_commands(lndnode, args)
 
     # otherwise enter an interactive mode
     else:
@@ -627,50 +631,55 @@ def main():
 
         logger.info("Running in interactive mode. "
                     "You can type 'help' or 'exit'.")
-        node = LndNode(config_file=config_file)
 
-        if parser.lncli_path:
-            logger.info("Enabled lncli: using " + parser.lncli_path)
+        lndnode = LndNode(config_file=config_file)
+        async with lndnode:
+            if parser.lncli_path:
+                logger.info("Enabled lncli: using " + parser.lncli_path)
 
-        while True:
-            try:
-                user_input = input("$ lndmanage ")
-            except KeyboardInterrupt:
-                logger.info("")
-                continue
-            except EOFError:
-                readline.write_history_file(history_file)
-                logger.info("exit")
-                return 0
-
-            if not user_input or user_input in ['help', '-h', '--help']:
-                parser.parser.print_help()
-                continue
-            elif user_input == 'exit':
-                readline.write_history_file(history_file)
-                return 0
-
-            args_list = user_input.split(" ")
-
-            # lncli execution
-            if args_list[0] == 'lncli':
-                if parser.lncli_path:
-                    lncli = Lncli(parser.lncli_path, config_file)
-                    lncli.lncli(args_list[1:])
+            while True:
+                try:
+                    user_input = input("$ lndmanage ")
+                except KeyboardInterrupt:
+                    logger.info("")
                     continue
-                else:
-                    logger.info("lncli not enabled, put lncli in PATH or in ~/.lndmanage")
+                except EOFError:
+                    readline.write_history_file(history_file)
+                    logger.info("exit")
+                    return 0
+
+                if not user_input or user_input in ['help', '-h', '--help']:
+                    parser.parser.print_help()
                     continue
-            try:
-                # need to run with parse_known_args to get an exception
-                args = parser.parser.parse_args(args_list)
-                parser.run_commands(node, args)
-            except SystemExit:
-                # argparse may raise SystemExit on incorrect user input,
-                # which is a graceful exit. The user gets the standard output
-                # from argparse of what went wrong.
-                continue
+                elif user_input == 'exit':
+                    readline.write_history_file(history_file)
+                    return 0
+
+                args_list = user_input.split(" ")
+
+                # lncli execution
+                if args_list[0] == 'lncli':
+                    if parser.lncli_path:
+                        lncli = Lncli(parser.lncli_path, config_file)
+                        lncli.lncli(args_list[1:])
+                        continue
+                    else:
+                        logger.info("lncli not enabled, put lncli in PATH or in ~/.lndmanage")
+                        continue
+                try:
+                    # need to run with parse_known_args to get an exception
+                    args = parser.parser.parse_args(args_list)
+                    await parser.run_commands(lndnode, args)
+                except SystemExit:
+                    # argparse may raise SystemExit on incorrect user input,
+                    # which is a graceful exit. The user gets the standard output
+                    # from argparse of what went wrong.
+                    continue
+
+
+def main():
+    asyncio.run(_main())
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(_main())

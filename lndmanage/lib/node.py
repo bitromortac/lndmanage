@@ -1,3 +1,4 @@
+import asyncio
 import binascii
 import codecs
 from collections import OrderedDict, defaultdict
@@ -44,26 +45,32 @@ NUM_MAX_FORWARDING_EVENTS = 100000
 OPEN_EXPIRY_TIME_MINUTES = 8
 
 
-class Node(object):
-    """Bare node object with attributes."""
-    def __init__(self):
-        self.alias = ''
-        self.pub_key = ''
-        self.total_capacity = 0
-        self.total_local_balance = 0
-        self.total_remote_balance = 0
-        self.total_channels = 0
-        self.num_active_channels = 0
-        self.num_peers = 0
-        self.total_satoshis_received = 0
-        self.total_satoshis_sent = 0
-        self.total_private_channels = 0
-        self.total_active_channels = 0
-        self.blockheight = 0
+class LndNode:
+    """Implements a synchronous/asynchronous interface to an lnd node."""
+    # rpcs
+    _routerrpc: lndrouterrpc.RouterStub
+    _rpc: lndrpc.LightningStub
+    _walletrpc: lndwalletkitrpc.WalletKitStub
+    _async_rpc: lndrpc.LightningStub
+    _async_routerrpc: lndrouterrpc.RouterStub
+    _async_channel: grpc.aio.Channel
+    _sync_channel: grpc.Channel
 
+    # attributes (TODO: clean up)
+    alias: str
+    pub_key: str
+    total_capacity: int = 0
+    total_local_balance: int = 0
+    total_remote_balance: int = 0
+    total_channels: int
+    num_active_channels: int
+    num_peers: int
+    total_satoshis_received: int = 0
+    total_satoshis_sent: int = 0
+    total_private_channels: int = 0
+    total_active_channels: int = 0
+    blockheight: int
 
-class LndNode(Node):
-    """Implements the node interface for LND."""
     def __init__(self, config_file: Optional[str] = None,
                  lnd_home: Optional[str] = None,
                  lnd_host: Optional[str] = None, regtest=False):
@@ -73,7 +80,6 @@ class LndNode(Node):
         :param lnd_host: lnd host of format "127.0.0.1:9735"
         :param regtest: if the node is representing a regtest node
         """
-        super().__init__()
         if config_file:
             self.config_file = config_file
             self.config = settings.read_config(self.config_file)
@@ -84,87 +90,105 @@ class LndNode(Node):
         self.lnd_host = lnd_host
         self.regtest = regtest
 
-        self._rpc = None
-        self._routerrpc = None
-        self.connect_rpcs()
-
-        self.set_info()
-        self.network = Network(self)
-        self.set_channel_summary()
-        self.update_blockheight()
-
-    def connect_rpcs(self):
-        """
-        Establishes a connection to lnd using the hostname, tls certificate,
-        and admin macaroon defined in settings.
-        """
-        macaroons = True
-        os.environ['GRPC_SSL_CIPHER_SUITES'] = \
-            'ECDHE-RSA-AES128-GCM-SHA256:' \
-            'ECDHE-RSA-AES128-SHA256:' \
-            'ECDHE-RSA-AES256-SHA384:' \
-            'ECDHE-RSA-AES256-GCM-SHA384:' \
-            'ECDHE-ECDSA-AES128-GCM-SHA256:' \
-            'ECDHE-ECDSA-AES128-SHA256:' \
-            'ECDHE-ECDSA-AES256-SHA384:' \
-            'ECDHE-ECDSA-AES256-GCM-SHA384'
-
+        # configure lndmanage home: (TODO: separate into config)
         # if no lnd_home is given, then use the paths from the config,
         # else override them with default file paths in lnd_home
         if self.lnd_home is not None:
-            cert_file = os.path.join(self.lnd_home, 'tls.cert')
+            self.cert_file_path = os.path.join(self.lnd_home, 'tls.cert')
             bitcoin_network = 'regtest' if self.regtest else 'mainnet'
-            macaroon_file = os.path.join(
+            self.macaroon_file_path = os.path.join(
                 self.lnd_home, 'data/chain/bitcoin/',
                 bitcoin_network, 'admin.macaroon')
             if self.lnd_host is None:
-                raise ValueError(
-                    'if lnd_home is given, lnd_host must be given also')
-            lnd_host = self.lnd_host
+                raise ValueError('if lnd_home is given, lnd_host must be given')
         else:
-            cert_file = os.path.expanduser(self.config['network']['tls_cert_file'])
-            macaroon_file = \
-                os.path.expanduser(self.config['network']['admin_macaroon_file'])
-            lnd_host = self.config['network']['lnd_grpc_host']
+            self.cert_file_path = os.path.expanduser(
+                self.config['network']['tls_cert_file']
+            )
+            self.macaroon_file_path = os.path.expanduser(
+                self.config['network']['admin_macaroon_file']
+            )
+            self.lnd_host = self.config['network']['lnd_grpc_host']
 
+    def get_rpc_credentials(self) -> grpc.ChannelCredentials:
+        # read the tls certificate
         cert = None
         try:
-            with open(cert_file, 'rb') as f:
+            with open(self.cert_file_path, 'rb') as f:
                 cert = f.read()
         except FileNotFoundError:
             logger.error("tls.cert not found, please configure %s.",
                          self.config_file)
             exit(1)
 
-        if macaroons:
-            try:
-                with open(macaroon_file, 'rb') as f:
-                    macaroon_bytes = f.read()
-                    macaroon = codecs.encode(macaroon_bytes, 'hex')
-            except FileNotFoundError:
-                logger.error("admin.macaroon not found, please configure %s.",
-                             self.config_file)
-                exit(1)
+        # read the macaroon
+        try:
+            with open(self.macaroon_file_path, 'rb') as f:
+                macaroon_bytes = f.read()
+                macaroon = codecs.encode(macaroon_bytes, 'hex')
+        except FileNotFoundError:
+            logger.error("admin.macaroon not found, please configure %s.",
+                         self.config_file)
+            exit(1)
 
-            def metadata_callback(context, callback):
-                callback([('macaroon', macaroon)], None)
+        def metadata_callback(context, callback):
+            callback([('macaroon', macaroon)], None)
 
-            cert_creds = grpc.ssl_channel_credentials(cert)
-            auth_creds = grpc.metadata_call_credentials(metadata_callback)
-            creds = grpc.composite_channel_credentials(cert_creds, auth_creds)
+        cert_creds = grpc.ssl_channel_credentials(cert)
+        auth_creds = grpc.metadata_call_credentials(metadata_callback)
 
-        else:
-            creds = grpc.ssl_channel_credentials(cert)
+        return grpc.composite_channel_credentials(cert_creds, auth_creds)
 
-        # necessary to circumvent standard size limitation
-        channel = grpc.secure_channel(lnd_host, creds, options=[
-            ('grpc.max_receive_message_length', 50 * 1024 * 1024)
-        ])
+    async def connect_async_rpcs(self):
+        # This needs to be run within an async context, the loop is being used in the
+        # rpc connections.
+        logger.debug("Connecting async rpcs.")
+
+        self._async_channel = grpc.aio.secure_channel(
+            self.lnd_host, self.get_rpc_credentials(),
+            options=[('grpc.max_receive_message_length', 50 * 1024 * 1024)])
+
+        # establish async connections to rpc servers
+        self._async_rpc = lndrpc.LightningStub(self._async_channel)
+        self._async_routerrpc = lndrouterrpc.RouterStub(self._async_channel)
+
+    def connect_sync_rpcs(self):
+        self._sync_channel = grpc.secure_channel(
+            self.lnd_host, self.get_rpc_credentials(),
+            options=[('grpc.max_receive_message_length', 50 * 1024 * 1024)])
 
         # establish connections to rpc servers
-        self._rpc = lndrpc.LightningStub(channel)
-        self._routerrpc = lndrouterrpc.RouterStub(channel)
-        self._walletrpc = lndwalletkitrpc.WalletKitStub(channel)
+        self._rpc = lndrpc.LightningStub(self._sync_channel)
+        self._routerrpc = lndrouterrpc.RouterStub(self._sync_channel)
+        self._walletrpc = lndwalletkitrpc.WalletKitStub(self._sync_channel)
+
+    async def start(self):
+        logger.debug("Node interface starting.")
+
+        # connect rpcs
+        self.connect_sync_rpcs()
+        await self.connect_async_rpcs()
+
+        # init attributes that depend on rpc interaction
+        self.set_info()
+        self.network = Network(self)
+        self.update_blockheight()
+        self.set_channel_summary()
+
+    async def stop(self):
+        logger.debug("Disconnecting rpcs.")
+
+        self._sync_channel.close()
+        await self._async_channel.close()
+
+        # wait a bit to close all transports
+        await asyncio.sleep(0.01)
+
+    async def __aenter__(self):
+        await self.start()
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.stop()
 
     def update_blockheight(self):
         info = self._rpc.GetInfo(lnd.GetInfoRequest())
