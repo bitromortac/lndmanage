@@ -39,6 +39,7 @@ class Network:
     edges: Dict
     graph: nx.MultiGraph
     liquidity_hints: LiquidityHintMgr
+    max_pair_capacity: Dict[NodePair, int]
 
     def __init__(self, node: 'LndNode'):
         self.node = node
@@ -62,7 +63,7 @@ class Network:
 
         if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
             logger.info(f"Cached graph is too old. Fetching new one.")
-            self.set_graph_and_edges()
+            self.set_graph_edges_pairs()
             with open(cache_graph_filename, 'wb') as file:
                 pickle.dump(self.graph, file, pickle.HIGHEST_PROTOCOL)
             with open(cache_edges_filename, 'wb') as file:
@@ -73,6 +74,8 @@ class Network:
             with open(cache_edges_filename, 'rb') as file:
                 self.edges = pickle.load(file)
             logger.info(f"> Loaded graph from file: {len(self.graph)} nodes, {len(self.edges)} channels.")
+
+        self.set_max_pair_capacities()
 
     @profiled
     def load_liquidity_hints(self):
@@ -94,7 +97,7 @@ class Network:
             pickle.dump(self.liquidity_hints, file)
 
     @profiled
-    def set_graph_and_edges(self):
+    def set_graph_edges_pairs(self):
         """
         Reads in the networkx graph and edges dictionary.
 
@@ -168,6 +171,17 @@ class Network:
                     e.node1_pub > e.node2_pub: policy1,
                     e.node2_pub > e.node1_pub: policy2,
                 })
+
+    def set_max_pair_capacities(self):
+        self.max_pair_capacity = {}
+        for cid, e in self.edges.items():
+            node_pair = NodePair((e['node1_pub'], e['node2_pub']))
+            # determine the maximal capacity over a key pair
+            if not self.max_pair_capacity.get(node_pair):
+                self.max_pair_capacity[node_pair] = e['capacity']
+            else:
+                if self.max_pair_capacity[node_pair] < e['capacity']:
+                    self.max_pair_capacity[node_pair] = e['capacity']
 
     def number_channels(self, node_pub_key):
         """

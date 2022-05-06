@@ -27,6 +27,7 @@ def new_test_graph(graph: Dict):
         network.edges = {}
         # TODO: fix side effects of liquidity hints loading
         network.liquidity_hints = LiquidityHintMgr(MockNode.pub_key)
+        network.max_pair_capacity = {}
 
     # add nodes
     for node, node_definition in graph.items():
@@ -42,6 +43,7 @@ def new_test_graph(graph: Dict):
         for channel, channel_definition in node_definition['channels'].items():
             # create a dictionary for channel_id lookups
             to_node = channel_definition['to']
+            node_pair = NodePair((node, to_node))
             network.edges[channel] = {
                 'node1_pub': node,
                 'node2_pub': to_node,
@@ -68,6 +70,13 @@ def new_test_graph(graph: Dict):
                     node > to_node: channel_definition['policies'][node > to_node],
                     to_node > node: channel_definition['policies'][to_node > node],
                 })
+
+            # max channel capacity
+            if not network.max_pair_capacity.get(node_pair):
+                network.max_pair_capacity[node_pair] = channel_definition['capacity']
+            else:
+                if network.max_pair_capacity[node_pair] < channel_definition['capacity']:
+                   network.max_pair_capacity[node_pair] = channel_definition['capacity']
 
     return network
 

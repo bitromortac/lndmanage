@@ -1,6 +1,7 @@
 import math
 from typing import TYPE_CHECKING, Dict
 
+from lndmanage.lib.data_types import NodeID
 from lndmanage import settings
 
 import logging
@@ -52,13 +53,16 @@ class ChannelRater:
         ]
         return min(costs)
 
-    def channel_weight(self, node_from: str, node_to: str, channel_info: Dict, amt_msat):
+    def channel_weight(self, node_from: NodeID, node_to: NodeID, channel_info: Dict, amt_msat: int):
+
         # check if channel is blacklisted
         if self.blacklisted_channels.get(channel_info["channel_id"]) == {"source": node_from, "target": node_to}:
             return math.inf
 
+        capacity = self.network.max_pair_capacity[channel_info['node_pair']]
+
         # we don't send if the channel cannot carry the payment
-        if amt_msat // 1000 > channel_info["capacity"]:
+        if amt_msat // 1000 > capacity:
             return math.inf
 
         # we don't send if the minimal htlc amount is not respected
@@ -83,7 +87,7 @@ class ChannelRater:
 
         # compute liquidity penalty
         liquidity_penalty = self.network.liquidity_hints.penalty(
-            node_from, node_to, channel_info, amt_msat, self.reference_fee_rate_milli_msat
+            node_from, node_to, capacity, amt_msat, self.reference_fee_rate_milli_msat
         )
 
         # routing fees

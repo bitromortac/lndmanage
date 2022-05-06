@@ -6,7 +6,7 @@ from math import inf, log
 
 import logging
 
-from lib.data_types import NodeID, NodePair
+from lndmanage.lib.data_types import NodeID, NodePair
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -234,7 +234,8 @@ class LiquidityHintMgr:
         hint = self._get_hint(node_pair)
         hint.remove_htlc(node_from < node_to)
 
-    def penalty(self, node_from: NodeID, node_to: NodeID, edge: Dict, amount_msat: int, fee_rate_milli_msat: int) -> float:
+    def penalty(self, node_from: NodeID, node_to: NodeID, capacity: int,
+                amount_msat: int, fee_rate_milli_msat: int) -> float:
         """Gives a penalty when sending from node1 to node2 over channel_id with an
         amount in units of millisatoshi.
 
@@ -259,7 +260,8 @@ class LiquidityHintMgr:
         if self.source_node in [node_from, ]:
             return 0
         # we only evaluate hints here, so use dict get (to not create many hints with self.get_hint)
-        hint = self._liquidity_hints.get(edge['node_pair'])
+        node_pair = NodePair((node_from, node_to))
+        hint = self._liquidity_hints.get(node_pair)
         if not hint:
             can_send, cannot_send, num_inflight_htlcs = None, None, 0
         else:
@@ -269,7 +271,7 @@ class LiquidityHintMgr:
         if can_send is None:
             can_send = 0
         if cannot_send is None:
-            cannot_send = edge['capacity'] * 1000
+            cannot_send = capacity * 1000
         if amount_msat >= cannot_send:
             return inf
         if amount_msat <= can_send:
