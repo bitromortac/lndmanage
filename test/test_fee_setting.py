@@ -2,9 +2,9 @@ from unittest import TestCase
 import sys
 import logging
 
-from lndmanage.lib.fee_setting import delta_demand, delta_min, optimization_parameters
+from test import testing_common
 
-import testing_common
+from lndmanage.lib.fee_setting import delta_demand, delta_min, optimization_parameters
 
 testing_common.logger.addHandler(logging.StreamHandler(sys.stdout))
 

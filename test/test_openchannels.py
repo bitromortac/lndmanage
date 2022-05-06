@@ -3,12 +3,12 @@ import asyncio
 import time
 from unittest import TestCase
 
-from lndmanage.lib import openchannels
-
 from test.testing_common import (
     test_graphs_paths,
     TestNetwork,
 )
+
+from lndmanage.lib import openchannels
 
 
 def confirm_transactions(testnet):
