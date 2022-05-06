@@ -5,6 +5,9 @@ from typing import Set, Dict
 from math import inf, log
 
 import logging
+
+from lib.data_types import NodeID, ShortChannelID
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -15,14 +18,6 @@ BADNESS_DECAY_SEC = 24 * 3600  # exponential decay time for badness
 TIME_EXPECTATION_ACCURACY = 0.2  # the relative error in estimating node reaction times
 TIME_PENALTY_RATE = 0.000_010  # the default penalty for reaction time
 TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow
-
-
-class ShortChannelID(int):
-    pass
-
-
-class NodeID(str):
-    pass
 
 
 class LiquidityHint:

@@ -59,3 +59,11 @@ class NodePair(tuple):
             seq = (keys[1], keys[0])
 
         return super().__new__(cls, seq)
+
+
+class NodeID(str):
+    pass
+
+
+class ShortChannelID(int):
+    pass
