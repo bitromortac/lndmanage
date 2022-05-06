@@ -1,7 +1,8 @@
 import math
 from collections import defaultdict
+from dataclasses import dataclass
 import time
-from typing import Set, Dict
+from typing import Set, Dict, Optional
 from math import inf, log
 
 import logging
@@ -20,6 +21,24 @@ TIME_PENALTY_RATE = 0.000_010  # the default penalty for reaction time
 TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow
 
 
+@dataclass
+class AmountHistory:
+    amount: int = None  # msat
+    timestamp: int = None
+
+    def __bool__(self):
+        return self.amount is not None and self.timestamp is not None
+
+    def __gt__(self, other):
+        return self and other and self.amount > other.amount
+
+    def __lt__(self, other):
+        return self and other and self.amount < other.amount
+
+    def __str__(self):
+        return str(self.amount)
+
+
 class LiquidityHint:
     """Encodes the amounts that can and cannot be sent over the direction of a
     channel and whether the channel is blacklisted.
@@ -29,84 +48,99 @@ class LiquidityHint:
     """
     def __init__(self):
         # use "can_send_forward + can_send_backward < cannot_send_forward + cannot_send_backward" as a sanity check?
-        self._can_send_forward = None
-        self._cannot_send_forward = None
-        self._can_send_backward = None
-        self._cannot_send_backward = None
+        self._can_send_forward = AmountHistory()
+        self._cannot_send_forward = AmountHistory()
+        self._can_send_backward = AmountHistory()
+        self._cannot_send_backward = AmountHistory()
         self.blacklist_timestamp = 0
         self.hint_timestamp = 0
         self._inflight_htlcs_forward = 0
         self._inflight_htlcs_backward = 0
 
-    def is_hint_invalid(self) -> bool:
+    def is_hint_invalid(self, timestamp: Optional[int]) -> bool:
+        if timestamp is None:
+            return True
+
         now = int(time.time())
-        return now - self.hint_timestamp > HINT_DURATION
+        return now - timestamp > HINT_DURATION
 
     @property
-    def can_send_forward(self):
-        return None if self.is_hint_invalid() else self._can_send_forward
+    def can_send_forward(self) -> AmountHistory:
+        if self.is_hint_invalid(self._can_send_forward.timestamp):
+            return AmountHistory()
+        return self._can_send_forward
 
     @can_send_forward.setter
-    def can_send_forward(self, amount):
-        # we don't want to record less significant info
-        # (sendable amount is lower than known sendable amount):
-        if self._can_send_forward and self._can_send_forward > amount:
+    def can_send_forward(self, new_amount_history: AmountHistory):
+        if new_amount_history < self._can_send_forward:
+            # we don't want to record less significant info
+            # (sendable amount is lower than known sendable amount):
             return
-        self._can_send_forward = amount
+        self._can_send_forward = new_amount_history
         # we make a sanity check that sendable amount is lower than not sendable amount
-        if self._cannot_send_forward and self._can_send_forward > self._cannot_send_forward:
-            self._cannot_send_forward = None
+        if self._can_send_forward > self._cannot_send_forward:
+            self._cannot_send_forward = AmountHistory()
 
     @property
-    def can_send_backward(self):
-        return None if self.is_hint_invalid() else self._can_send_backward
+    def can_send_backward(self) -> AmountHistory:
+        if self.is_hint_invalid(self._can_send_backward.timestamp):
+            return AmountHistory()
+        return self._can_send_backward
 
     @can_send_backward.setter
-    def can_send_backward(self, amount):
-        if self._can_send_backward and self._can_send_backward > amount:
+    def can_send_backward(self, new_amount_history: AmountHistory):
+        if new_amount_history < self._can_send_backward:
+            # don't overwrite with insignificant info
             return
-        self._can_send_backward = amount
-        if self._cannot_send_backward and self._can_send_backward > self._cannot_send_backward:
-            self._cannot_send_backward = None
+        self._can_send_backward = new_amount_history
+        # sanity check
+        if self._can_send_backward > self._cannot_send_backward:
+            self._cannot_send_backward = AmountHistory()
 
     @property
-    def cannot_send_forward(self):
-        return None if self.is_hint_invalid() else self._cannot_send_forward
+    def cannot_send_forward(self) -> AmountHistory:
+        if self.is_hint_invalid(self._cannot_send_forward.timestamp):
+            return AmountHistory()
+        return self._cannot_send_forward
 
     @cannot_send_forward.setter
-    def cannot_send_forward(self, amount):
-        # we don't want to record less significant info
-        # (not sendable amount is higher than known not sendable amount):
-        if self._cannot_send_forward and self._cannot_send_forward < amount:
+    def cannot_send_forward(self, new_amount_history: AmountHistory):
+        if new_amount_history > self._cannot_send_forward:
+            # don't overwrite with insignificant info
             return
-        self._cannot_send_forward = amount
-        if self._can_send_forward and self._can_send_forward > self._cannot_send_forward:
-            self._can_send_forward = None
+        self._cannot_send_forward = new_amount_history
+        # sanity check
+        if self._can_send_forward > self._cannot_send_forward:
+            self._can_send_forward = AmountHistory()
         # if we can't send over the channel, we should be able to send in the
         # reverse direction
-        self.can_send_backward = amount
+        self.can_send_backward = new_amount_history
 
     @property
-    def cannot_send_backward(self):
-        return None if self.is_hint_invalid() else self._cannot_send_backward
+    def cannot_send_backward(self) -> AmountHistory:
+        if self.is_hint_invalid(self._cannot_send_backward.timestamp):
+            return AmountHistory()
+        return self._cannot_send_backward
 
     @cannot_send_backward.setter
-    def cannot_send_backward(self, amount):
-        if self._cannot_send_backward and self._cannot_send_backward < amount:
+    def cannot_send_backward(self, new_amount_history: AmountHistory):
+        if new_amount_history > self._cannot_send_backward:
+            # don't overwrite with insignificant info
             return
-        self._cannot_send_backward = amount
-        if self._can_send_backward and self._can_send_backward > self._cannot_send_backward:
-            self._can_send_backward = None
-        self.can_send_forward = amount
+        self._cannot_send_backward = new_amount_history
+        # sanity check
+        if self._can_send_backward > self._cannot_send_backward:
+            self._can_send_backward = AmountHistory()
+        self.can_send_forward = new_amount_history
 
-    def can_send(self, is_forward_direction: bool):
+    def can_send(self, is_forward_direction: bool) -> AmountHistory:
         # make info invalid after some time?
         if is_forward_direction:
             return self.can_send_forward
         else:
             return self.can_send_backward
 
-    def cannot_send(self, is_forward_direction: bool):
+    def cannot_send(self, is_forward_direction: bool) -> AmountHistory:
         # make info invalid after some time?
         if is_forward_direction:
             return self.cannot_send_forward
@@ -114,18 +148,18 @@ class LiquidityHint:
             return self.cannot_send_backward
 
     def update_can_send(self, is_forward_direction: bool, amount: int):
-        self.hint_timestamp = int(time.time())
+        timestamp = int(time.time())
         if is_forward_direction:
-            self.can_send_forward = amount
+            self.can_send_forward = AmountHistory(amount, timestamp)
         else:
-            self.can_send_backward = amount
+            self.can_send_backward = AmountHistory(amount, timestamp)
 
     def update_cannot_send(self, is_forward_direction: bool, amount: int):
-        self.hint_timestamp = int(time.time())
+        timestamp = int(time.time())
         if is_forward_direction:
-            self.cannot_send_forward = amount
+            self.cannot_send_forward = AmountHistory(amount, timestamp)
         else:
-            self.cannot_send_backward = amount
+            self.cannot_send_backward = AmountHistory(amount, timestamp)
 
     def num_inflight_htlcs(self, is_forward_direction: bool) -> int:
         if is_forward_direction:
@@ -262,16 +296,20 @@ class LiquidityHintMgr:
         # we only evaluate hints here, so use dict get (to not create many hints with self.get_hint)
         node_pair = NodePair((node_from, node_to))
         hint = self._liquidity_hints.get(node_pair)
-        if not hint:
-            can_send, cannot_send, num_inflight_htlcs = None, None, 0
-        else:
-            can_send = hint.can_send(node_from < node_to)
-            cannot_send = hint.cannot_send(node_from < node_to)
 
+        # fetch a hint if it exists
+        can_send = None
+        cannot_send = None
+        if hint:
+            can_send = hint.can_send(node_from < node_to).amount
+            cannot_send = hint.cannot_send(node_from < node_to).amount
+
+        # if the hint doesn't help us, we set defaults
         if can_send is None:
             can_send = 0
         if cannot_send is None:
             cannot_send = capacity * 1000
+
         if amount_msat >= cannot_send:
             return inf
         if amount_msat <= can_send:
