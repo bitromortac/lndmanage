@@ -90,6 +90,12 @@ class Network:
         except Exception as e:
             logger.exception(e)
 
+        # TODO: don't load if we loaded some time ago
+        # we extend our information with data from mission control
+        mc_pairs = self.node.query_mc()
+        self.liquidity_hints.extend_with_mission_control(mc_pairs)
+        self.save_liquidty_hints()
+
     @profiled
     def save_liquidty_hints(self):
         cache_hints_filename = make_cache_filename('liquidity_hints.gpickle')

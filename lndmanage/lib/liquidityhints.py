@@ -146,15 +146,19 @@ class LiquidityHint:
         else:
             return self.cannot_send_backward
 
-    def update_can_send(self, is_forward_direction: bool, amount: int):
-        timestamp = int(time.time())
+    def update_can_send(self, is_forward_direction: bool, amount: int,
+                        timestamp: int = None):
+        if not timestamp:
+            timestamp = int(time.time())
         if is_forward_direction:
             self.can_send_forward = AmountHistory(amount, timestamp)
         else:
             self.can_send_backward = AmountHistory(amount, timestamp)
 
-    def update_cannot_send(self, is_forward_direction: bool, amount: int):
-        timestamp = int(time.time())
+    def update_cannot_send(self, is_forward_direction: bool, amount: int,
+                           timestamp: int = None):
+        if not timestamp:
+            timestamp = int(time.time())
         if is_forward_direction:
             self.cannot_send_forward = AmountHistory(amount, timestamp)
         else:
@@ -224,18 +228,20 @@ class LiquidityHintMgr:
             self._liquidity_hints[node_pair] = hint
         return hint
 
-    def update_can_send(self, node_from: NodeID, node_to: NodeID, amount_msat: int):
+    def update_can_send(self, node_from: NodeID, node_to: NodeID, amount_msat: int,
+                        timestamp: int = None):
         node_pair = NodePair((node_from, node_to))
         logger.debug(f"    report: can send {amount_msat // 1000} sat over channel {node_pair}")
         hint = self._get_hint(node_pair)
-        hint.update_can_send(node_from > node_to, amount_msat)
+        hint.update_can_send(node_from > node_to, amount_msat, timestamp)
         self._could_route[node_from] += 1
 
-    def update_cannot_send(self, node_from: NodeID, node_to: NodeID, amount: int):
+    def update_cannot_send(self, node_from: NodeID, node_to: NodeID, amount: int,
+                           timestamp: int = None):
         node_pair = NodePair((node_from, node_to))
         logger.debug(f"    report: cannot send {amount // 1000} sat over channel {node_pair}")
         hint = self._get_hint(node_pair)
-        hint.update_cannot_send(node_from > node_to, amount)
+        hint.update_cannot_send(node_from > node_to, amount, timestamp)
         self._could_not_route[node_from] += 1
 
     def update_badness_hint(self, node: NodeID, badness: float):
@@ -374,3 +380,20 @@ class LiquidityHintMgr:
             for k, v in self._liquidity_hints.items():
                 string += f"{k}: {v}\n"
         return string
+
+    def extend_with_mission_control(self, mc_pairs):
+        for pair in mc_pairs:
+            node_from = pair.node_from.hex()
+            node_to = pair.node_to.hex()
+
+            if pair.history.success_time:
+                self.update_can_send(
+                    node_from, node_to, pair.history.success_amt_msat,
+                    pair.history.success_time,
+                )
+
+            if pair.history.fail_time:
+                self.update_cannot_send(
+                    node_from, node_to, pair.history.fail_amt_msat,
+                    pair.history.fail_time,
+                )

@@ -19,6 +19,7 @@ def new_test_graph(graph: Dict):
     # we need to init the node interface with a public key
     class MockNode:
         pub_key = 'A'
+        query_mc = lambda x: {}
 
     # we disable cached graph reading
     with mock.patch.object(Network, 'load_graph', return_value=None):
