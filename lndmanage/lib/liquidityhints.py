@@ -6,7 +6,7 @@ from math import inf, log
 
 import logging
 
-from lib.data_types import NodeID, ShortChannelID
+from lib.data_types import NodeID, NodePair
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -163,7 +163,7 @@ class LiquidityHintMgr:
     # TODO: hints based on node pairs only (shadow channels, non-strict forwarding)?
     def __init__(self, source_node: str):
         self.source_node = source_node
-        self._liquidity_hints: Dict[ShortChannelID, LiquidityHint] = {}
+        self._liquidity_hints: Dict[NodePair, LiquidityHint] = {}
         # could_not_route tracks node's failures to route
         self._could_not_route: Dict[NodeID, int] = defaultdict(int)
         # could_route tracks node's successes to route
@@ -184,22 +184,24 @@ class LiquidityHintMgr:
     def now(self):
         return time.time()
 
-    def get_hint(self, channel_id: ShortChannelID) -> LiquidityHint:
-        hint = self._liquidity_hints.get(channel_id)
+    def _get_hint(self, node_pair: NodePair) -> LiquidityHint:
+        hint = self._liquidity_hints.get(node_pair)
         if not hint:
             hint = LiquidityHint()
-            self._liquidity_hints[channel_id] = hint
+            self._liquidity_hints[node_pair] = hint
         return hint
 
-    def update_can_send(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID, amount_msat: int):
-        logger.debug(f"    report: can send {amount_msat // 1000} sat over channel {channel_id}")
-        hint = self.get_hint(channel_id)
+    def update_can_send(self, node_from: NodeID, node_to: NodeID, amount_msat: int):
+        node_pair = NodePair((node_from, node_to))
+        logger.debug(f"    report: can send {amount_msat // 1000} sat over channel {node_pair}")
+        hint = self._get_hint(node_pair)
         hint.update_can_send(node_from < node_to, amount_msat)
         self._could_route[node_from] += 1
 
-    def update_cannot_send(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID, amount: int):
-        logger.debug(f"    report: cannot send {amount // 1000} sat over channel {channel_id}")
-        hint = self.get_hint(channel_id)
+    def update_cannot_send(self, node_from: NodeID, node_to: NodeID, amount: int):
+        node_pair = NodePair((node_from, node_to))
+        logger.debug(f"    report: cannot send {amount // 1000} sat over channel {node_pair}")
+        hint = self._get_hint(node_pair)
         hint.update_cannot_send(node_from < node_to, amount)
         self._could_not_route[node_from] += 1
 
@@ -222,12 +224,14 @@ class LiquidityHintMgr:
         avg_time = self._elapsed_time[node] / nfwd if nfwd else 0
         logger.debug(f"    report: update elapsed time {elapsed_time} +=> {self._elapsed_time[node]} (avg: {avg_time}) (node: {node})")
 
-    def add_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
-        hint = self.get_hint(channel_id)
+    def add_htlc(self, node_from: NodeID, node_to: NodeID):
+        node_pair = NodePair((node_from, node_to))
+        hint = self._get_hint(node_pair)
         hint.add_htlc(node_from < node_to)
 
-    def remove_htlc(self, node_from: NodeID, node_to: NodeID, channel_id: ShortChannelID):
-        hint = self.get_hint(channel_id)
+    def remove_htlc(self, node_from: NodeID, node_to: NodeID):
+        node_pair = NodePair((node_from, node_to))
+        hint = self._get_hint(node_pair)
         hint.remove_htlc(node_from < node_to)
 
     def penalty(self, node_from: NodeID, node_to: NodeID, edge: Dict, amount_msat: int, fee_rate_milli_msat: int) -> float:
@@ -255,7 +259,7 @@ class LiquidityHintMgr:
         if self.source_node in [node_from, ]:
             return 0
         # we only evaluate hints here, so use dict get (to not create many hints with self.get_hint)
-        hint = self._liquidity_hints.get(edge['channel_id'])
+        hint = self._liquidity_hints.get(edge['node_pair'])
         if not hint:
             can_send, cannot_send, num_inflight_htlcs = None, None, 0
         else:
@@ -305,12 +309,12 @@ class LiquidityHintMgr:
                 self._badness_hints[node_from] *= math.exp(-time_delta / BADNESS_DECAY_SEC)
         return amount * self._badness_hints[node_from]
 
-    def add_to_blacklist(self, channel_id: ShortChannelID):
-        hint = self.get_hint(channel_id)
+    def add_to_blacklist(self, node_pair: NodePair):
+        hint = self._get_hint(node_pair)
         now = int(time.time())
         hint.blacklist_timestamp = now
 
-    def get_blacklist(self) -> Set[ShortChannelID]:
+    def get_blacklist(self) -> Set[NodePair]:
         now = int(time.time())
         return set(k for k, v in self._liquidity_hints.items() if now - v.blacklist_timestamp < BLACKLIST_DURATION)
 
