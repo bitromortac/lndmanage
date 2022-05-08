@@ -635,7 +635,7 @@ async def _main():
         lndnode = LndNode(config_file=config_file)
         async with lndnode:
             if parser.lncli_path:
-                logger.info("Enabled lncli: using " + parser.lncli_path)
+                logger.info("> Enabled lncli: using " + parser.lncli_path)
 
             while True:
                 try:

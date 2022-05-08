@@ -62,7 +62,7 @@ class Network:
             timestamp_graph = 0  # set very old timestamp
 
         if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
-            logger.info(f"Cached graph is too old. Fetching new one.")
+            logger.info(f"> Cached graph is too old. Fetching new one.")
             self.set_graph_edges_pairs()
             with open(cache_graph_filename, 'wb') as file:
                 pickle.dump(self.graph, file, pickle.HIGHEST_PROTOCOL)
@@ -84,7 +84,7 @@ class Network:
             with open(cache_hints_filename, 'rb') as file:
                 self.liquidity_hints = pickle.load(file)
                 num_badness_hints = len([f for f in self.liquidity_hints._badness_hints.values() if f])
-            logger.info(f"> Loaded liquidty hints: {len(self.liquidity_hints._liquidity_hints)} hints, {num_badness_hints} badness hints.")
+            logger.info(f"> Loaded liquidity hints: {len(self.liquidity_hints._liquidity_hints)} hints, {num_badness_hints} badness hints.")
         except FileNotFoundError:
             self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
         except Exception as e:
@@ -94,6 +94,7 @@ class Network:
         if self.liquidity_hints.mc_sync_timestamp < time.time() - settings.CACHING_RETENTION_MINUTES * 60:
             mc_pairs = self.node.query_mc()
             self.liquidity_hints.extend_with_mission_control(mc_pairs)
+            logger.info(f"> Synced mission control data (imported {len(mc_pairs)} pairs).")
             self.save_liquidty_hints()
 
     @profiled
