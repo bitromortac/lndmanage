@@ -216,6 +216,7 @@ class LiquidityHintMgr:
         # badness hints have an exponential decay time of BADNESS_DECAY_SEC updated
         # every BADNESS_DECAY_ADJUSTMENT_SEC
         self._badness_timestamps: Dict[NodeID, float] = defaultdict(float)
+        self.mc_sync_timestamp: int = 0
 
     @property
     def now(self):
@@ -382,6 +383,7 @@ class LiquidityHintMgr:
         return string
 
     def extend_with_mission_control(self, mc_pairs):
+        logger.info("> Syncing mission control data.")
         for pair in mc_pairs:
             node_from = pair.node_from.hex()
             node_to = pair.node_to.hex()
@@ -397,3 +399,4 @@ class LiquidityHintMgr:
                     node_from, node_to, pair.history.fail_amt_msat,
                     pair.history.fail_time,
                 )
+        self.mc_sync_timestamp = int(time.time())

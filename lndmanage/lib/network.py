@@ -90,11 +90,11 @@ class Network:
         except Exception as e:
             logger.exception(e)
 
-        # TODO: don't load if we loaded some time ago
         # we extend our information with data from mission control
-        mc_pairs = self.node.query_mc()
-        self.liquidity_hints.extend_with_mission_control(mc_pairs)
-        self.save_liquidty_hints()
+        if self.liquidity_hints.mc_sync_timestamp < time.time() - settings.CACHING_RETENTION_MINUTES * 60:
+            mc_pairs = self.node.query_mc()
+            self.liquidity_hints.extend_with_mission_control(mc_pairs)
+            self.save_liquidty_hints()
 
     @profiled
     def save_liquidty_hints(self):
