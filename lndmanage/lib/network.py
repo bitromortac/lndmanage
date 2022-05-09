@@ -62,11 +62,13 @@ class Network:
         if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
             logger.info(f"Cached graph is too old. Fetching new one.")
             self.set_graph_and_edges()
-            nx.write_gpickle(self.graph, cache_graph_filename)
+            with open(cache_graph_filename, 'wb') as file:
+                pickle.dump(self.graph, file, pickle.HIGHEST_PROTOCOL)
             with open(cache_edges_filename, 'wb') as file:
                 pickle.dump(self.edges, file)
         else:  # recent graph in file
-            self.graph = nx.read_gpickle(cache_graph_filename)
+            with open(cache_graph_filename, 'rb') as file:
+                self.graph = pickle.load(file)
             with open(cache_edges_filename, 'rb') as file:
                 self.edges = pickle.load(file)
             logger.info(f"> Loaded graph from file: {len(self.graph)} nodes, {len(self.edges)} channels.")
