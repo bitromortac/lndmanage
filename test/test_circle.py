@@ -1,6 +1,7 @@
 """Tests for circular self-payments."""
 import asyncio
 import math
+from decimal import Decimal
 import time
 from typing import List
 import unittest
@@ -36,7 +37,7 @@ class CircleTest(TestNetwork):
             amount_sat: int,
             expected_fees_msat: int,
             budget_sat=20,
-            max_effective_fee_rate=50,
+            max_effective_fee_rate=Decimal(50),
             dry=False
     ):
         """Helper function for testing a circular payment.
@@ -52,10 +53,7 @@ class CircleTest(TestNetwork):
 
         async with self.lndnode:
             self.rebalancer = Rebalancer(
-                self.lndnode,
-                max_effective_fee_rate=max_effective_fee_rate,
-                budget_sat=budget_sat,
-                force=True,
+                self.lndnode
             )
 
             graph_before = self.testnet.assemble_graph()
@@ -73,6 +71,11 @@ class CircleTest(TestNetwork):
             invoice = self.lndnode.get_invoice(amount_sat, '')
             payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
 
+            max_effective_fee_rate = min(
+                max_effective_fee_rate if max_effective_fee_rate is not None else Decimal(1),
+                budget_sat / amount_sat if budget_sat is not None else Decimal(1)
+            )
+            budget_sat = int(max_effective_fee_rate * abs(amount_sat))
             fees_msat = self.rebalancer._rebalance(
                 send_channels=send_channels,
                 receive_channels=receive_channels,
@@ -80,6 +83,7 @@ class CircleTest(TestNetwork):
                 payment_hash=payment_hash,
                 payment_address=payment_address,
                 budget_sat=budget_sat,
+                force=True,
                 dry=dry
             )
 
@@ -202,7 +206,7 @@ class TestCircleLiquid(CircleTest):
         amount_sat = 10000
         expected_fees_msat = 33
         budget = 20
-        max_effective_fee_rate = 0
+        max_effective_fee_rate = Decimal(0)
 
         self.assertRaises(
             TooExpensive,
