@@ -479,8 +479,8 @@ class Rebalancer(object):
 
         net_change = abs(initial_local_balance_change)
         max_effective_fee_rate = min(
-            max_effective_fee_rate if max_effective_fee_rate else Decimal(1),
-            budget_sat / net_change if budget_sat else Decimal(1)
+            max_effective_fee_rate if max_effective_fee_rate is not None else Decimal(1),
+            budget_sat / net_change if budget_sat is not None else Decimal(1)
         )
 
         logger.info(
