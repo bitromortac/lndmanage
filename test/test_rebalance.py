@@ -2,6 +2,7 @@
 import asyncio
 import time
 from typing import Optional
+from decimal import Decimal
 
 from test.testing_common import (
     test_graphs_paths,
@@ -21,10 +22,12 @@ class RebalanceTest(TestNetwork):
     async def rebalance_and_check(
             self,
             test_channel_number: int,
-            target: Optional[float],
+            target: Optional[Decimal],
             amount_sat: Optional[int],
             allow_uneconomic: bool,
             places: int = 5,
+            max_effective_fee_rate: Decimal = Decimal('5E-6'),
+            budget_sat: int = 20,
     ):
         """
         Test function for rebalancing to a specific target unbalancedness and
@@ -40,12 +43,7 @@ class RebalanceTest(TestNetwork):
         async with self.lndnode:
             graph_before = self.testnet.assemble_graph()
 
-            rebalancer = Rebalancer(
-                self.lndnode,
-                max_effective_fee_rate=5E-6,
-                budget_sat=20,
-                force=allow_uneconomic,
-            )
+            rebalancer = Rebalancer(self.lndnode)
 
             channel_id = self.testnet.channel_mapping[
                 test_channel_number]['channel_id']
@@ -55,6 +53,9 @@ class RebalanceTest(TestNetwork):
                 dry=False,
                 target=target,
                 amount_sat=amount_sat,
+                max_effective_fee_rate=max_effective_fee_rate,
+                budget_sat=budget_sat,
+                force=allow_uneconomic,
             )
 
             # sleep a bit to let LNDs update their balances
@@ -76,7 +77,7 @@ class RebalanceTest(TestNetwork):
 
             if target is not None:
                 self.assertAlmostEqual(
-                    target, channel_unbalancedness, places=places)
+                    target, Decimal(channel_unbalancedness), places=places)
 
             elif amount_sat is not None:
                 self.assertAlmostEqual(
@@ -111,7 +112,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=0.0,
+                target=Decimal(0),
                 amount_sat=None,
                 allow_uneconomic=True
             )
@@ -122,7 +123,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=0.2,
+                target=Decimal('0.2'),
                 amount_sat=None,
                 allow_uneconomic=True
             )
@@ -133,7 +134,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=1.0,
+                target=Decimal('1.0'),
                 amount_sat=None,
                 allow_uneconomic=True
             )
@@ -146,7 +147,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=-0.2,
+                target=Decimal('-0.2'),
                 amount_sat=None,
                 allow_uneconomic=True
             )
@@ -161,7 +162,7 @@ class TestLiquidRebalance(RebalanceTest):
             asyncio.run,
             self.rebalance_and_check(
                 test_channel_number,
-                target=-0.2,
+                target=Decimal('-0.2'),
                 amount_sat=None,
                 allow_uneconomic=False
             )
@@ -172,7 +173,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=0.0,
+                target=Decimal(0),
                 amount_sat=None,
                 allow_uneconomic=True,
                 places=1
@@ -184,7 +185,7 @@ class TestLiquidRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=0.0,
+                target=Decimal(0),
                 amount_sat=None,
                 allow_uneconomic=True,
                 places=2
@@ -205,8 +206,8 @@ class TestLiquidRebalance(RebalanceTest):
 
     def test_shuffle_arround(self):
         """Shuffles sats around in channel 6."""
-        first_target_amount = -0.1
-        second_target_amount = 0.1
+        first_target_amount = Decimal('-0.1')
+        second_target_amount = Decimal('0.1')
         test_channel_number = 6
 
         asyncio.run(
@@ -245,7 +246,7 @@ class TestUnbalancedRebalance(RebalanceTest):
         asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=-0.05,
+                target=Decimal('-0.05'),
                 amount_sat=None,
                 allow_uneconomic=True,
                 places=1
@@ -271,7 +272,7 @@ class TestIlliquidRebalance(RebalanceTest):
         fees_msat = asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,
-                target=-0.05,
+                target=Decimal('-0.05'),
                 amount_sat=None,
                 allow_uneconomic=True,
                 places=1
