@@ -1,5 +1,6 @@
 import unittest
 
+from test import testing_common
 from lndmanage.lib.rating import node_badness
 
 
