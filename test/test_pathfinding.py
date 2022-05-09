@@ -4,11 +4,14 @@ from unittest import TestCase, mock
 
 import networkx as nx
 
+from test import testing_common
+
 from lndmanage.lib.network import Network
 from lndmanage.lib.rating import ChannelRater
 from lndmanage.lib.pathfinding import dijkstra
+from lndmanage.lib.liquidityhints import LiquidityHintMgr
 
-from graph_definitions.routing_graph import nodes as test_graph
+from test.graph_definitions.routing_graph import nodes as test_graph
 
 
 def new_test_graph(graph: Dict):
@@ -21,6 +24,8 @@ def new_test_graph(graph: Dict):
         network = Network(MockNode())
         network.graph = nx.MultiGraph()
         network.edges = {}
+        # TODO: fix side effects of liquidity hints loading
+        network.liquidity_hints = LiquidityHintMgr(MockNode.pub_key)
 
     # add nodes
     for node, node_definition in graph.items():
@@ -95,7 +100,7 @@ class TestGraph(TestCase):
         weight_function = lambda v, u, e: cr.node_to_node_weight(v, u, e, amt_msat)
 
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
-        self.assertEqual(['A', 'D', 'E'], path)
+        self.assertEqual(['A', 'B', 'E'], path)
 
         # We report that B cannot send to E
         network.liquidity_hints.update_cannot_send('B', 'E', 2, 1_000)
@@ -105,7 +110,7 @@ class TestGraph(TestCase):
         # We report that D cannot send to E
         network.liquidity_hints.update_cannot_send('D', 'E', 5, 1_000)
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
-        self.assertEqual(['A', 'D', 'C', 'E'], path)
+        self.assertEqual(['A', 'B', 'C', 'E'], path)
 
         # We report that D can send to C
         network.liquidity_hints.update_can_send('D', 'C', 4, amt_msat + 1000)
