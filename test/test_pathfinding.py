@@ -9,6 +9,7 @@ from test import testing_common
 from lndmanage.lib.network import Network
 from lndmanage.lib.rating import ChannelRater
 from lndmanage.lib.pathfinding import dijkstra
+from lndmanage.lib.liquidityhints import LiquidityHintMgr
 
 from test.graph_definitions.routing_graph import nodes as test_graph
 
@@ -23,6 +24,8 @@ def new_test_graph(graph: Dict):
         network = Network(MockNode())
         network.graph = nx.MultiGraph()
         network.edges = {}
+        # TODO: fix side effects of liquidity hints loading
+        network.liquidity_hints = LiquidityHintMgr(MockNode.pub_key)
 
     # add nodes
     for node, node_definition in graph.items():
