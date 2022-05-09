@@ -275,7 +275,8 @@ class TestIlliquidRebalance(RebalanceTest):
                 target=Decimal('-0.05'),
                 amount_sat=None,
                 allow_uneconomic=True,
-                places=1
+                max_effective_fee_rate=Decimal('61E-7'),
+                places=1,
             )
         )
         self.assertAlmostEqual(2000, fees_msat, places=-3)
