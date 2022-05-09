@@ -55,7 +55,7 @@ class Rebalancer(object):
             amt_sat: int,
             payment_hash: bytes,
             payment_address: bytes,
-            budget_sat: int,
+            budget_sat: Decimal,
             dry=False,
             force=False,
     ) -> int:
@@ -397,7 +397,9 @@ class Rebalancer(object):
             candidates
         :raises TooExpensive: the rebalance became too expensive
         """
-        if target and not (-1 < target < 1):
+        if budget_sat is not None:
+            budget_sat = Decimal(budget_sat)
+        if target and not (-1 <= target <= 1):
             raise ValueError("Target must be between -1 and 1.")
 
         # convert the node id to a channel id if possible
@@ -477,11 +479,12 @@ class Rebalancer(object):
                     f" rb: {unbalanced_channel_info['remote_balance']} sat")
             initial_local_balance_change = amount_sat
 
-        net_change = abs(initial_local_balance_change)
+        net_change = abs(Decimal(initial_local_balance_change))
         max_effective_fee_rate = min(
             max_effective_fee_rate if max_effective_fee_rate is not None else Decimal(1),
             budget_sat / net_change if budget_sat is not None else Decimal(1)
         )
+        total_budget_sat = max_effective_fee_rate * net_change
 
         logger.info(
             f">>> Trying to rebalance channel {channel_id} "
@@ -492,7 +495,7 @@ class Rebalancer(object):
             logger.info(f">>> This is a dry run, nothing to fear.")
 
         # copy the original target for bookkeeping
-        local_balance_change_left = initial_local_balance_change
+        local_balance_change_left = Decimal(initial_local_balance_change)
 
         logger.info(
             f">>> The channel status before rebalancing is "
@@ -550,12 +553,14 @@ class Rebalancer(object):
         # we try to rebalance with amount_sat until we reach the desired total local
         # balance change
         while abs(local_balance_change_left) >= 0:
-            budget_sat = (
-                int(max_effective_fee_rate * abs(amount_sat)) if max_effective_fee_rate else abs(amount_sat)
-            ) - total_fees_paid_msat // 1000
+            budget_sat = (Decimal(total_budget_sat*1000 - total_fees_paid_msat)/1000) * (amount_sat / local_balance_change_left )
             # 1. determine counterparty rebalance candidates
             rebalance_candidates = self._get_rebalance_candidates(
-                channel_id, fee_rate_milli_msat, amount_sat)
+                channel_id,
+                fee_rate_milli_msat,
+                amount_sat,
+                force=force
+            )
 
             if len(rebalance_candidates) == 0:
                 raise NoRebalanceCandidates(
@@ -564,7 +569,7 @@ class Rebalancer(object):
             self._debug_rebalance_candidates(rebalance_candidates)
 
             # TODO: If the rest of the checks are consistent, this should never happen?
-            if total_fees_paid_msat >= budget_sat * 1000:
+            if total_fees_paid_msat >= total_budget_sat * 1000:
                 raise TooExpensive(
                     f"Fee budget exhausted. "
                     f"Total fees {total_fees_paid_msat / 1000:.3f} sat.")
@@ -577,7 +582,7 @@ class Rebalancer(object):
 
             # for each rebalance amount, get a new invoice
             invoice = self.node.get_invoice(
-                amt_msat=abs(amount_sat) * 1000,
+                amt_msat=int((abs(amount_sat) * 1000).to_integral()),
                 memo=f"lndmanage: Rebalance of channel {channel_id}.")
             payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
 
@@ -593,7 +598,7 @@ class Rebalancer(object):
             # attempt the rebalance
             try:
                 rebalance_fees_msat = self._rebalance(
-                    send_channels, receive_channels, abs(amount_sat), payment_hash,
+                    send_channels, receive_channels, int(abs(amount_sat).to_integral()), payment_hash,
                     payment_address, budget_sat, dry=dry, force=force)
 
                 # account for running costs / target
