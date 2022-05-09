@@ -3,7 +3,7 @@ FROM lndmanage:local
 
 COPY --from=lnregtest-deps /opt/bin/ /root/lndmanage/test/bin/
 ENV PATH="/root/.venv/bin:/opt/bin:$PATH:/root"
-ARG LNREGTEST_REF=be7f39b306829387b3e9754e84db60901fbb385e
+ARG LNREGTEST_REF=4aa08bd72f0ec76b3459d7ab69d4d14a0fdd4358
 RUN apt-get update && \
     apt-get install -y -q --no-install-recommends git && \
     pip install git+https://github.com/bitromortac/lnregtest.git@${LNREGTEST_REF} && \
