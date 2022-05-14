@@ -5,6 +5,7 @@ from typing import Dict, TYPE_CHECKING
 
 import networkx as nx
 
+from lndmanage.lib.data_types import NodePair
 from lndmanage.lib.utilities import profiled
 from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
 from lndmanage.lib.liquidityhints import LiquidityHintMgr
@@ -120,6 +121,8 @@ class Network:
                 color=n.color)
 
         for e in raw_graph.edges:
+            node_pair = NodePair((e.node1_pub, e.node2_pub))
+
             policy1 = {
                 'time_lock_delta': e.node1_policy.time_lock_delta,
                 'fee_base_msat': e.node1_policy.fee_base_msat,
@@ -142,6 +145,7 @@ class Network:
             self.edges[e.channel_id] = {
                 'node1_pub': e.node1_pub,
                 'node2_pub': e.node2_pub,
+                'node_pair': node_pair,
                 'capacity': e.capacity,
                 'last_update': e.last_update,
                 'channel_id': e.channel_id,
@@ -156,6 +160,7 @@ class Network:
             self.graph.add_edge(
                 e.node1_pub,
                 e.node2_pub,
+                node_pair=node_pair,
                 channel_id=e.channel_id,
                 last_update=e.last_update,
                 capacity=e.capacity,
