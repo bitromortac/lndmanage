@@ -228,14 +228,14 @@ class LiquidityHintMgr:
         node_pair = NodePair((node_from, node_to))
         logger.debug(f"    report: can send {amount_msat // 1000} sat over channel {node_pair}")
         hint = self._get_hint(node_pair)
-        hint.update_can_send(node_from < node_to, amount_msat)
+        hint.update_can_send(node_from > node_to, amount_msat)
         self._could_route[node_from] += 1
 
     def update_cannot_send(self, node_from: NodeID, node_to: NodeID, amount: int):
         node_pair = NodePair((node_from, node_to))
         logger.debug(f"    report: cannot send {amount // 1000} sat over channel {node_pair}")
         hint = self._get_hint(node_pair)
-        hint.update_cannot_send(node_from < node_to, amount)
+        hint.update_cannot_send(node_from > node_to, amount)
         self._could_not_route[node_from] += 1
 
     def update_badness_hint(self, node: NodeID, badness: float):
@@ -260,12 +260,12 @@ class LiquidityHintMgr:
     def add_htlc(self, node_from: NodeID, node_to: NodeID):
         node_pair = NodePair((node_from, node_to))
         hint = self._get_hint(node_pair)
-        hint.add_htlc(node_from < node_to)
+        hint.add_htlc(node_from > node_to)
 
     def remove_htlc(self, node_from: NodeID, node_to: NodeID):
         node_pair = NodePair((node_from, node_to))
         hint = self._get_hint(node_pair)
-        hint.remove_htlc(node_from < node_to)
+        hint.remove_htlc(node_from > node_to)
 
     def penalty(self, node_from: NodeID, node_to: NodeID, capacity: int,
                 amount_msat: int, fee_rate_milli_msat: int) -> float:
@@ -300,8 +300,8 @@ class LiquidityHintMgr:
         can_send = None
         cannot_send = None
         if hint:
-            can_send = hint.can_send(node_from < node_to).amount
-            cannot_send = hint.cannot_send(node_from < node_to).amount
+            can_send = hint.can_send(node_from > node_to).amount
+            cannot_send = hint.cannot_send(node_from > node_to).amount
 
         # if the hint doesn't help us, we set defaults
         if can_send is None:
