@@ -53,7 +53,6 @@ class LiquidityHint:
         self._can_send_backward = AmountHistory()
         self._cannot_send_backward = AmountHistory()
         self.blacklist_timestamp = 0
-        self.hint_timestamp = 0
         self._inflight_htlcs_forward = 0
         self._inflight_htlcs_backward = 0
 
@@ -364,7 +363,10 @@ class LiquidityHintMgr:
 
     def reset_liquidity_hints(self):
         for k, v in self._liquidity_hints.items():
-            v.hint_timestamp = 0
+            v._can_send_forward = AmountHistory()
+            v._can_send_backward = AmountHistory()
+            v._cannot_send_forward = AmountHistory()
+            v._cannot_send_backward = AmountHistory()
 
     def __repr__(self):
         string = "liquidity hints:\n"
