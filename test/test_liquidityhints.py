@@ -64,7 +64,7 @@ class LiquidityTest(TestCase):
         )
         # we conclude for the backward direction from the failure:
         self.assertEqual(
-            AmountHistory(amount=30000, timestamp=1),
+            AmountHistory(),
             hint.can_send("bb" > "aa"),
         )
         # we can't say anything about the amount that cannot be sent in the backward

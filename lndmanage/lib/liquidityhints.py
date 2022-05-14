@@ -111,9 +111,6 @@ class LiquidityHint:
         # sanity check
         if self._can_send_forward > self._cannot_send_forward:
             self._can_send_forward = AmountHistory()
-        # if we can't send over the channel, we should be able to send in the
-        # reverse direction
-        self.can_send_backward = new_amount_history
 
     @property
     def cannot_send_backward(self) -> AmountHistory:
@@ -130,7 +127,6 @@ class LiquidityHint:
         # sanity check
         if self._can_send_backward > self._cannot_send_backward:
             self._can_send_backward = AmountHistory()
-        self.can_send_forward = new_amount_history
 
     def can_send(self, is_forward_direction: bool) -> AmountHistory:
         # make info invalid after some time?
