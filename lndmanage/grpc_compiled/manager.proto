@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option objc_class_prefix = "MNG";
+
+package managerpc;
+
+// blah.
+service Mangager {
+  // blah.
+  rpc RunningServices(RunningServicesRequest) returns (RunningServicesResponse) {}
+}
+
+// blah.
+message RunningServicesRequest {
+}
+
+// blah.
+message RunningServicesResponse {
+    repeated RunningService services = 1;
+}
+
+// blah.
+message RunningService {
+    string name = 1;
+}

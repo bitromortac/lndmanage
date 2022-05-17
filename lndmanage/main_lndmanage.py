@@ -28,7 +28,7 @@ from lndmanage.lib.report import Report
 from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(settings.logger_config)
+logging.config.dictConfig(settings.lndmanage_log_config)
 logger = logging.getLogger()
 
 
@@ -429,6 +429,13 @@ class Parser(object):
             help='Update the fees without asking the user explicitly.',
             action='store_true')
 
+        # lndmanaged stuff
+
+        # cmd: services
+        parser_services = subparsers.add_parser(
+            'services',
+            help="displays services running in lndmanaged")
+
     def check_for_lncli(self):
         """
         Looks for lncli in PATH or in LNDMANAGE_HOME folder. Sets self.lncli_path.
@@ -603,6 +610,9 @@ class Parser(object):
                 init=args.init,
                 reckless=args.reckless
             )
+        elif args.cmd == 'services':
+            logger.info("running")
+            await node.running_services()
 
 
 async def _main():

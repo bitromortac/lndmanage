@@ -18,6 +18,8 @@ import lndmanage.grpc_compiled.router_pb2 as lndrouter
 import lndmanage.grpc_compiled.router_pb2_grpc as lndrouterrpc
 import lndmanage.grpc_compiled.walletkit_pb2 as lndwalletkit
 import lndmanage.grpc_compiled.walletkit_pb2_grpc as lndwalletkitrpc
+import lndmanage.grpc_compiled.manager_pb2 as managermsg
+import lndmanage.grpc_compiled.manager_pb2_grpc as managerrpc
 
 from lndmanage.lib.network import Network
 from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, OurNodeFailure
@@ -53,8 +55,10 @@ class LndNode:
     _walletrpc: lndwalletkitrpc.WalletKitStub
     _async_rpc: lndrpc.LightningStub
     _async_routerrpc: lndrouterrpc.RouterStub
+    _async_managerrpc: managerrpc.MangagerStub
     _async_channel: grpc.aio.Channel
     _sync_channel: grpc.Channel
+    _async_manager_channel: grpc.aio.Channel
 
     # attributes (TODO: clean up)
     alias: str
@@ -151,6 +155,11 @@ class LndNode:
         # establish async connections to rpc servers
         self._async_rpc = lndrpc.LightningStub(self._async_channel)
         self._async_routerrpc = lndrouterrpc.RouterStub(self._async_channel)
+
+        # optionally connect to lndmanged
+        self._async_manager_channel = grpc.aio.insecure_channel(
+            'localhost:50051')
+        self._async_managerrpc = managerrpc.MangagerStub(self._async_manager_channel)
 
     def connect_sync_rpcs(self):
         self._sync_channel = grpc.secure_channel(
@@ -1039,3 +1048,7 @@ class LndNode:
             node_to_channel_map[cv['remote_pubkey']].append(c)
 
         return node_to_channel_map
+
+    async def running_services(self):
+        resp = await self._async_managerrpc.RunningServices(managermsg.RunningServicesRequest())
+        print(resp)

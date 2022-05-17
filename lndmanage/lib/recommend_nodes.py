@@ -10,7 +10,6 @@ from lndmanage.lib.network_info import NetworkAnalysis
 from lndmanage import settings
 
 import logging.config
-logging.config.dictConfig(settings.logger_config)
 logger = logging.getLogger(__name__)
 
 # define printing shortcuts, alignments, and cutoffs
