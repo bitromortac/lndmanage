@@ -7,6 +7,8 @@
 lndmanage is a command line tool for advanced channel management of an 
 [LND](https://github.com/lightningnetwork/lnd) node.
 
+**DISCLAIMER: This is BETA software, so please be careful. No warranty is given.**
+
 [See installation instructions.](#setup)
 
 ### Feature list:
@@ -28,10 +30,6 @@ lndmanage is a command line tool for advanced channel management of an
 * Batched channel opening [```openchannels```](#batched-channel-opening)
 * Support of [```lncli```](#lncli-support)
    
-**DISCLAIMER: This is BETA software, so please be careful (All actions are 
-  executed as a dry run unless you call lndmanage with the ```--reckless``` 
-  flag though). No warranty is given.**
-
 ## Command Line Options
 ```
 usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}] {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees} ...
@@ -405,24 +403,8 @@ under the `annotations` section (as specified in
 can be saved. These annotations will then appear in the `listchannels` views.
 
 ## Batched Channel Opening
-lndmanage supports batched channel opening support using LND's internal wallet.
-With this command you can specify node pubkeys, amounts, and have coin control
-to avoid change creation. Reserves for anchor commitments are respected or
-created automatically.
-
-The `openchannels` command can operate in several ways. You only specify 
-the node pubkeys as a minimal input and the tool will automatically connect
-to the nodes in the channel opening process. You may also specify a list
-of UTXOs which are used as the budget. The individual channel capacities
-can be given either as absolute values, or as relative values 
-(they will be rescaled to the sum of UTXOs), or you can give a total amount,
-which will be distributed over the new channels.
-
-Anchor commitments introduce some UX issues with reserving UTXOs that are needed
-to confirm commitment transactions in time via child-pays-for-parent. This is 
-why you won't be able to spend down all funds on newer versions of LND.
-lndmanage recognizes this case and will not touch small UTXOs that are suitable
-for reserves, or it will create them.
+lndmanage supports batched channel opening wrapping LND's batchopen command. With this 
+command you can specify node pubkeys, amounts or a total amount for your channels.
 
 ## Support of lncli
 lndmanage supports the native command line interface of `lnd` in interactive mode.
