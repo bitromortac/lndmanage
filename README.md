@@ -46,7 +46,7 @@ positional arguments:
     report              displays reports of activity on the node
     info                displays info on channels and nodes
     lncli               execute lncli
-    openchannels        opens multiple channels with UTXO control
+    openchannels        opens multiple channels
     update-fees         optimize the fees on your channels to increase revenue and to automatically rebalance
 
 ```
