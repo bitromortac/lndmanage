@@ -809,9 +809,7 @@ class LndNode:
             label='lndmanage: batch open',
         )
         response = self._rpc.BatchOpenChannel(request)
-        logger.info(f">>> Pending channels:")
-        for r in response.pending_channels:
-            logger.info(f"    {r.txid.hex()}:{r.output_index}")
+        logger.info(f">>> Pending channels: {len(response.pending_channels)}")
 
     def _connect_nodes(self, pubkeys: List[str]) -> List[str]:
         """
