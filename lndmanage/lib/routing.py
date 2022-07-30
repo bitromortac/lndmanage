@@ -1,5 +1,6 @@
-from typing import List, Dict, TYPE_CHECKING, Tuple
+from typing import List, Dict, TYPE_CHECKING
 
+from lndmanage.lib.data_types import NodePair
 from lndmanage.lib.exceptions import RouteWithTooSmallCapacity, NoRoute
 from lndmanage.lib.pathfinding import dijkstra
 from lndmanage import settings
@@ -74,10 +75,12 @@ class Route(object):
             forward_msat = amt_msat + sum(fees_msat_container[:ichannel])
             fees_msat_container.append(fees_msat)
 
+            node_pair = NodePair((channel_data['node1_pub'], channel_data['node2_pub']))
+            capacity = self.node.network.max_pair_capacity[node_pair]
             logger.info(f"      Fees: {fees_msat / 1000 if not hop == 1 else 0:3.3f} sat")
             logger.debug(f"      Fees container {fees_msat_container}")
             logger.debug(f"      Forward: {forward_msat / 1000:3.3f} sat")
-            logger.info(f"      Liquidity penalty: {self.node.network.liquidity_hints.penalty(node_from, node_to, channel_data, amt_msat, self.node.network.channel_rater.reference_fee_rate_milli_msat) / 1000: 3.3f} sat")
+            logger.info(f"      Liquidity penalty: {self.node.network.liquidity_hints.penalty(node_from, node_to, capacity, amt_msat, self.node.network.channel_rater.reference_fee_rate_milli_msat) / 1000: 3.3f} sat")
             logger.info(f"      Badness penalty: {self.node.network.liquidity_hints.badness_penalty(node_from, amt_msat) / 1000: 3.3f} sat")
             logger.info(f"      Time penalty: {self.node.network.liquidity_hints.time_penalty(node_from, amt_msat) / 1000: 3.3f} sat")
 

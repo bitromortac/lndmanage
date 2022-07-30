@@ -6,6 +6,7 @@ import networkx as nx
 
 from test import testing_common
 
+from lndmanage.lib.data_types import NodePair
 from lndmanage.lib.network import Network
 from lndmanage.lib.rating import ChannelRater
 from lndmanage.lib.pathfinding import dijkstra
@@ -18,6 +19,7 @@ def new_test_graph(graph: Dict):
     # we need to init the node interface with a public key
     class MockNode:
         pub_key = 'A'
+        query_mc = lambda x: {}
 
     # we disable cached graph reading
     with mock.patch.object(Network, 'load_graph', return_value=None):
@@ -26,6 +28,7 @@ def new_test_graph(graph: Dict):
         network.edges = {}
         # TODO: fix side effects of liquidity hints loading
         network.liquidity_hints = LiquidityHintMgr(MockNode.pub_key)
+        network.max_pair_capacity = {}
 
     # add nodes
     for node, node_definition in graph.items():
@@ -41,9 +44,11 @@ def new_test_graph(graph: Dict):
         for channel, channel_definition in node_definition['channels'].items():
             # create a dictionary for channel_id lookups
             to_node = channel_definition['to']
+            node_pair = NodePair((node, to_node))
             network.edges[channel] = {
                 'node1_pub': node,
                 'node2_pub': to_node,
+                'node_pair': NodePair((node, to_node)),
                 'capacity': channel_definition['capacity'],
                 'last_update': None,
                 'channel_id': channel,
@@ -61,10 +66,18 @@ def new_test_graph(graph: Dict):
                 channel_id=channel,
                 last_update=None,
                 capacity=channel_definition['capacity'],
+                node_pair=NodePair((node, to_node)),
                 fees={
                     node > to_node: channel_definition['policies'][node > to_node],
                     to_node > node: channel_definition['policies'][to_node > node],
                 })
+
+            # max channel capacity
+            if not network.max_pair_capacity.get(node_pair):
+                network.max_pair_capacity[node_pair] = channel_definition['capacity']
+            else:
+                if network.max_pair_capacity[node_pair] < channel_definition['capacity']:
+                   network.max_pair_capacity[node_pair] = channel_definition['capacity']
 
     return network
 
@@ -103,16 +116,16 @@ class TestGraph(TestCase):
         self.assertEqual(['A', 'B', 'E'], path)
 
         # We report that B cannot send to E
-        network.liquidity_hints.update_cannot_send('B', 'E', 2, 1_000)
+        network.liquidity_hints.update_cannot_send('B', 'E', 1_000)
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
         self.assertEqual(['A', 'D', 'E'], path)
 
         # We report that D cannot send to E
-        network.liquidity_hints.update_cannot_send('D', 'E', 5, 1_000)
+        network.liquidity_hints.update_cannot_send('D', 'E', 1_000)
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
         self.assertEqual(['A', 'B', 'C', 'E'], path)
 
         # We report that D can send to C
-        network.liquidity_hints.update_can_send('D', 'C', 4, amt_msat + 1000)
+        network.liquidity_hints.update_can_send('D', 'C', amt_msat + 1000)
         path = dijkstra(network.graph, 'A', 'E', weight=weight_function)
         self.assertEqual(['A', 'D', 'C', 'E'], path)

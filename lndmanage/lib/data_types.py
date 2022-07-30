@@ -1,5 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass, field
+from typing import Tuple
 
 
 class AddressType(Enum):
@@ -46,3 +47,23 @@ class NodeProperties:
     remote_base_fees: list
     remote_balances: list
     sent_received_per_week: int
+
+
+class NodePair(tuple):
+    """Represents a node pair mapped to a fixed order."""
+
+    def __new__(cls, keys: Tuple[str, str]):
+        if keys[0].casefold() < keys[1].casefold():
+            seq = (keys[0], keys[1])
+        else:
+            seq = (keys[1], keys[0])
+
+        return super().__new__(cls, seq)
+
+
+class NodeID(str):
+    pass
+
+
+class ShortChannelID(int):
+    pass

@@ -871,3 +871,9 @@ class LndNode:
             node_to_channel_map[cv['remote_pubkey']].append(c)
 
         return node_to_channel_map
+
+    def query_mc(self):
+        resp = self._routerrpc.QueryMissionControl(
+            lndrouter.QueryMissionControlRequest()
+        )
+        return resp.pairs

@@ -5,6 +5,7 @@ from typing import Dict, TYPE_CHECKING
 
 import networkx as nx
 
+from lndmanage.lib.data_types import NodePair
 from lndmanage.lib.utilities import profiled
 from lndmanage.lib.ln_utilities import convert_channel_id_to_short_channel_id
 from lndmanage.lib.liquidityhints import LiquidityHintMgr
@@ -38,6 +39,7 @@ class Network:
     edges: Dict
     graph: nx.MultiGraph
     liquidity_hints: LiquidityHintMgr
+    max_pair_capacity: Dict[NodePair, int]
 
     def __init__(self, node: 'LndNode'):
         self.node = node
@@ -60,8 +62,8 @@ class Network:
             timestamp_graph = 0  # set very old timestamp
 
         if timestamp_graph < time.time() - settings.CACHING_RETENTION_MINUTES * 60:  # old graph in file
-            logger.info(f"Cached graph is too old. Fetching new one.")
-            self.set_graph_and_edges()
+            logger.info(f"> Cached graph is too old. Fetching new one.")
+            self.set_graph_edges_pairs()
             with open(cache_graph_filename, 'wb') as file:
                 pickle.dump(self.graph, file, pickle.HIGHEST_PROTOCOL)
             with open(cache_edges_filename, 'wb') as file:
@@ -73,6 +75,8 @@ class Network:
                 self.edges = pickle.load(file)
             logger.info(f"> Loaded graph from file: {len(self.graph)} nodes, {len(self.edges)} channels.")
 
+        self.set_max_pair_capacities()
+
     @profiled
     def load_liquidity_hints(self):
         cache_hints_filename = make_cache_filename('liquidity_hints.gpickle')
@@ -80,11 +84,21 @@ class Network:
             with open(cache_hints_filename, 'rb') as file:
                 self.liquidity_hints = pickle.load(file)
                 num_badness_hints = len([f for f in self.liquidity_hints._badness_hints.values() if f])
-            logger.info(f"> Loaded liquidty hints: {len(self.liquidity_hints._liquidity_hints)} hints, {num_badness_hints} badness hints.")
+            logger.info(f"> Loaded liquidity hints: {len(self.liquidity_hints._liquidity_hints)} hints, {num_badness_hints} badness hints.")
         except FileNotFoundError:
             self.liquidity_hints = LiquidityHintMgr(self.node.pub_key)
         except Exception as e:
             logger.exception(e)
+
+        try:
+            # we extend our information with data from mission control
+            if self.liquidity_hints.mc_sync_timestamp < time.time() - settings.CACHING_RETENTION_MINUTES * 60:
+                mc_pairs = self.node.query_mc()
+                self.liquidity_hints.extend_with_mission_control(mc_pairs)
+                logger.info(f"> Synced mission control data (imported {len(mc_pairs)} pairs).")
+                self.save_liquidty_hints()
+        except AttributeError:
+            raise Exception("Hints file to old, please delete cache folder.")
 
     @profiled
     def save_liquidty_hints(self):
@@ -93,7 +107,7 @@ class Network:
             pickle.dump(self.liquidity_hints, file)
 
     @profiled
-    def set_graph_and_edges(self):
+    def set_graph_edges_pairs(self):
         """
         Reads in the networkx graph and edges dictionary.
 
@@ -120,6 +134,8 @@ class Network:
                 color=n.color)
 
         for e in raw_graph.edges:
+            node_pair = NodePair((e.node1_pub, e.node2_pub))
+
             policy1 = {
                 'time_lock_delta': e.node1_policy.time_lock_delta,
                 'fee_base_msat': e.node1_policy.fee_base_msat,
@@ -142,6 +158,7 @@ class Network:
             self.edges[e.channel_id] = {
                 'node1_pub': e.node1_pub,
                 'node2_pub': e.node2_pub,
+                'node_pair': node_pair,
                 'capacity': e.capacity,
                 'last_update': e.last_update,
                 'channel_id': e.channel_id,
@@ -156,6 +173,7 @@ class Network:
             self.graph.add_edge(
                 e.node1_pub,
                 e.node2_pub,
+                node_pair=node_pair,
                 channel_id=e.channel_id,
                 last_update=e.last_update,
                 capacity=e.capacity,
@@ -163,6 +181,17 @@ class Network:
                     e.node1_pub > e.node2_pub: policy1,
                     e.node2_pub > e.node1_pub: policy2,
                 })
+
+    def set_max_pair_capacities(self):
+        self.max_pair_capacity = {}
+        for cid, e in self.edges.items():
+            node_pair = NodePair((e['node1_pub'], e['node2_pub']))
+            # determine the maximal capacity over a key pair
+            if not self.max_pair_capacity.get(node_pair):
+                self.max_pair_capacity[node_pair] = e['capacity']
+            else:
+                if self.max_pair_capacity[node_pair] < e['capacity']:
+                    self.max_pair_capacity[node_pair] = e['capacity']
 
     def number_channels(self, node_pub_key):
         """

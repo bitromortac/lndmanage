@@ -151,7 +151,9 @@ class Rebalancer(object):
                     self.node.network.liquidity_hints.update_elapsed_time(source_node, elapsed_time / success_path_length)
                     if failed_hop_index and hop == failed_hop_index:
                         break
-                    self.node.network.liquidity_hints.update_can_send(source_node, target_node, channel['chan_id'], amt_msat)
+                    self.node.network.liquidity_hints.update_can_send(
+                        source_node, target_node, amt_msat,
+                    )
 
                 # symmetrically penalize a route about the error source if it failed
                 if failed_hop_index:
@@ -206,7 +208,8 @@ class Rebalancer(object):
 
                     # report that channel could not route the amount to liquidity hints
                     self.node.network.liquidity_hints.update_cannot_send(
-                        failed_source, failed_target, failed_channel_id, amt_msat)
+                        failed_source, failed_target, amt_msat,
+                    )
 
                     # report all the previous hops that they could route the amount
                     report_success_up_to_failed_hop(failed_hop)
