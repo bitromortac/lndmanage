@@ -90,12 +90,15 @@ class Network:
         except Exception as e:
             logger.exception(e)
 
-        # we extend our information with data from mission control
-        if self.liquidity_hints.mc_sync_timestamp < time.time() - settings.CACHING_RETENTION_MINUTES * 60:
-            mc_pairs = self.node.query_mc()
-            self.liquidity_hints.extend_with_mission_control(mc_pairs)
-            logger.info(f"> Synced mission control data (imported {len(mc_pairs)} pairs).")
-            self.save_liquidty_hints()
+        try:
+            # we extend our information with data from mission control
+            if self.liquidity_hints.mc_sync_timestamp < time.time() - settings.CACHING_RETENTION_MINUTES * 60:
+                mc_pairs = self.node.query_mc()
+                self.liquidity_hints.extend_with_mission_control(mc_pairs)
+                logger.info(f"> Synced mission control data (imported {len(mc_pairs)} pairs).")
+                self.save_liquidty_hints()
+        except AttributeError:
+            raise Exception("Hints file to old, please delete cache folder.")
 
     @profiled
     def save_liquidty_hints(self):
