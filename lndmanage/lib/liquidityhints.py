@@ -23,20 +23,20 @@ TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow
 
 @dataclass
 class AmountHistory:
-    amount: int = None  # msat
+    amount_msat: int = None  # msat
     timestamp: int = None
 
     def __bool__(self):
-        return self.amount is not None and self.timestamp is not None
+        return self.amount_msat is not None and self.timestamp is not None
 
     def __gt__(self, other):
-        return self and other and self.amount > other.amount
+        return self and other and self.amount_msat > other.amount_msat
 
     def __lt__(self, other):
-        return self and other and self.amount < other.amount
+        return self and other and self.amount_msat < other.amount_msat
 
     def __str__(self):
-        return str(self.amount)
+        return str(self.amount_msat)
 
 
 class LiquidityHint:
@@ -303,8 +303,8 @@ class LiquidityHintMgr:
         can_send = None
         cannot_send = None
         if hint:
-            can_send = hint.can_send(node_from > node_to).amount
-            cannot_send = hint.cannot_send(node_from > node_to).amount
+            can_send = hint.can_send(node_from > node_to).amount_msat
+            cannot_send = hint.cannot_send(node_from > node_to).amount_msat
 
         # if the hint doesn't help us, we set defaults
         if can_send is None:

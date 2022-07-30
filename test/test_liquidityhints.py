@@ -54,12 +54,12 @@ class LiquidityTest(TestCase):
         hint = mgr._liquidity_hints.get(node_pair)
         # hint from mc:
         self.assertEqual(
-            AmountHistory(amount=10000, timestamp=1),
+            AmountHistory(amount_msat=10000, timestamp=1),
             hint.can_send("aa" > "bb"),
         )
         # hint from mc:
         self.assertEqual(
-            AmountHistory(amount=30000, timestamp=1),
+            AmountHistory(amount_msat=30000, timestamp=1),
             hint.cannot_send("aa" > "bb"),
         )
         # we conclude for the backward direction from the failure:
