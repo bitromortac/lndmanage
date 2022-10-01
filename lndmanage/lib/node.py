@@ -242,26 +242,14 @@ class LndNode:
         invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
         return invoice
 
-    def send_to_route(self, route: 'Route', payment_hash: bytes,
-                      payment_address: bytes):
-        """
-        Takes bare route (list) and tries to send along it,
-        trying to fulfill the invoice labeled by the given hash.
+    def send_to_route(self, route: lnd.Route, payment_hash: bytes):
+        """Takes a route and sends to it."""
 
-        :param route: (list) of :class:`lib.routes.Route`
-        :param payment_hash: invoice identifier
-        :return:
-        """
-        lnd_route = self._to_lnd_route(route)
-        # set payment address for last hop
-        lnd_route.hops[-1].tlv_payload = True
-        lnd_route.hops[-1].mpp_record.payment_addr = payment_address
-        lnd_route.hops[-1].mpp_record.total_amt_msat = lnd_route.hops[-1].amt_to_forward_msat
-        # set payment hash
         request = lndrouter.SendToRouteRequest(
-            route=lnd_route,
+            route=route,
             payment_hash=payment_hash,
         )
+
         try:
             # timeout after 5 minutes
             payment = self._routerrpc.SendToRouteV2(request, timeout=5 * 60)
@@ -287,10 +275,29 @@ class LndNode:
             elif failure.code == 19:
                 raise exceptions.TemporaryNodeFailure(payment)
             else:
-                logger.info(failure)
-                raise Exception(f"Unknown error: code {failure.code}")
+                logger.info(f"Unknown error: code: {failure.code}")
+                raise exceptions.TemporaryChannelFailure(payment)
 
         return payment
+
+    def build_route(self, amt_msat: int, outgoing_chan_id: int,
+        hop_pubkeys: List[str], payment_addr: bytes) -> lnd.Route:
+        """ Queries the routerrpc endpoint to build a route."""
+
+        final_cltv_delta = 144
+
+        # Convert hop_pubkeys to List[bytes]
+        hop_pubkeys = [bytes.fromhex(n) for n in hop_pubkeys]
+
+        request = lndrouter.BuildRouteRequest(
+            amt_msat = amt_msat,
+            final_cltv_delta = final_cltv_delta,
+            outgoing_chan_id = outgoing_chan_id,
+            hop_pubkeys = hop_pubkeys,
+            payment_addr = payment_addr,
+        )
+
+        return self._routerrpc.BuildRoute(request, timeout=5 * 60).route
 
     def get_raw_network_graph(self):
         try:
