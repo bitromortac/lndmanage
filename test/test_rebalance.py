@@ -15,9 +15,7 @@ from lndmanage.lib.exceptions import NoRebalanceCandidates
 
 
 class RebalanceTest(TestNetwork):
-    """
-    Implements an abstract testing class for channel rebalancing.
-    """
+    """Implements an abstract testing class for channel rebalancing."""
     async def rebalance_and_check(
             self,
             test_channel_number: int,
@@ -26,16 +24,15 @@ class RebalanceTest(TestNetwork):
             allow_uneconomic: bool,
             places: int = 5,
     ):
-        """
-        Test function for rebalancing to a specific target unbalancedness and
+        """Test function for rebalancing to a specific target unbalancedness and
         asserts afterwards that the target was reached.
 
         :param test_channel_number: channel id
         :param target: unbalancedness target
         :param amount_sat: rebalancing amount
         :param allow_uneconomic: if uneconomic rebalancing should be allowed
-        :param places: accuracy of the comparison between expected and tested values
-        :type places: int
+        :param places: accuracy of the comparison between expected and tested
+            values
         """
         async with self.lndnode:
             graph_before = self.testnet.assemble_graph()
@@ -65,7 +62,8 @@ class RebalanceTest(TestNetwork):
 
             channel_data_before = graph_before['A'][test_channel_number]
             channel_data_after = graph_after['A'][test_channel_number]
-            amount_sent = channel_data_before['local_balance'] - channel_data_after['local_balance']
+            amount_sent = (channel_data_before['local_balance'] -
+                               channel_data_after['local_balance'])
 
             channel_unbalancedness, _ = local_balance_to_unbalancedness(
                 channel_data_after['local_balance'],
@@ -85,8 +83,7 @@ class RebalanceTest(TestNetwork):
             return fees_msat
 
     def graph_test(self):
-        """
-        graph_test should be implemented by each subclass test and check,
+        """graph_test should be implemented by each subclass test and check,
         whether the test graph has the correct shape.
         """
         raise NotImplementedError
@@ -267,7 +264,7 @@ class TestIlliquidRebalance(RebalanceTest):
 
     def test_channel_1_splitting(self):
         """Tests multiple payment attempts with splitting."""
-        test_channel_number = 1
+        test_channel_number = 1 #
         fees_msat = asyncio.run(
             self.rebalance_and_check(
                 test_channel_number,

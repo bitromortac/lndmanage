@@ -18,7 +18,6 @@ from lndmanage.lib.exceptions import (
     DryRun,
     RebalancingTrialsExhausted,
     NoRoute,
-    OurNodeFailure,
 )
 
 from lndmanage import settings  # needed for side effect configuration
@@ -39,7 +38,7 @@ class CircleTest(TestNetwork):
             max_effective_fee_rate=50,
             dry=False
     ):
-        """Helper function for testing a circular payment.
+        """Helper function to test a circular payment.
 
         :param channel_numbers_send: channels whose local balance is decreased
         :param channel_numbers_receive: channels whose local balance is increased
@@ -59,12 +58,14 @@ class CircleTest(TestNetwork):
             )
 
             graph_before = self.testnet.assemble_graph()
-            send_channels = {}
+
             self.rebalancer.channels = self.lndnode.get_unbalanced_channels()
 
+            send_channels = {}
             for c in channel_numbers_send:
                 channel_id = self.testnet.channel_mapping[c]['channel_id']
                 send_channels[channel_id] = self.rebalancer.channels[channel_id]
+
             receive_channels = {}
             for c in channel_numbers_receive:
                 channel_id = self.testnet.channel_mapping[c]['channel_id']
@@ -83,20 +84,26 @@ class CircleTest(TestNetwork):
                 dry=dry
             )
 
-            time.sleep(SLEEP_SEC_AFTER_REBALANCING)  # needed to let lnd update the balances
+            # Let LND update its balances.
+            time.sleep(SLEEP_SEC_AFTER_REBALANCING)
 
             graph_after = self.testnet.assemble_graph()
 
             self.assertEqual(expected_fees_msat, fees_msat)
 
-            # check that we send the amount we wanted and that it's conserved
-            # TODO: this depends on channel reserves, we assume we opened the channels
+            # Check that we send the amount we wanted and that it's conserved.
+            # TODO: This depends on channel reserves, we assume we opened the
+            # channels.
             sent = 0
             received = 0
             for c in channel_numbers_send:
-                sent += (graph_before['A'][c]['local_balance'] - graph_after['A'][c]['local_balance'])
+                sent += (graph_before['A'][c]['local_balance'] -
+                    graph_after['A'][c]['local_balance'])
+
             for c in channel_numbers_receive:
-                received += (graph_before['A'][c]['remote_balance'] - graph_after['A'][c]['remote_balance'])
+                received += (graph_before['A'][c]['remote_balance'] -
+                    graph_after['A'][c]['remote_balance'])
+
             assert sent - math.ceil(expected_fees_msat / 1000) == received
 
             listchannels = ListChannels(self.lndnode)
@@ -117,13 +124,14 @@ class TestCircleLiquid(CircleTest):
         # assert some basic properties of the graph
         self.assertEqual(6, len(self.master_node_graph_view))
 
-    def test_circle_success_1_2(self):
-        """
-        Test successful rebalance from channel 1 to channel 2.
+    def test_success_1_2(self):
+        """Test successful rebalance from channel 1 to channel 2.
+
+        Successful route: A->B->C->A.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [2]
-        amount_sat = 10000
+        amount_sat = 10_000
         expected_fees_msat = 43
 
         asyncio.run(self.circular_rebalance_and_check(
@@ -133,9 +141,29 @@ class TestCircleLiquid(CircleTest):
             expected_fees_msat
         ))
 
-    def test_circle_success_1_6(self):
+    def test_fail_1_2(self):
+        """Test failing rebalance from channel 1 to channel 2.
+
+        Route A->B->C->A fails because of missing liquidity from C->A.
         """
-        Test successful rebalance from channel 1 to channel 6.
+        channel_numbers_from = [1]
+        channel_numbers_to = [2]
+        amount_sat = 600_000
+
+        self.assertRaises(
+            NoRoute,
+            lambda: asyncio.run(self.circular_rebalance_and_check(
+                channel_numbers_from,
+                channel_numbers_to,
+                amount_sat,
+                None,
+            ),
+        ))
+
+    def test_success_1_6(self):
+        """Test successful rebalance from channel 1 to channel 6.
+
+        Successful route: A->B->D->A.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [6]
@@ -149,9 +177,8 @@ class TestCircleLiquid(CircleTest):
             expected_fees_msat
         ))
 
-    def test_circle_6_1_fail_rebalance_failure_no_funds(self):
-        """
-        Test expected failure for channel 6 to channel 1, where channel 6
+    def test_6_1_fail_rebalance_failure_no_funds(self):
+        """Test expected failure for channel 6 to channel 1, where channel 6
         doesn't have funds.
         """
         channel_numbers_from = [6]
@@ -160,7 +187,7 @@ class TestCircleLiquid(CircleTest):
         expected_fees_msat = 33
 
         self.assertRaises(
-            OurNodeFailure,
+            NoRoute,
             asyncio.run,
             self.circular_rebalance_and_check(
                 channel_numbers_from,
@@ -170,9 +197,8 @@ class TestCircleLiquid(CircleTest):
             )
         )
 
-    def test_circle_1_6_fail_budget_too_expensive(self):
-        """
-        Test expected failure where rebalance uses more than the fee budget.
+    def test_1_6_fail_budget_too_expensive(self):
+        """Test expected failure where rebalance uses more than the fee budget.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [6]
@@ -192,9 +218,8 @@ class TestCircleLiquid(CircleTest):
             )
         )
 
-    def test_circle_1_6_fail_max_fee_rate_too_expensive(self):
-        """
-        Test expected failure where rebalance is more expensive than
+    def test_1_6_fail_max_fee_rate_too_expensive(self):
+        """Test expected failure where rebalance is more expensive than
         the desired maximal fee rate.
         """
         channel_numbers_from = [1]
@@ -217,13 +242,12 @@ class TestCircleLiquid(CircleTest):
             )
         )
 
-    def test_circle_1_6_success_channel_reserve(self):
-        """
-        Test for a maximal amount circular payment.
+    def test_1_6_success_channel_reserve(self):
+        """Test for a maximal amount circular payment.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [6]
-        local_balance = 1000000
+        local_balance = 1_000_000
         # take into account 1% channel reserve
         amount_sat = int(local_balance - 0.01 * local_balance)
         # need to subtract commitment fee (local + anchor output)
@@ -247,9 +271,8 @@ class TestCircleLiquid(CircleTest):
             )
         )
 
-    def test_circle_1_6_fail_rebalance_dry(self):
-        """
-        Test if dry run exception is raised.
+    def test_1_6_fail_rebalance_dry(self):
+        """Test if dry run exception is raised.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [6]
@@ -268,24 +291,48 @@ class TestCircleLiquid(CircleTest):
             )
         )
 
-    @unittest.skip
     def test_multi_send(self):
-        pass
+        """Tests sending over multiple rebalance candidates."""
+        channel_numbers_from = [1, 2]
+        channel_numbers_to = [6]
+        amount_sat = 10000
+        expected_fees_msat = 33
 
-    @unittest.skip
+        asyncio.run(
+            self.circular_rebalance_and_check(
+                channel_numbers_from,
+                channel_numbers_to,
+                amount_sat,
+                expected_fees_msat,
+            )
+        )
+
     def test_multi_receive(self):
-        pass
+        """Tests receiving via multiple rebalance candidates."""
+        channel_numbers_from = [1]
+        channel_numbers_to = [2, 6]
+        amount_sat = 10000
+        expected_fees_msat = 33
 
+        asyncio.run(
+            self.circular_rebalance_and_check(
+                channel_numbers_from,
+                channel_numbers_to,
+                amount_sat,
+                expected_fees_msat,
+            )
+        )
 
 class TestCircleIlliquid(CircleTest):
-
     network_definition = test_graphs_paths['star_ring_4_illiquid']
 
     def graph_test(self):
         self.assertEqual(10, len(self.master_node_graph_view))
 
-    def test_circle_fail_2_3_no_route(self):
-        """Test if NoRoute is raised. We can't go beyond C."""
+    def test_fail_2_3_no_route(self):
+        """Test that NoRoute is raised. We can't go beyond C, none of its
+        channels have enough capacity.
+        """
         channel_numbers_from = [2]  # A -> C
         channel_numbers_to = [3]  # D -> A
         amount_sat = 500_000
@@ -302,42 +349,60 @@ class TestCircleIlliquid(CircleTest):
             )
         )
 
-    def test_circle_1_2_fail_max_trials_exhausted(self):
+    def test_1_2_fail_max_trials_exhausted(self):
         """Test if RebalancingTrialsExhausted is raised.
 
-        There will be a single rebalancing attempt, which fails, after which we don't retry.
+        There will be a single rebalancing attempt A->B->C->A, which fails for
+        B->C. After this trial we stop due to max rebalance trials.
         """
         channel_numbers_from = [1]
         channel_numbers_to = [2]
         amount_sat = 190950
         expected_fees_msat = None
-        settings.REBALANCING_TRIALS = 1
 
-        self.assertRaises(
-            RebalancingTrialsExhausted,
-            asyncio.run,
-            self.circular_rebalance_and_check(
-                channel_numbers_from,
-                channel_numbers_to,
-                amount_sat,
-                expected_fees_msat,
+        try:
+            previous = settings.REBALANCING_TRIALS
+            settings.REBALANCING_TRIALS = 1
+
+            self.assertRaises(
+                RebalancingTrialsExhausted,
+                asyncio.run,
+                self.circular_rebalance_and_check(
+                    channel_numbers_from,
+                    channel_numbers_to,
+                    amount_sat,
+                    expected_fees_msat,
+                )
             )
-        )
+        finally:
+            settings.REBALANCING_TRIALS = previous
 
-    def test_circle_1_2_fail_no_route_multi_trials(self):
-        """Test if NoRoute is raised."""
+    def test_1_2_fail_no_route_multi_trials(self):
+        """Test if RebalancingTrialsExhausted is raised.
+
+        None of those paths support the payment:
+        A -> B -> C -> A
+        A -> B -> E -> C -> A
+        A -> B -> D -> C -> A
+        """
         channel_numbers_from = [1]
         channel_numbers_to = [2]
         amount_sat = 450000
         expected_fees_msat = None
 
-        self.assertRaises(
-            RebalancingTrialsExhausted,
-            asyncio.run,
-            self.circular_rebalance_and_check(
-                channel_numbers_from,
-                channel_numbers_to,
-                amount_sat,
-                expected_fees_msat,
+        try:
+            previous = settings.REBALANCING_TRIALS
+            settings.REBALANCING_TRIALS = 3
+
+            asyncio.run(
+                self.circular_rebalance_and_check(
+                    channel_numbers_from,
+                    channel_numbers_to,
+                    amount_sat,
+                    expected_fees_msat,
+                )
             )
-        )
+        except RebalancingTrialsExhausted as e:
+            self.assertEqual(4, e.trials)
+        finally:
+            settings.REBALANCING_TRIALS = previous

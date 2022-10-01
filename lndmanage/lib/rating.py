@@ -15,8 +15,13 @@ if TYPE_CHECKING:
 BADNESS_RATE = 0.000_100
 
 
-def node_badness(node_number: int, hop: int):
-    return BADNESS_RATE * math.exp(-abs(node_number - (hop + 0.5)))
+def node_badness(node_index: int, failed_hop_index: int):
+    """Computes a badness for a node.
+
+    indexes are zero-based:
+    A(0) -hop0- B(1) -hop1- C(2)
+    """
+    return BADNESS_RATE * math.exp(-abs(failed_hop_index - (node_index + 0.5)))
 
 
 class ChannelRater:
