@@ -82,9 +82,9 @@ class ChannelOpener(object):
         # 1. connect to nodes
         try:
             pubkeys_succeeded = self.node._connect_nodes(pubkeys)
-        except ConnectionRefusedError:
+        except ConnectionRefusedError as e:
             logger.info(">>> Could not connect to all nodes. Try to connect "
-                        "manually via 'lncli connect', then rerun.")
+                        f"manually via 'lncli connect', then rerun. {e}")
             return
 
         assert len(pubkeys) == len(pubkeys_succeeded)

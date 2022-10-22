@@ -6,6 +6,7 @@ from typing import Tuple
 class AddressType(Enum):
     WITNESS_PUBKEY_HASH = 0
     NESTED_PUBKEY_HASH = 1
+    TAPROOT_PUBKEY = 4
 
 
 @dataclass(order=True)
