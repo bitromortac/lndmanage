@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from unittest import TestCase, mock
 
 from lndmanage.lib.data_types import NodePair
-from lndmanage.lib.liquidityhints import LiquidityHintMgr, AmountHistory
+from lndmanage.lib.liquidityhints import LiquidityHintMgr, AmountHistory, LiquidityHint
 
 
 @dataclass
@@ -77,3 +77,27 @@ class LiquidityTest(TestCase):
         node_pair = NodePair(("bb", "cc"))
         hint = mgr._liquidity_hints.get(node_pair)
         self.assertIsNone(hint)
+
+class TestLiquidityHint(TestCase):
+    def test_liquidity_hint(self):
+        """Test updating an expired hint."""
+
+        hint = LiquidityHint()
+        amount = 100000000
+        direction = False
+        self.assertFalse(direction)
+
+        hint = LiquidityHint()
+        hint._can_send_backward = AmountHistory(None, None)
+        hint._can_send_forward = AmountHistory(100066910, 0)
+        hint._cannot_send_backward = AmountHistory(25003625, 0)
+        hint._cannot_send_forward = AmountHistory(100066911, 0)
+
+        self.assertIsNone(hint.can_send(direction).amount_msat)
+        self.assertIsNone(hint.cannot_send(direction).amount_msat)
+
+        hint.update_cannot_send(direction, amount, None)
+
+        self.assertIsNone(hint.can_send(direction).amount_msat)
+        self.assertEqual(amount, hint.cannot_send(direction).amount_msat)
+
