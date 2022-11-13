@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 BLACKLIST_DURATION = 3600  # how long (in seconds) a channel remains blacklisted
-HINT_DURATION = 3600  # how long (in seconds) a liquidity hint remains valid
-BADNESS_DECAY_ADJUSTMENT_SEC = 10 * 60  # adjustment interval for badness hints
-BADNESS_DECAY_SEC = 24 * 3600  # exponential decay time for badness
+HINT_DURATION = 3600 * 24 * 7  # how long (in seconds) a liquidity hint remains valid
+BADNESS_DECAY_ADJUSTMENT_SEC = 1 * 60  # adjustment interval for badness hints
+BADNESS_DECAY_SEC = 3600 * 24 * 4 # exponential decay time for badness
 TIME_EXPECTATION_ACCURACY = 0.2  # the relative error in estimating node reaction times
 TIME_PENALTY_RATE = 0.000_010  # the default penalty for reaction time
 TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow

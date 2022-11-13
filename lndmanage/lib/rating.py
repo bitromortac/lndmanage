@@ -12,8 +12,9 @@ logger.addHandler(logging.NullHandler())
 if TYPE_CHECKING:
     from lndmanage.lib.network import Network
 
-BADNESS_RATE = 0.000_100
-
+# BADNESS_RATE represents the factor how quickly a node becomes bad if it's not
+# able to route or is in the vicinity of a failed hop.
+BADNESS_RATE = 0.000_050
 
 def node_badness(node_index: int, failed_hop_index: int):
     """Computes a badness for a node.
