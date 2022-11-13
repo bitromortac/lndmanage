@@ -42,6 +42,7 @@ logger.addHandler(logging.NullHandler())
 
 NUM_MAX_FORWARDING_EVENTS = 100000
 OPEN_EXPIRY_TIME_MINUTES = 8
+GRPC_TIMEOUT_SEC = 5 * 60
 
 
 class LndNode:
@@ -251,12 +252,16 @@ class LndNode:
         )
 
         try:
-            # timeout after 5 minutes
-            payment = self._routerrpc.SendToRouteV2(request, timeout=5 * 60)
-        except _Rendezvous:
-            raise PaymentTimeOut
-        except _InactiveRpcError:
-            raise PaymentTimeOut
+            payment = self._routerrpc.SendToRouteV2(
+                request, timeout=GRPC_TIMEOUT_SEC,
+            )
+
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                raise PaymentTimeOut
+
+            raise
+
         if payment.HasField('failure'):
             failure = payment.failure  # type: lnd.Failure.FailureCode
             logger.debug(f"Routing failure: {failure}")

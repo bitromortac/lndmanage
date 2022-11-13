@@ -71,15 +71,10 @@ class CircleTest(TestNetwork):
                 channel_id = self.testnet.channel_mapping[c]['channel_id']
                 receive_channels[channel_id] = self.rebalancer.channels[channel_id]
 
-            invoice = self.lndnode.get_invoice(amount_sat, '')
-            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
-
             fees_msat = self.rebalancer._rebalance(
                 send_channels=send_channels,
                 receive_channels=receive_channels,
                 amt_sat=amount_sat,
-                payment_hash=payment_hash,
-                payment_address=payment_address,
                 budget_sat=budget_sat,
                 dry=dry
             )

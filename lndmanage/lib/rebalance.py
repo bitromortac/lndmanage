@@ -59,8 +59,6 @@ class Rebalancer(object):
             send_channels: Dict[int, dict],
             receive_channels: Dict[int, dict],
             amt_sat: int,
-            payment_hash: bytes,
-            payment_address: bytes,
             budget_sat: int,
             dry=False,
     ) -> int:
@@ -73,8 +71,6 @@ class Rebalancer(object):
         :param send_channels: channels for sending with info
         :param receive_channels: channels for receiving with info
         :param amt_sat: amount to be sent in sat
-        :param payment_hash: payment hash
-        :param payment_address: payment secret
         :param budget_sat: budget for the rebalance in sat
         :param dry: specifies, if it is a dry run
 
@@ -90,6 +86,11 @@ class Rebalancer(object):
         :raises NotEconomic: we would effectively loose money due to not enough expected
             earnings in the future
         """
+        # We create an invoice and a payment hash for the requested rebalance
+        # amount.
+        invoice = self.node.get_invoice(amt_sat, memo=f"lndmanage: rebalance")
+        payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
+
         # be up to date with the blockheight, otherwise could lead to cltv errors
         self.node.update_blockheight()
         amt_msat = amt_sat * 1000
@@ -158,7 +159,7 @@ class Rebalancer(object):
             all_node_hops = [self.node.pub_key]
             all_node_hops.extend([h.pub_key for h in route.hops])
 
-            def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
+            def report_elapsed_time(fail_hop_idx: int=None):
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 logger.debug(f"  > time elapsed: {elapsed_time:3.1f} s")
@@ -167,20 +168,25 @@ class Rebalancer(object):
                 # failed and that there was no successful part of the route.
                 # Thus, the failed hop index indicates the length of the
                 # successful part of the route.
-                success_path_length = failed_hop_index if failed_hop_index else len(route.hops)
+                success_path_length = fail_hop_idx if fail_hop_idx else len(route.hops)
 
-                # Deal with successful hops:
-                # * report that they can route the amount
-                # * record elapsed time up to the failed hop
                 for hop, _ in enumerate(route.hops):
                     from_node = all_node_hops[hop]
-                    to_node = all_node_hops[hop+1]
 
                     # We could not reach the to_node, but we still update the
                     # elapsed time for the from_node.
                     self.node.network.liquidity_hints.update_elapsed_time(
                         from_node, elapsed_time / success_path_length,
                     )
+
+            def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
+                # We report how long it took to get the outcome of the payment.
+                report_elapsed_time(failed_hop_index)
+
+                # Report that the the successful hops could route a payment.
+                for hop, _ in enumerate(route.hops):
+                    from_node = all_node_hops[hop]
+                    to_node = all_node_hops[hop+1]
 
                     if failed_hop_index and hop == failed_hop_index:
                         break
@@ -193,8 +199,8 @@ class Rebalancer(object):
                 if failed_hop_index:
                     for hop, hop_details in enumerate(route.hops):
                         badness = node_badness(hop, failed_hop_index)
-
                         to_node = hop_details.pub_key
+
                         self.node.network.liquidity_hints.update_badness_hint(
                             to_node, badness,
                         )
@@ -203,7 +209,26 @@ class Rebalancer(object):
                 try:
                     result = self.node.send_to_route(route, payment_hash)
                 except PaymentTimeOut:
-                    raise PaymentTimeOut
+                    # If we experience a payment timeout that means that an HTLC
+                    # is still in-flight. For rebalances we can ignore this
+                    # ocasionally unlike for payments where we only want a
+                    # payment to be paid only once.
+                    report_elapsed_time()
+
+                    logger.info("  > Rebalance timed out.")
+
+                    # We need to create a new invoice in order to not send again
+                    # to the same payment hash.
+                    invoice = self.node.get_invoice(
+                        amt_sat, memo=f"lndmanage: rebalance",
+                    )
+                    payment_hash = invoice.r_hash
+                    payment_address = invoice.payment_addr
+
+                    self.node.network.save_liquidty_hints()
+
+                    continue
+
                 # TODO: check whether the failure source is correctly attributed
                 except exceptions.TemporaryChannelFailure as e:
                     failed_hop = int(e.payment.failure.failure_source_index)
@@ -645,12 +670,6 @@ class Rebalancer(object):
                 f"of {initial_local_balance_change} sat. "
                 f"Fees paid up to now: {total_fees_paid_msat / 1000:.3f} sat.")
 
-            # for each rebalance amount, get a new invoice
-            invoice = self.node.get_invoice(
-                amt_msat=abs(amount_sat) * 1000,
-                memo=f"lndmanage: Rebalance of channel {channel_id}.")
-            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
-
             # set sending and receiving channels
             if amount_sat < 0:  # we send over the channel
                 send_channels = {channel_id: unbalanced_channel_info}
@@ -663,8 +682,8 @@ class Rebalancer(object):
             # attempt the rebalance
             try:
                 rebalance_fees_msat = self._rebalance(
-                    send_channels, receive_channels, abs(amount_sat), payment_hash,
-                    payment_address, budget_sat, dry=dry)
+                    send_channels, receive_channels, abs(amount_sat),
+                    budget_sat, dry=dry)
 
                 # account for running costs / target
                 budget_sat -= rebalance_fees_msat // 1000
