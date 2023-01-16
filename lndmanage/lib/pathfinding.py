@@ -1,4 +1,5 @@
 from typing import Callable, List
+from lndmanage.lib.exceptions import NoRoute
 
 import networkx as nx
 
@@ -22,4 +23,8 @@ def dijkstra(graph: nx.Graph, source: str, target: str, weight: Callable) -> Lis
     :return: hops in terms of the node keys
     """
     path = nx.shortest_path(graph, source, target, weight=weight)
+
+    if not path:
+        raise NoRoute
+
     return path

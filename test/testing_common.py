@@ -24,7 +24,7 @@ from lndmanage.lib.node import LndNode
 
 import logging.config
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 from lndmanage import settings
 settings.CACHING_RETENTION_MINUTES = 0

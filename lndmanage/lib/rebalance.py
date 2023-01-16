@@ -59,8 +59,6 @@ class Rebalancer(object):
             send_channels: Dict[int, dict],
             receive_channels: Dict[int, dict],
             amt_sat: int,
-            payment_hash: bytes,
-            payment_address: bytes,
             budget_sat: int,
             dry=False,
     ) -> int:
@@ -73,8 +71,6 @@ class Rebalancer(object):
         :param send_channels: channels for sending with info
         :param receive_channels: channels for receiving with info
         :param amt_sat: amount to be sent in sat
-        :param payment_hash: payment hash
-        :param payment_address: payment secret
         :param budget_sat: budget for the rebalance in sat
         :param dry: specifies, if it is a dry run
 
@@ -90,6 +86,11 @@ class Rebalancer(object):
         :raises NotEconomic: we would effectively loose money due to not enough expected
             earnings in the future
         """
+        # We create an invoice and a payment hash for the requested rebalance
+        # amount.
+        invoice = self.node.get_invoice(amt_sat, memo=f"lndmanage: rebalance")
+        payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
+
         # be up to date with the blockheight, otherwise could lead to cltv errors
         self.node.update_blockheight()
         amt_msat = amt_sat * 1000
@@ -99,32 +100,47 @@ class Rebalancer(object):
             start_time = time.time()
             count += 1
             if count > settings.REBALANCING_TRIALS:
-                raise RebalancingTrialsExhausted
+                exception = RebalancingTrialsExhausted
+                exception.trials = count
+                raise exception
             logger.info(f">>> Trying to rebalance with {amt_sat} sat (attempt number {count}).")
 
-            route = self.router.get_route(send_channels, receive_channels, amt_msat)
-            if not route:
-                raise NoRoute
+            route = self.router.route_from_constraints(
+                send_channels, receive_channels, amt_msat, payment_address,
+            )
 
-            effective_fee_rate = route.total_fee_msat / route.total_amt_msat
+            # Display info about the route.
+            effective_fee_rate = route.total_fees_msat / route.total_amt_msat
+            amount_msat = route.total_amt_msat - route.total_fees_msat
             logger.info(
-                f"  > Route summary: amount: {(route.total_amt_msat - route.total_fee_msat) / 1000:3.3f} "
-                f"sat, total fee: {route.total_fee_msat / 1000:3.3f} sat, "
+                f"  > Route summary: amount: { amount_msat / 1000:3.3f} "
+                f"sat, total fees: {route.total_fees_msat / 1000:3.3f} sat, "
                 f"fee rate: {effective_fee_rate:1.6f}, "
-                f"number of hops: {len(route.channel_hops)}")
-            logger.debug(f"   Channel hops: {route.channel_hops}")
+                f"number of hops: {len(route.hops)}")
 
-            # check if route makes sense
-            illiquid_channel_id = route.channel_hops[-1]
+            # Check that the route includes send and receive channels.
+            illiquid_channel_id = route.hops[-1].chan_id
             illiquid_channel = self.channels[illiquid_channel_id]
-            liquid_channel_id = route.channel_hops[0]
+            liquid_channel_id = route.hops[0].chan_id
             liquid_channel = self.channels[liquid_channel_id]
-            assert illiquid_channel_id in list(receive_channels.keys()), "receiving channel should be in receive list"
-            assert liquid_channel_id in list(send_channels.keys()), "sending channel should be in send list"
 
-            # check economics
-            fee_rate_margin = (illiquid_channel['local_fee_rate'] - liquid_channel['local_fee_rate']) / 1_000_000
-            logger.info(f"  > Expected gain: {(fee_rate_margin - effective_fee_rate) * amt_sat:3.3f} sat")
+            # Check that the last hop is a channel with a receiving peer.
+            # last_hop_node is the node from which we receive.
+            last_hop_node = route.hops[-2].pub_key
+            for info in receive_channels.values():
+                if info['remote_pubkey'] == last_hop_node:
+                    break
+            else:
+                raise Exception("last hop is not in receive channels")
+
+            assert liquid_channel_id in list(send_channels.keys()), \
+                "sending channel should be in send list"
+
+            # Check the economics of the route.
+            fee_rate_margin = (illiquid_channel['local_fee_rate'] - \
+                liquid_channel['local_fee_rate']) / 1_000_000
+            gain = (fee_rate_margin - effective_fee_rate) * amt_sat
+            logger.info(f"  > Expected gain: {gain:3.3f} sat")
             if (effective_fee_rate > fee_rate_margin) and not self.force:
                 # TODO: We could look for the hop that charges the highest fee
                 #  and blacklist it, to ignore it in the next path.
@@ -134,38 +150,85 @@ class Rebalancer(object):
                 raise TooExpensive(f"Route is too expensive (rate too high). Rate: {effective_fee_rate:.6f}, "
                                    f"requested max rate: {self.max_effective_fee_rate:.6f}")
 
-            if route.total_fee_msat > budget_sat * 1000:
+            if route.total_fees_msat > budget_sat * 1000:
                 raise TooExpensive(f"Route is too expensive (budget exhausted). Total fee of route: "
-                                   f"{route.total_fee_msat / 1000:.3f} sat, budget: {budget_sat:.3f} sat")
+                                   f"{route.total_fees_msat / 1000:.3f} sat, budget: {budget_sat:.3f} sat")
 
-            def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
-                """Rates the route."""
+            # all_node_hops includes all node pubkeys involved in the route,
+            # starts with own node, ends with own node.
+            all_node_hops = [self.node.pub_key]
+            all_node_hops.extend([h.pub_key for h in route.hops])
+
+            def report_elapsed_time(fail_hop_idx: int=None):
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 logger.debug(f"  > time elapsed: {elapsed_time:3.1f} s")
 
-                success_path_length = failed_hop_index + 1 if failed_hop_index else len(route.hops)
-                for hop, channel in enumerate(route.hops):
-                    source_node = route.node_hops[hop]
-                    target_node = route.node_hops[hop + 1]
-                    self.node.network.liquidity_hints.update_elapsed_time(source_node, elapsed_time / success_path_length)
-                    if failed_hop_index and hop == failed_hop_index:
-                        break
-                    self.node.network.liquidity_hints.update_can_send(
-                        source_node, target_node, amt_msat,
+                # If the failed hop index is zero, this means that the first hop
+                # failed and that there was no successful part of the route.
+                # Thus, the failed hop index indicates the length of the
+                # successful part of the route.
+                success_path_length = fail_hop_idx if fail_hop_idx else len(route.hops)
+
+                for hop, _ in enumerate(route.hops):
+                    from_node = all_node_hops[hop]
+
+                    # We could not reach the to_node, but we still update the
+                    # elapsed time for the from_node.
+                    self.node.network.liquidity_hints.update_elapsed_time(
+                        from_node, elapsed_time / success_path_length,
                     )
 
-                # symmetrically penalize a route about the error source if it failed
+            def report_success_up_to_failed_hop(failed_hop_index: Optional[int]):
+                # We report how long it took to get the outcome of the payment.
+                report_elapsed_time(failed_hop_index)
+
+                # Report that the the successful hops could route a payment.
+                for hop, _ in enumerate(route.hops):
+                    from_node = all_node_hops[hop]
+                    to_node = all_node_hops[hop+1]
+
+                    if failed_hop_index and hop == failed_hop_index:
+                        break
+
+                    self.node.network.liquidity_hints.update_can_send(
+                        from_node, to_node, amt_msat,
+                    )
+
+                # Compute node badness and report all nodes.
                 if failed_hop_index:
-                    for node_number, node in enumerate(route.node_hops):
-                        badness = node_badness(node_number, failed_hop_index)
-                        self.node.network.liquidity_hints.update_badness_hint(node, badness)
+                    for hop, hop_details in enumerate(route.hops):
+                        badness = node_badness(hop, failed_hop_index)
+                        to_node = hop_details.pub_key
+
+                        self.node.network.liquidity_hints.update_badness_hint(
+                            to_node, badness,
+                        )
 
             if not dry:
                 try:
-                    result = self.node.send_to_route(route, payment_hash, payment_address)
+                    result = self.node.send_to_route(route, payment_hash)
                 except PaymentTimeOut:
-                    raise PaymentTimeOut
+                    # If we experience a payment timeout that means that an HTLC
+                    # is still in-flight. For rebalances we can ignore this
+                    # ocasionally unlike for payments where we only want a
+                    # payment to be paid only once.
+                    report_elapsed_time()
+
+                    logger.info("  > Rebalance timed out.")
+
+                    # We need to create a new invoice in order to not send again
+                    # to the same payment hash.
+                    invoice = self.node.get_invoice(
+                        amt_sat, memo=f"lndmanage: rebalance",
+                    )
+                    payment_hash = invoice.r_hash
+                    payment_address = invoice.payment_addr
+
+                    self.node.network.save_liquidty_hints()
+
+                    continue
+
                 # TODO: check whether the failure source is correctly attributed
                 except exceptions.TemporaryChannelFailure as e:
                     failed_hop = int(e.payment.failure.failure_source_index)
@@ -184,12 +247,13 @@ class Rebalancer(object):
                     logger.info("Success!\n")
                     report_success_up_to_failed_hop(failed_hop_index=None)
                     self.node.network.save_liquidty_hints()
-                    return route.total_fee_msat
+
+                    return route.total_fees_msat
 
                 if failed_hop:
-                    failed_channel_id = route.hops[failed_hop]['chan_id']
-                    failed_source = route.node_hops[failed_hop]
-                    failed_target = route.node_hops[failed_hop + 1]
+                    failed_channel_id = route.hops[failed_hop].chan_id
+                    failed_source = all_node_hops[failed_hop]
+                    failed_target = all_node_hops[failed_hop + 1]
 
                     if failed_channel_id in [send_channels, receive_channels]:
                         raise RebalanceFailure(
@@ -201,10 +265,11 @@ class Rebalancer(object):
                             f"Failing channel: {failed_channel_id}")
 
                     # determine the nodes involved in the channel
-                    logger.info(f"  > Failed: hop: {failed_hop + 1}, channel: {failed_channel_id}")
+                    logger.info(f"  > Failed: hop: {failed_hop}, channel: {failed_channel_id}")
                     logger.info(f"  > Could not reach {failed_target} ({self.node.network.node_alias(failed_target)})\n")
-                    logger.debug(f"  > Node hops {route.node_hops}")
-                    logger.debug(f"  > Channel hops {route.channel_hops}")
+                    logger.debug(f"  > Node hops {all_node_hops}")
+                    channel_hops = [h.chan_id for h in route.hops]
+                    logger.debug(f"  > Channel hops {channel_hops}")
 
                     # report that channel could not route the amount to liquidity hints
                     self.node.network.liquidity_hints.update_cannot_send(
@@ -605,12 +670,6 @@ class Rebalancer(object):
                 f"of {initial_local_balance_change} sat. "
                 f"Fees paid up to now: {total_fees_paid_msat / 1000:.3f} sat.")
 
-            # for each rebalance amount, get a new invoice
-            invoice = self.node.get_invoice(
-                amt_msat=abs(amount_sat) * 1000,
-                memo=f"lndmanage: Rebalance of channel {channel_id}.")
-            payment_hash, payment_address = invoice.r_hash, invoice.payment_addr
-
             # set sending and receiving channels
             if amount_sat < 0:  # we send over the channel
                 send_channels = {channel_id: unbalanced_channel_info}
@@ -623,8 +682,8 @@ class Rebalancer(object):
             # attempt the rebalance
             try:
                 rebalance_fees_msat = self._rebalance(
-                    send_channels, receive_channels, abs(amount_sat), payment_hash,
-                    payment_address, budget_sat, dry=dry)
+                    send_channels, receive_channels, abs(amount_sat),
+                    budget_sat, dry=dry)
 
                 # account for running costs / target
                 budget_sat -= rebalance_fees_msat // 1000

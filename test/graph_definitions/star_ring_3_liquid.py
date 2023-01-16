@@ -1,5 +1,15 @@
-"""
-Implements a lightning network topology:
+"""Implements a lightning network topology:
+
+
+    A-1-->--------------B  1: 1_000_000     10:0
+    2 .              3  4  2: 1_000_000      5:5
+    |    <        >     |  3: 10_000_000     5:5
+    ^       .  .        ^  4: 10_000_000     5:5
+    v       .  .        v  5: 1_000_000      5:5
+    |    <        .     |  6: 1_000_000     10:0
+    | .              6  |
+    C-5--<--------->----D
+
 """
 nodes = {
     'A': {
@@ -11,13 +21,13 @@ nodes = {
         'channels': {
             1: {
                 'to': 'B',
-                'capacity': 1000000,
+                'capacity': 1_000_000 ,
                 'ratio_local': 10,
                 'ratio_remote': 0,
             },
             2: {
                 'to': 'C',
-                'capacity': 1000000,
+                'capacity': 1_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
             },
@@ -32,13 +42,13 @@ nodes = {
         'channels': {
             3: {
                 'to': 'C',
-                'capacity': 10000000,
+                'capacity': 10_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
             },
             4: {
                 'to': 'D',
-                'capacity': 10000000,
+                'capacity': 10_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
             },
@@ -53,7 +63,7 @@ nodes = {
         'channels': {
             5: {
                 'to': 'D',
-                'capacity': 1000000,
+                'capacity': 1_000_000,
                 'ratio_local': 5,
                 'ratio_remote': 5,
             },
@@ -68,7 +78,7 @@ nodes = {
         'channels': {
             6: {
                 'to': 'A',
-                'capacity': 1000000,
+                'capacity': 1_000_000,
                 'ratio_local': 10,
                 'ratio_remote': 0,
             },

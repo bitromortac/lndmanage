@@ -45,7 +45,7 @@ class Network:
         self.node = node
         self.load_graph()
         self.load_liquidity_hints()
-        self.channel_rater = ChannelRater(self)
+        self.channel_rater = ChannelRater(self, node.pub_key)
 
     @profiled
     def load_graph(self):

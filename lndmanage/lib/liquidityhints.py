@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 BLACKLIST_DURATION = 3600  # how long (in seconds) a channel remains blacklisted
-HINT_DURATION = 3600  # how long (in seconds) a liquidity hint remains valid
-BADNESS_DECAY_ADJUSTMENT_SEC = 10 * 60  # adjustment interval for badness hints
-BADNESS_DECAY_SEC = 24 * 3600  # exponential decay time for badness
+HINT_DURATION = 3600 * 24 * 7  # how long (in seconds) a liquidity hint remains valid
+BADNESS_DECAY_ADJUSTMENT_SEC = 1 * 60  # adjustment interval for badness hints
+BADNESS_DECAY_SEC = 3600 * 24 * 4 # exponential decay time for badness
 TIME_EXPECTATION_ACCURACY = 0.2  # the relative error in estimating node reaction times
 TIME_PENALTY_RATE = 0.000_010  # the default penalty for reaction time
 TIME_NODE_IS_SLOW_SEC = 5  # the time a node is viewed as slow
@@ -71,11 +71,15 @@ class LiquidityHint:
 
     @can_send_forward.setter
     def can_send_forward(self, new_amount_history: AmountHistory):
-        if new_amount_history < self._can_send_forward:
-            # we don't want to record less significant info
-            # (sendable amount is lower than known sendable amount):
+        # We don't want to record less significant info (sendable amount is
+        # lower than known sendable amount), unless we the hint is not valid
+        # anymore.
+        if new_amount_history < self._can_send_forward and \
+            not self.is_hint_invalid(self._can_send_forward.timestamp):
             return
+
         self._can_send_forward = new_amount_history
+
         # we make a sanity check that sendable amount is lower than not sendable amount
         if self._can_send_forward > self._cannot_send_forward:
             self._cannot_send_forward = AmountHistory()
@@ -88,10 +92,14 @@ class LiquidityHint:
 
     @can_send_backward.setter
     def can_send_backward(self, new_amount_history: AmountHistory):
-        if new_amount_history < self._can_send_backward:
-            # don't overwrite with insignificant info
+        # Don't overwrite with insignificant info unless the hint is not valid
+        # anymore.
+        if new_amount_history < self._can_send_backward and \
+            not self.is_hint_invalid(self._can_send_backward.timestamp):
             return
+
         self._can_send_backward = new_amount_history
+
         # sanity check
         if self._can_send_backward > self._cannot_send_backward:
             self._cannot_send_backward = AmountHistory()
@@ -104,10 +112,14 @@ class LiquidityHint:
 
     @cannot_send_forward.setter
     def cannot_send_forward(self, new_amount_history: AmountHistory):
-        if new_amount_history > self._cannot_send_forward:
-            # don't overwrite with insignificant info
+        # Don't overwrite with insignificant info unless the hint is not valid
+        # anymore.
+        if new_amount_history > self._cannot_send_forward and \
+            not self.is_hint_invalid(self._cannot_send_forward.timestamp):
             return
+
         self._cannot_send_forward = new_amount_history
+
         # sanity check
         if self._can_send_forward > self._cannot_send_forward:
             self._can_send_forward = AmountHistory()
@@ -120,10 +132,14 @@ class LiquidityHint:
 
     @cannot_send_backward.setter
     def cannot_send_backward(self, new_amount_history: AmountHistory):
-        if new_amount_history > self._cannot_send_backward:
-            # don't overwrite with insignificant info
+        # Don't overwrite with insignificant info unless the hint is not valid
+        # anymore.
+        if new_amount_history > self._cannot_send_backward and \
+            not self.is_hint_invalid(self._cannot_send_backward.timestamp):
             return
+
         self._cannot_send_backward = new_amount_history
+
         # sanity check
         if self._can_send_backward > self._cannot_send_backward:
             self._can_send_backward = AmountHistory()
