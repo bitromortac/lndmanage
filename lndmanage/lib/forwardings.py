@@ -13,8 +13,6 @@ from lndmanage import settings
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-np.warnings.filterwarnings("ignore")
-
 # nearest neighbor weight for flow-analysis ~1/(avg. degree)
 NEIGHBOR_WEIGHT = 0.1
 # nearest neighbor weight for flow-analysis ~1/(avg. degree)^2
