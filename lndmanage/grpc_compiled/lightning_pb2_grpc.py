@@ -357,6 +357,11 @@ class LightningStub(object):
                 request_serializer=lightning__pb2.SubscribeCustomMessagesRequest.SerializeToString,
                 response_deserializer=lightning__pb2.CustomMessage.FromString,
                 )
+        self.ListAliases = channel.unary_unary(
+                '/lnrpc.Lightning/ListAliases',
+                request_serializer=lightning__pb2.ListAliasesRequest.SerializeToString,
+                response_deserializer=lightning__pb2.ListAliasesResponse.FromString,
+                )
 
 
 class LightningServicer(object):
@@ -1097,6 +1102,16 @@ class LightningServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListAliases(self, request, context):
+        """lncli: `listaliases`
+        ListAliases returns the set of all aliases that have ever existed with
+        their confirmed SCID (if it exists) and/or the base SCID (in the case of
+        zero conf).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LightningServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -1424,6 +1439,11 @@ def add_LightningServicer_to_server(servicer, server):
                     servicer.SubscribeCustomMessages,
                     request_deserializer=lightning__pb2.SubscribeCustomMessagesRequest.FromString,
                     response_serializer=lightning__pb2.CustomMessage.SerializeToString,
+            ),
+            'ListAliases': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListAliases,
+                    request_deserializer=lightning__pb2.ListAliasesRequest.FromString,
+                    response_serializer=lightning__pb2.ListAliasesResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2555,5 +2575,22 @@ class Lightning(object):
         return grpc.experimental.unary_stream(request, target, '/lnrpc.Lightning/SubscribeCustomMessages',
             lightning__pb2.SubscribeCustomMessagesRequest.SerializeToString,
             lightning__pb2.CustomMessage.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListAliases(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListAliases',
+            lightning__pb2.ListAliasesRequest.SerializeToString,
+            lightning__pb2.ListAliasesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
