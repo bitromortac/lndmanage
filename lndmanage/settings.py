@@ -32,9 +32,6 @@ NUMBER_CHANNELS_DEFINING_HUB = parse_env('LNDMNANAGE_HUB_NODE_FLOOR', '200', int
 # -------- rebalancing --------
 # in terms of unbalancedness
 UNBALANCED_CHANNEL = parse_env('LNDMANAGE_UNBALANCED_CHANNEL_CEIL', '0.2', float)
-# rebalancing will be done with CHUNK_SIZE of the minimal capacity
-# of the to be balanced channels
-REBALANCING_TRIALS = parse_env('LNDMANAGE_REBALANCING_TRIALS', '10', int)
 
 
 logger_config = None

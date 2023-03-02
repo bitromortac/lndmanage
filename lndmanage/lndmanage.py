@@ -8,20 +8,12 @@ import distutils.spawn as spawn
 # readline has a desired side effect on keyword input of enabling history
 import readline
 
-from lndmanage.lib.exceptions import (
-    DryRun,
-    PaymentTimeOut,
-    TooExpensive,
-    RebalanceFailure,
-    RebalancingTrialsExhausted,
-)
 from lndmanage.lib.fee_setting import FeeSetter, optimization_parameters
 from lndmanage.lib.info import Info
 from lndmanage.lib.listings import ListChannels, ListPeers
 from lndmanage.lib.lncli import Lncli
 from lndmanage.lib.node import LndNode
 from lndmanage.lib.openchannels import ChannelOpener
-from lndmanage.lib.rebalance import Rebalancer, DEFAULT_MAX_FEE_RATE, DEFAULT_AMOUNT_SAT
 from lndmanage.lib.recommend_nodes import RecommendNodes
 from lndmanage.lib.report import Report
 
@@ -156,38 +148,6 @@ class Parser(object):
         listpeers_subparsers.add_parser(
             'out',
             help="displays peers sorted by outward traffic")
-
-        # cmd: rebalance
-        self.parser_rebalance = subparsers.add_parser(
-            'rebalance', help='rebalance a channel',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        self.parser_rebalance.add_argument('node_channel', type=str,
-                                           help='node id or channel id')
-        self.parser_rebalance.add_argument(
-            '--max-fee-sat', type=int, default=None,
-            help='Sets the maximal fees in satoshis to be paid.')
-        self.parser_rebalance.add_argument(
-            '--amount', type=int, default=None,
-            help='Specifies the increase in local balance in sat. The amount can be'
-                 f'negative to decrease the local balance. Default: {DEFAULT_AMOUNT_SAT} sat.')
-        self.parser_rebalance.add_argument(
-            '--max-fee-rate', type=range_limited_float_type, default=DEFAULT_MAX_FEE_RATE,
-            help='Sets the maximal effective fee rate to be paid.'
-                 ' The effective fee rate is defined by '
-                 '(base_fee + amt * fee_rate) / amt.')
-        self.parser_rebalance.add_argument(
-            '--reckless', help='Execute action in the network.',
-            action='store_true')
-        self.parser_rebalance.add_argument(
-            '--force',
-            help=f"Allow rebalances that are uneconomic.",
-            action='store_true')
-        self.parser_rebalance.add_argument(
-            '--target', help=f'The unbalancedness target is between [-1, 1]. '
-            f'A target of -1 leads to a maximal local balance, a target of 0 '
-            f'to a 50:50 balanced channel and a target of 1 to a maximal '
-            f'remote balance. Default is a target of 0.',
-            type=unbalanced_float, default=None)
 
         # cmd: recommend-nodes
         self.parser_recommend_nodes = subparsers.add_parser(
@@ -492,27 +452,6 @@ class Parser(object):
                     time_interval_end=time_to,
                     sort_string='out',
                 )
-
-        elif args.cmd == 'rebalance':
-            if args.target:
-                logger.warning("Warning: Target is set, this is still an "
-                               "experimental feature.")
-            rebalancer = Rebalancer(node, args.max_fee_rate, args.max_fee_sat, args.force)
-            try:
-                rebalancer.rebalance(
-                    args.node_channel,
-                    dry=not args.reckless,
-                    target=args.target,
-                    amount_sat=args.amount
-                )
-            except ValueError as e:
-                logger.error(e)
-            except TooExpensive as e:
-                logger.error(f"Too expensive: {e}")
-            except RebalanceFailure as e:
-                logger.error(f"Rebalance failure: {e}")
-            except KeyboardInterrupt:
-                pass
 
         elif args.cmd == 'recommend-nodes':
             if not args.subcmd:

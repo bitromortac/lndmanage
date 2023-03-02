@@ -23,32 +23,27 @@ lndmanage is a command line tool for advanced channel management of an
   * [```listchannels inactive```](#inactive-channels): information on inactive channels
 * Peer listing [```listpeers```](#peer-listing): aggregated channel statistics
 * Fee updating [```update-fees```](#fee-optimization): increase revenue and rebalance by fee optimization
-* Rebalancing command [```rebalance```](#channel-rebalancing)
-  * different rebalancing strategies can be chosen
-  * a target 'balancedness' can be specified (e.g. to empty the channel)
 * Recommendation of good nodes [```recommend-nodes```](#channel-opening-strategies)
 * Batched channel opening [```openchannels```](#batched-channel-opening)
 * Support of [```lncli```](#lncli-support)
    
 ## Command Line Options
 ```
-usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}] {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees} ...
+usage: lndmanage.py [-h] [--loglevel {INFO,DEBUG}] {status,listchannels,recommend-nodes,report,info,lncli,openchannels,update-fees} ...
 
 Lightning network daemon channel management tool.
 
 positional arguments:
-  {status,listchannels,rebalance,circle,recommend-nodes,report,info,lncli,openchannels,update-fees}
+  {status,listchannels,recommend-nodes,report,info,lncli,openchannels,update-fees}
     status              display node status
     listchannels        lists channels with extended information [see also subcommands with -h]
     listpeers           lists peers with extended information
-    rebalance           rebalance a channel
     recommend-nodes     recommends nodes [see also subcommands with -h]
     report              displays reports of activity on the node
     info                displays info on channels and nodes
     lncli               execute lncli
     openchannels        opens multiple channels
     update-fees         optimize the fees on your channels to increase revenue and to automatically rebalance
-
 ```
 
 ## Info Command
@@ -135,29 +130,6 @@ Forwardings:
    cidxxxxxxxxxxxxxxx: 3
    cidxxxxxxxxxxxxxxx: 3
 ```
-
-## Channel Rebalancing
-Channels with depleted liquidity can be rebalanced with channels of saturated liquidity by circular self-payments, that is, a payment leaves from the saturated channel and arrives in the depleted channel. This operation has the cost of paying routing fees. Another often overlooked cost is *state accumulation*. Rebalancing is a time consuming process where many attemps are needed, because one is often trying to counter the natural flow within the network. This can lead to enlarged databases and therefore overall slower operations and strain on the network, which is why rebalancing should be used sparingly!
-
-Which channels could be rebalanced? Typically, we want to rebalance channels that give us high fee earning expecations [to see those channels, see `$ lndmanage listchannels forwardings`, fields `fo/w` (fees earned per week)  and `fi/w` (fees earned by other channels due to incoming payments per week)]. We want to increase local balance in channels with high `fo/w` and decrease local balance in channels with high `fi/w`. Another use case is to increase/decrease local balance for new channels to see whether there's demand for forwarding. Otherwise it is not helpful to perfectly rebalance a channel 50:50 in most cases.
-
-The workflow to rebalance a channel is as follows:
-* ideally your channels have meaningful fee rates set (see `$ lndmanage update-fees`)
-* the counterparty rebalance channels are chosen according to the expected earnings calculated from the fee rate that is set for the to-be-rebalanced channel, i.e., a channel with a low fee rate will send its liquidity to channels with high fee rates, such that this capital can earn fees in the future and vice-versa
-* take a look at all your channels with forwarding activity and select a channel with high `fo/w` or `fi/w`, or high absolute values of `ub`
-
-* the ```ub``` field tells you how unbalanced your channel is 
-  and in which direction (negative means that the channel has mostly local balance - you may want to decrease the local balance)
-* take a `channel_id` or `node_id` you wish to rebalance
-* decide on whether you want to increase (positive `--amount`) or decrease your local balance (negative `--amount`), chose small amounts (< 1000000 sat) for better success
-* if `--amount` is not set, the sign of liquidity change is determined automatically
-* do a dry run to see what's waiting for you
-
-  ```$ lndmanage rebalance channel_id/node_id```
-
-* read the output and if everything looks well, 
-  then run with the ```--reckless``` flag
-* if you want to disable the fee rate selection of counterparty channels to increase success probability, run with the `--force` flag
 
 ## Forwarding Information
 A more sophisticated way to see if funds have to be reallocated is to 
