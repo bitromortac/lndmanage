@@ -41,6 +41,36 @@ class SignerStub(object):
                 request_serializer=signer__pb2.SharedKeyRequest.SerializeToString,
                 response_deserializer=signer__pb2.SharedKeyResponse.FromString,
                 )
+        self.MuSig2CombineKeys = channel.unary_unary(
+                '/signrpc.Signer/MuSig2CombineKeys',
+                request_serializer=signer__pb2.MuSig2CombineKeysRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2CombineKeysResponse.FromString,
+                )
+        self.MuSig2CreateSession = channel.unary_unary(
+                '/signrpc.Signer/MuSig2CreateSession',
+                request_serializer=signer__pb2.MuSig2SessionRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2SessionResponse.FromString,
+                )
+        self.MuSig2RegisterNonces = channel.unary_unary(
+                '/signrpc.Signer/MuSig2RegisterNonces',
+                request_serializer=signer__pb2.MuSig2RegisterNoncesRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2RegisterNoncesResponse.FromString,
+                )
+        self.MuSig2Sign = channel.unary_unary(
+                '/signrpc.Signer/MuSig2Sign',
+                request_serializer=signer__pb2.MuSig2SignRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2SignResponse.FromString,
+                )
+        self.MuSig2CombineSig = channel.unary_unary(
+                '/signrpc.Signer/MuSig2CombineSig',
+                request_serializer=signer__pb2.MuSig2CombineSigRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2CombineSigResponse.FromString,
+                )
+        self.MuSig2Cleanup = channel.unary_unary(
+                '/signrpc.Signer/MuSig2Cleanup',
+                request_serializer=signer__pb2.MuSig2CleanupRequest.SerializeToString,
+                response_deserializer=signer__pb2.MuSig2CleanupResponse.FromString,
+                )
 
 
 class SignerServicer(object):
@@ -67,8 +97,8 @@ class SignerServicer(object):
         """
         ComputeInputScript generates a complete InputIndex for the passed
         transaction with the signature as defined within the passed SignDescriptor.
-        This method should be capable of generating the proper input script for
-        both regular p2wkh output and p2wkh outputs nested within a regular p2sh
+        This method should be capable of generating the proper input script for both
+        regular p2wkh/p2tr outputs and p2wkh outputs nested within a regular p2sh
         output.
 
         Note that when using this method to sign inputs belonging to the wallet,
@@ -119,6 +149,101 @@ class SignerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def MuSig2CombineKeys(self, request, context):
+        """
+        MuSig2CombineKeys (experimental!) is a stateless helper RPC that can be used
+        to calculate the combined MuSig2 public key from a list of all participating
+        signers' public keys. This RPC is completely stateless and deterministic and
+        does not create any signing session. It can be used to determine the Taproot
+        public key that should be put in an on-chain output once all public keys are
+        known. A signing session is only needed later when that output should be
+        _spent_ again.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MuSig2CreateSession(self, request, context):
+        """
+        MuSig2CreateSession (experimental!) creates a new MuSig2 signing session
+        using the local key identified by the key locator. The complete list of all
+        public keys of all signing parties must be provided, including the public
+        key of the local signing key. If nonces of other parties are already known,
+        they can be submitted as well to reduce the number of RPC calls necessary
+        later on.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MuSig2RegisterNonces(self, request, context):
+        """
+        MuSig2RegisterNonces (experimental!) registers one or more public nonces of
+        other signing participants for a session identified by its ID. This RPC can
+        be called multiple times until all nonces are registered.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MuSig2Sign(self, request, context):
+        """
+        MuSig2Sign (experimental!) creates a partial signature using the local
+        signing key that was specified when the session was created. This can only
+        be called when all public nonces of all participants are known and have been
+        registered with the session. If this node isn't responsible for combining
+        all the partial signatures, then the cleanup flag should be set, indicating
+        that the session can be removed from memory once the signature was produced.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MuSig2CombineSig(self, request, context):
+        """
+        MuSig2CombineSig (experimental!) combines the given partial signature(s)
+        with the local one, if it already exists. Once a partial signature of all
+        participants is registered, the final signature will be combined and
+        returned.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MuSig2Cleanup(self, request, context):
+        """
+        MuSig2Cleanup (experimental!) allows a caller to clean up a session early in
+        cases where it's obvious that the signing session won't succeed and the
+        resources can be released.
+
+        NOTE: The MuSig2 BIP is not final yet and therefore this API must be
+        considered to be HIGHLY EXPERIMENTAL and subject to change in upcoming
+        releases. Backward compatibility is not guaranteed!
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SignerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -146,6 +271,36 @@ def add_SignerServicer_to_server(servicer, server):
                     servicer.DeriveSharedKey,
                     request_deserializer=signer__pb2.SharedKeyRequest.FromString,
                     response_serializer=signer__pb2.SharedKeyResponse.SerializeToString,
+            ),
+            'MuSig2CombineKeys': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2CombineKeys,
+                    request_deserializer=signer__pb2.MuSig2CombineKeysRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2CombineKeysResponse.SerializeToString,
+            ),
+            'MuSig2CreateSession': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2CreateSession,
+                    request_deserializer=signer__pb2.MuSig2SessionRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2SessionResponse.SerializeToString,
+            ),
+            'MuSig2RegisterNonces': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2RegisterNonces,
+                    request_deserializer=signer__pb2.MuSig2RegisterNoncesRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2RegisterNoncesResponse.SerializeToString,
+            ),
+            'MuSig2Sign': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2Sign,
+                    request_deserializer=signer__pb2.MuSig2SignRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2SignResponse.SerializeToString,
+            ),
+            'MuSig2CombineSig': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2CombineSig,
+                    request_deserializer=signer__pb2.MuSig2CombineSigRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2CombineSigResponse.SerializeToString,
+            ),
+            'MuSig2Cleanup': grpc.unary_unary_rpc_method_handler(
+                    servicer.MuSig2Cleanup,
+                    request_deserializer=signer__pb2.MuSig2CleanupRequest.FromString,
+                    response_serializer=signer__pb2.MuSig2CleanupResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -241,5 +396,107 @@ class Signer(object):
         return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/DeriveSharedKey',
             signer__pb2.SharedKeyRequest.SerializeToString,
             signer__pb2.SharedKeyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2CombineKeys(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2CombineKeys',
+            signer__pb2.MuSig2CombineKeysRequest.SerializeToString,
+            signer__pb2.MuSig2CombineKeysResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2CreateSession(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2CreateSession',
+            signer__pb2.MuSig2SessionRequest.SerializeToString,
+            signer__pb2.MuSig2SessionResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2RegisterNonces(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2RegisterNonces',
+            signer__pb2.MuSig2RegisterNoncesRequest.SerializeToString,
+            signer__pb2.MuSig2RegisterNoncesResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2Sign(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2Sign',
+            signer__pb2.MuSig2SignRequest.SerializeToString,
+            signer__pb2.MuSig2SignResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2CombineSig(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2CombineSig',
+            signer__pb2.MuSig2CombineSigRequest.SerializeToString,
+            signer__pb2.MuSig2CombineSigResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MuSig2Cleanup(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/signrpc.Signer/MuSig2Cleanup',
+            signer__pb2.MuSig2CleanupRequest.SerializeToString,
+            signer__pb2.MuSig2CleanupResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

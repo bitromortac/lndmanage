@@ -28,19 +28,19 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/bitromortac/lndmanage",
     packages=setuptools.find_packages(),
-    python_requires='>3.8.0',
+    python_requires='>=3.9.0',
     install_requires=[
-        "googleapis-common-protos>=1.52.0",
-        "grpcio>=1.31.0",
-        "grpcio-tools>=1.31.0",
-        "networkx>=2.4",
-        "numpy>=1.19.1",
-        "protobuf>=3.12.4",
-        "Pygments>=2.7.4",
+        "googleapis-common-protos==1.58.0",
+        "grpcio==1.51.3",
+        "grpcio-tools==1.48.2",
+        "networkx==3.0",
+        "numpy==1.24.2",
+        "protobuf==3.20.3",
+        "Pygments==2.14.0",
     ],
     extras_require={
         "test": [
-            "lnregtest>=0.2.1",
+            "lnregtest>=0.2.2",
         ]
     },
     include_package_data=True,

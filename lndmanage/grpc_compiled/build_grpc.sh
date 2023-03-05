@@ -1,7 +1,12 @@
 #!/bin/bash
 git clone https://github.com/googleapis/googleapis.git
-pip install grpcio grpcio-tools googleapis-common-protos
-tag="v0.14.2-beta"
+python -m venv temp
+source temp/bin/activate
+pip install --upgrade pip
+pip install grpcio==1.51.3 grpcio-tools==1.48.2 googleapis-common-protos==1.58.0 protobuf==3.20.3
+
+tag="v0.15.5-beta"
+
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/lightning.proto" -O lightning.proto
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/routerrpc/router.proto" -O router.proto
 wget "https://raw.githubusercontent.com/lightningnetwork/lnd/${tag}/lnrpc/walletrpc/walletkit.proto" -O walletkit.proto
