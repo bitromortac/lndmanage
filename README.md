@@ -1,7 +1,7 @@
 <p align="center">
 <img src="https://github.com/bitromortac/lndmanage/raw/master/logo.png" style="max-width:100%;" width="400" />
 </p>
-<hr />
+
 
 [![build_img]][build_url]
 [![gh_last_release_svg]][lndmanage-hub]
@@ -15,6 +15,8 @@
 [Docker Image Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/lndmanage?arch=amd64&sort=date
+
+<hr />
 
 # lndmanage
 lndmanage is a command line tool for advanced channel management of an 
