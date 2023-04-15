@@ -3,6 +3,19 @@
 </p>
 <hr />
 
+[![build_img]][build_url]
+[![gh_last_release_svg]][lndmanage-hub]
+[![Docker Image Size]][lndmanage-hub]
+[![Docker Pulls Count]][lndmanage-hub]
+
+[build_url]: https://github.com/kroese/lndmanage/actions
+[lndmanage-hub]: https://hub.docker.com/r/kroese/lndmanage
+
+[build_img]: https://github.com/kroese/lndmanage/actions/workflows/build.yml/badge.svg
+[Docker Image Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest
+[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat
+[gh_last_release_svg]: https://img.shields.io/docker/v/kroese/lndmanage?arch=amd64&sort=date
+
 # lndmanage
 lndmanage is a command line tool for advanced channel management of an 
 [LND](https://github.com/lightningnetwork/lnd) node.
