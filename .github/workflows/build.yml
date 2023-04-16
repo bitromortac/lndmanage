@@ -9,6 +9,10 @@ on:
       - '.dockerignore'
       - '.github/**'
       - '.github/workflows/**'
+      - 'LICENSE'
+      - 'MANIFEST.in'
+      - 'logo.png'
+      - 'requirements.txt'
 
 jobs:
   build:
