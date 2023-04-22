@@ -401,7 +401,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmanage requires `>=python3.8`, `lnd v0.14.x`, `python3-venv`.
+Installation of lndmanage requires `>=python3.9`, `lnd v0.15.x`, `python3-venv`.
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
@@ -420,7 +420,6 @@ make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
  configuration.
 
 ### Linux
-
 You can install lndmanage via two methods:
 
 1\. Install with pip (recommended):
@@ -428,7 +427,7 @@ You can install lndmanage via two methods:
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install --upgrade pip setuptools wheel
-$ python3 -m pip install lndmanage
+$ python3 -m pip install 'git+https://github.com/bitromortac/lndmanage@v0.15.0'
 ```
 2\. Install from source:
 ```
@@ -453,7 +452,7 @@ You need to set the environment variable `PYTHONIOENCODING` for proper encoding 
 $ py -m venv venv
 $ .\venv\Scripts\activate
 $ pip install --upgrade pip setuptools wheel
-$ python -m pip install lndmanage
+$ python3 -m pip install 'git+https://github.com/bitromortac/lndmanage@v0.15.0'
 ```
 
 2\. Install from source:
