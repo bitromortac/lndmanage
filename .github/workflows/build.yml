@@ -26,7 +26,7 @@ jobs:
       name: Build the Docker image
       run: |
               docker build . \
-              --file Dockerfile \
+              --file ./docker/Dockerfile \
               --label "build=${GITHUB_RUN_ID}" \
               --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
               --tag "${{ github.repository }}:latest" \
