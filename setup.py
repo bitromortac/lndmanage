@@ -30,7 +30,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.9.0',
     install_requires=[
-        "googleapis-common-protos==1.58.0",
+        "googleapis-common-protos==1.59.0",
         "grpcio==1.51.3",
         "grpcio-tools==1.48.2",
         "networkx==3.0",
