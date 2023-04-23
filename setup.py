@@ -32,7 +32,7 @@ setuptools.setup(
     install_requires=[
         "googleapis-common-protos==1.58.0",
         "grpcio==1.51.3",
-        "grpcio-tools==1.48.2",
+        "grpcio-tools==1.54.0",
         "networkx==3.0",
         "numpy==1.24.2",
         "protobuf==3.20.3",
