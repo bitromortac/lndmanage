@@ -220,12 +220,18 @@ class FeeSetter(object):
                 peer_number_forwardings_out += number_forwardings_out
                 peer_total_forwarding_out += total_forwarding_out
 
-                cumul_fee_rate += self.channel_fee_policies[
-                    channel_data["channel_point"]
-                ]["fee_rate"]
-                cumul_base_fee += self.channel_fee_policies[
-                    channel_data["channel_point"]
-                ]["base_fee_msat"]
+                point = channel_data["channel_point"]
+                try:
+                    policy = self.channel_fee_policies[point]
+                except KeyError:
+                    raise Exception(
+                        f"Channel {channel_id} ({point}) not found in "
+                        "feereport. This is unexpected and may mean that this "
+                        "channel is not operating correctly."
+                    )
+
+                cumul_fee_rate += policy["fee_rate"]
+                cumul_base_fee += policy["base_fee_msat"]
 
             logger.info(
                 f"    Channels with peer: {len(cs)}, "

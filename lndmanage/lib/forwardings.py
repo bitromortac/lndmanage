@@ -508,16 +508,24 @@ class ForwardingStatistics(object):
         return sum(self.outward_forwardings)
 
     def mean_forwarding_in(self) -> float:
-        return np.mean(self.inward_forwardings)
+        if len(self.inward_forwardings) > 0:
+            return np.mean(self.inward_forwardings)
+        return 0.0
 
     def mean_forwarding_out(self) -> float:
-        return np.mean(self.outward_forwardings)
+        if len(self.outward_forwardings) > 0:
+            return np.mean(self.outward_forwardings)
+        return 0.0
 
     def median_forwarding_in(self) -> float:
-        return np.median(self.inward_forwardings)
+        if len(self.inward_forwardings) > 0:
+            return np.median(self.inward_forwardings)
+        return 0.0
 
     def median_forwarding_out(self) -> float:
-        return np.median(self.outward_forwardings)
+        if len(self.outward_forwardings) > 0:
+            return np.median(self.outward_forwardings)
+        return 0.0
 
     def total_fees_out(self) -> int:
         return sum(self.fees_out)
