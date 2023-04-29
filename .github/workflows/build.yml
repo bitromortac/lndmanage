@@ -30,7 +30,18 @@ jobs:
               --label "build=${GITHUB_RUN_ID}" \
               --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
               --tag "${{ github.repository }}:latest" \
-              --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+    -
+      name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    -
+      name: Push to DockerHub
+      run: |
+              docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" &&\
+              docker push "${{ github.repository }}:latest"
     -
       name: Increment minor version
       run: |
@@ -43,14 +54,4 @@ jobs:
         value: ${{ env.NEW_MINOR }}
         repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
-    -
-      name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    -
-      name: Push to DockerHub
-      run: |
-              docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" &&\
-              docker push "${{ github.repository }}:latest"
+    
