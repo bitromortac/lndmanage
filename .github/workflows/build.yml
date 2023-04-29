@@ -32,11 +32,15 @@ jobs:
               --tag "${{ github.repository }}:latest" \
               --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
     -
-      name: Update Minor version
+      name: Increment minor version
+      run: |
+        echo "NEW_MINOR=$((${{ secrets.MINOR }}+1))" >> $GITHUB_ENV
+    -
+      name: Update minor version
       uses: hmanzur/actions-set-secret@v2.0.0
       with:
         name: 'MINOR'
-        value: $((${{ secrets.MINOR }}+1))
+        value: ${{ env.NEW_MINOR }}
         repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
     -
