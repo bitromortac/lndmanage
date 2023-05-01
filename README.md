@@ -12,8 +12,8 @@
 [lndmanage-hub]: https://hub.docker.com/r/kroese/lndmanage
 
 [build_img]: https://github.com/kroese/lndmanage/actions/workflows/build.yml/badge.svg
-[Docker Image Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest?color=066da5
-[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat&color=066da5
+[Docker Image Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest?color=066da5&label=size
+[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat&color=066da5&label=pulls
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/lndmanage?arch=amd64&sort=date&color=066da5
 
 <hr />
