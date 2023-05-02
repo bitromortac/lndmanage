@@ -3,7 +3,7 @@
 </p>
 
 [![Build]][build_url]
-[![Version]][hub_url]
+[![Version]][build_url]
 [![Size]][hub_url]
 [![Pulls]][hub_url]
 
@@ -12,7 +12,7 @@
 
 [Build]: https://github.com/kroese/lndmanage/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest?color=066da5&label=size
-[Pulls]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat&color=066da5&label=pulls
+[Pulls]: https://img.shields.io/docker/pulls/kroese/lndmanage.svg?style=flat&label=pulls&logo=docker
 [Version]: https://img.shields.io/docker/v/kroese/lndmanage?arch=amd64&sort=date&color=066da5
 
 <hr />
