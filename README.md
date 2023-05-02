@@ -7,7 +7,7 @@
 [![Size]][hub_url]
 [![Pulls]][hub_url]
 
-[build_url]: https://github.com/kroese/lndmanage/actions
+[build_url]: https://github.com/kroese/lndmanage/
 [hub_url]: https://hub.docker.com/r/kroese/lndmanage
 
 [Build]: https://github.com/kroese/lndmanage/actions/workflows/build.yml/badge.svg
