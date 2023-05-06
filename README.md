@@ -3,12 +3,13 @@
 </p>
 
 [![Build]][build_url]
-[![Version]][build_url]
-[![Size]][hub_url]
+[![Version]][tag_url]
+[![Size]][tag_url]
 [![Pulls]][hub_url]
 
 [build_url]: https://github.com/kroese/lndmanage/
 [hub_url]: https://hub.docker.com/r/kroese/lndmanage
+[tag_url]: https://hub.docker.com/r/kroese/lndmanage/tags
 
 [Build]: https://github.com/kroese/lndmanage/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/lndmanage/latest?color=066da5&label=size
