@@ -80,7 +80,7 @@ jobs:
             --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
             --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) ./Dockerfile
+            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
       -
         name: Clear Docker credentials
         run: |
