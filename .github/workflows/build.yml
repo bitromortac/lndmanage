@@ -72,16 +72,15 @@ jobs:
           echo "Docker platform: ${{ steps.prepare.outputs.docker_platforms }}"
           echo "Tags: ${{ steps.prepare.outputs.tags }}"
 
+          cd docker
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
             --output "type=image,push=true" \
             --progress=plain \
-            --build-arg "LNDMANAGE_HOST_SRC_PATH=/home/runner/work/lndmanage" \
-            --build-arg "LNDMANAGE_EXTRA_PACKAGES=fish}" \
             --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
             --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
             --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) docker/.
+            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
       -
         name: Clear Docker credentials
         run: |
