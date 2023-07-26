@@ -73,6 +73,8 @@ jobs:
           echo "Tags: ${{ steps.prepare.outputs.tags }}"
 
           cd docker
+          ls -lh
+          
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
             --output "type=image,push=true" \
             --progress=plain \
