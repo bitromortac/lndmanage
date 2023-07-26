@@ -75,7 +75,7 @@ jobs:
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
             --output "type=image,push=true" \
             --progress=plain \
-            --file ./docker/Dockerfile
+            --file ./docker/Dockerfile \
             --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
             --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
             --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
