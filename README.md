@@ -1,21 +1,6 @@
 <p align="center">
 <img src="https://github.com/bitromortac/lndmanage/raw/master/logo.png" style="max-width:100%;" width="400" />
 </p>
-
-[![Build]][build_url]
-[![Version]][tag_url]
-[![Size]][tag_url]
-[![Pulls]][hub_url]
-
-[build_url]: https://github.com/dobtc/lndmanage/
-[hub_url]: https://hub.docker.com/r/dobtc/lndmanage
-[tag_url]: https://hub.docker.com/r/dobtc/lndmanage/tags
-
-[Build]: https://github.com/dobtc/lndmanage/actions/workflows/build.yml/badge.svg
-[Size]: https://img.shields.io/docker/image-size/dobtc/lndmanage/latest?color=066da5&label=size
-[Pulls]: https://img.shields.io/docker/pulls/dobtc/lndmanage.svg?style=flat&label=pulls&logo=docker
-[Version]: https://img.shields.io/docker/v/dobtc/lndmanage?arch=amd64&sort=date&color=066da5
-
 <hr />
 
 # lndmanage
