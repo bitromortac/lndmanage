@@ -1,6 +1,7 @@
-<p align="center">
+<div align="center">
 <img src="https://github.com/bitromortac/lndmanage/raw/master/logo.png" style="max-width:100%;" width="400" />
-</p>
+</div>
+<div align="center">
 
 [![Build]][build_url]
 [![Version]][tag_url]
@@ -16,9 +17,10 @@
 [Pulls]: https://img.shields.io/docker/pulls/dobtc/lndmanage.svg?style=flat&label=pulls&logo=docker
 [Version]: https://img.shields.io/docker/v/dobtc/lndmanage/latest?arch=amd64&sort=semver&color=066da5
 
+</div>
+
 <hr />
 
-# lndmanage
 lndmanage is a command line tool for advanced channel management of an 
 [LND](https://github.com/lightningnetwork/lnd) node.
 
