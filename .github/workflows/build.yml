@@ -1,19 +1,8 @@
 name: Build
-
 on:
   workflow_dispatch:
-  push:
-    branches: [ disabled ]
-    paths-ignore:
-      - '**/*.md'
-      - '.gitignore'
-      - '.dockerignore'
-      - '.github/**'
-      - '.github/workflows/**'
-      - 'LICENSE'
-      - 'MANIFEST.in'
-      - 'logo.png'
-      - 'requirements.txt'
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -21,42 +10,70 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      contents: read    
+      contents: read
     steps:
       - 
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      -
         name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - 
+        name: Check for new tags in bitromortac/lndmanage
+        run: |
+          #!/bin/bash
+          latest_tag=$(curl -s https://api.github.com/repos/bitromortac/lndmanage/tags | jq -r '.[0].name')
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+      - 
+        name: Check if the new tag exists in DockerHub
+        id: check-tag
+        run: |
+          #!/bin/bash
+          dockerhub_tags=$(curl -s https://hub.docker.com/v2/repositories/${{ github.repository }}/tags | jq -r '.results[].name')
+          if echo "${dockerhub_tags}" | grep -q "${{ env.latest_tag }}"; then
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+      - 
+        name: Set up Docker Buildx
+        if: env.exists == 'false'
+        uses: docker/setup-buildx-action@v3
       -
         name: Prepare Docker build
+        if: env.exists == 'false'
         id: prepare
         run: |
         
           PLATFORMS="linux/amd64,linux/arm64"
-          VERSION="${{ vars.MAJOR }}.${{ vars.MINOR }}"
           
           TAGS=()
           TAGS=("${{ github.repository }}:latest")
-          TAGS+=("${{ github.repository }}:${VERSION}")
+          TAGS+=("${{ github.repository }}:${{ env.latest_tag }}")
           TAGS+=("ghcr.io/${{ github.repository }}:latest")
-          TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
+          TAGS+=("ghcr.io/${{ github.repository }}:${{ env.latest_tag }}")
           
           echo "tags=${TAGS[@]}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${{ env.latest_tag }}" >> $GITHUB_OUTPUT
           echo "docker_platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
-          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT      
+      - 
+        name: Clone branch
+        if: env.exists == 'false'
+        run: |
+          git config --global url.https://github.com/.insteadOf git://github.com/
+          git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch ${{ steps.prepare.outputs.version }}
+          cp docker/Dockerfile lndmanage/docker/
+          cp docker/.dockerignore lndmanage/docker/
       -
         name: Login into Docker Hub
+        if: env.exists == 'false'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GitHub Container Registry
+        if: env.exists == 'false'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -64,6 +81,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - 
         name: Build Docker image
+        if: env.exists == 'false'
         run: |
         
           TAGS=(${{ steps.prepare.outputs.tags }})
@@ -72,21 +90,23 @@ jobs:
           echo "Docker platform: ${{ steps.prepare.outputs.docker_platforms }}"
           echo "Tags: ${{ steps.prepare.outputs.tags }}"
 
+          cd lndmanage
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
             --output "type=image,push=true" \
             --progress=plain \
-            --file ./docker/Dockerfile \
             --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
             --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
             --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
+            $(printf "%s" "${TAGS[@]/#/ --tag }" ) docker/.
       -
         name: Clear Docker credentials
+        if: env.exists == 'false'
         run: |
           rm -f ${HOME}/.docker/config.json
       -
         name: Create a release
+        if: env.exists == 'false'
         uses: action-pack/github-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
@@ -94,7 +114,15 @@ jobs:
           tag: "v${{ steps.prepare.outputs.version }}"
           title: "v${{ steps.prepare.outputs.version }}"
       -
-        name: Increment version variable
-        uses: action-pack/bump@v2
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+       name: Send mail
+       if: env.exists == 'false'
+       uses: dawidd6/action-send-mail@v3
+       with:
+         to: ${{secrets.MAILTO}}
+         from: Github Actions <${{secrets.MAILTO}}>
+         connection_url: ${{secrets.MAIL_CONNECTION}}
+         subject: Build of ${{ github.event.repository.name }} v${{ steps.prepare.outputs.version }} completed
+         body: |
+              The build job of ${{ github.event.repository.name }} v${{ steps.prepare.outputs.version }} was completed successfully! 
+              
+              See https://github.com/${{ github.repository }}/actions for more information.
