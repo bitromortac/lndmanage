@@ -63,7 +63,7 @@ jobs:
           git config --global url.https://github.com/.insteadOf git://github.com/
           git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch ${{ steps.prepare.outputs.version }}
           cp docker/Dockerfile lndmanage/docker/
-          cp docker/.dockerignore lndmanage/docker/
+          cp .dockerignore lndmanage/
       -
         name: Login into Docker Hub
         if: env.exists == 'false'
