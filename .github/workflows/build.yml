@@ -21,7 +21,7 @@ jobs:
         name: Check for new tags in bitromortac/lndmanage
         run: |
           #!/bin/bash
-          latest_tag=$(curl -s https://api.github.com/repos/bitromortac/lndmanage/tags | jq -r '.[0].name')
+          latest_tag=$(curl -s https://api.github.com/repos/bitromortac/lndmanage/tags | jq -r '.[0].name' | tail -c+2)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
         name: Check if the new tag exists in DockerHub
@@ -62,7 +62,7 @@ jobs:
         run: |
           rm -r lndmanage
           git config --global url.https://github.com/.insteadOf git://github.com/
-          git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch ${{ steps.prepare.outputs.version }}
+          git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch v${{ steps.prepare.outputs.version }}
           cp docker/Dockerfile lndmanage/docker/
           cp .dockerignore lndmanage/
       -
@@ -95,11 +95,12 @@ jobs:
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
             --output "type=image,push=true" \
             --progress=plain \
+            --file ./docker/Dockerfile \
             --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
             --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
             --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) docker/.
+            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
       -
         name: Clear Docker credentials
         if: env.exists == 'false'
