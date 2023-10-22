@@ -1,7 +1,7 @@
 # for optimized python builds
 # we follow solution #2 described in https://pythonspeed.com/articles/multi-stage-docker-python/
 
-FROM python:3.12-slim as builder
+FROM python:3.10-slim as builder
 
 RUN python -m venv /root/.venv
 
@@ -13,10 +13,6 @@ COPY "$LNDMANAGE_HOST_SRC_PATH/requirements.txt" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/pyproject.toml" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/setup.py" .
 COPY "$LNDMANAGE_HOST_SRC_PATH/lndmanage/__init__.py" ./lndmanage/
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-         build-essential && \
-	 apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install .
 
