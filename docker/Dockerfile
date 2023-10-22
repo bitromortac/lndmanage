@@ -1,7 +1,7 @@
 # for optimized python builds
 # we follow solution #2 described in https://pythonspeed.com/articles/multi-stage-docker-python/
 
-FROM python:3.11-slim as builder
+FROM python:3.10-slim as builder
 
 RUN python -m venv /root/.venv
 
@@ -18,7 +18,7 @@ RUN pip install .
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
-FROM python:3.11-slim as final
+FROM python:3.10-slim as final
 
 ARG LNDMANAGE_EXTRA_PACKAGES
 RUN ([ ! -z $LNDMANAGE_EXTRA_PACKAGES ] && \
@@ -44,7 +44,7 @@ ARG BUILD_ARG=0
 ARG VERSION_ARG="0.0"
 ENV VERSION=$VERSION_ARG
 
-LABEL org.opencontainers.image.title="LNDManage"
+LABEL org.opencontainers.image.title="LND Manage"
 LABEL org.opencontainers.image.created=${DATE_ARG}
 LABEL org.opencontainers.image.revision=${BUILD_ARG}
 LABEL org.opencontainers.image.version=${VERSION_ARG}
