@@ -18,7 +18,7 @@ RUN pip install .
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
-FROM python:3.12-slim as final
+FROM python:3.10-slim as final
 
 ARG LNDMANAGE_EXTRA_PACKAGES
 RUN ([ ! -z $LNDMANAGE_EXTRA_PACKAGES ] && \
