@@ -12,7 +12,6 @@ jobs:
       packages: write
       contents: read
     steps:
-    steps:
       - 
         name: Run graphql query to get tag
         uses: octokit/graphql-action@v2.x
