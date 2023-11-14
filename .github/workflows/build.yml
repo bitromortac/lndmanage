@@ -12,28 +12,50 @@ jobs:
       packages: write
       contents: read
     steps:
+    steps:
       - 
-        name: Checkout
-        uses: actions/checkout@v4
+        name: Run graphql query to get tag
+        uses: octokit/graphql-action@v2.x
+        id: latest_tag
         with:
-          fetch-depth: 0
+          query: |
+            query tag($owner: String!, $repo: String!) {
+              repository(owner: $owner, name: $repo) {
+                refs(refPrefix: "refs/tags/", last: 1, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {
+                  edges {
+                    node {
+                      name
+               } } } } }
+          repo: lndmanage
+          owner: bitromortac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
-        name: Check for new tags in bitromortac/lndmanage
+        name: Parse tag from query output
         run: |
           #!/bin/bash
-          latest_tag=$(curl -s https://api.github.com/repos/bitromortac/lndmanage/tags | jq -r '.[0].name' | tail -c+2)
+          latest_tag=$(echo '${{ steps.latest_tag.outputs.data }}' | jq '.repository.refs.edges[][].name' -r)
+          [ -z "$latest_tag" ] && echo "Tag not found!" && exit 1
+          [[ "$latest_tag" = v* ]] && latest_tag="${latest_tag:1}"
+          echo "Found tag: \"${latest_tag}\"" 
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
-        name: Check if the new tag exists in DockerHub
+        name: Check if the tag exists in DockerHub
         id: check-tag
         run: |
           #!/bin/bash
           dockerhub_tags=$(curl -s https://hub.docker.com/v2/repositories/${{ github.repository }}/tags | jq -r '.results[].name')
-          if echo "${dockerhub_tags}" | grep -q "${{ env.latest_tag }}"; then
+          if echo "${dockerhub_tags}" | grep -qx "${{ env.latest_tag }}"; then
             echo "exists=true" >> $GITHUB_ENV
           else
             echo "exists=false" >> $GITHUB_ENV
           fi
+      - 
+        name: Checkout
+        if: env.exists == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          
       - 
         name: Set up Docker Buildx
         if: env.exists == 'false'
