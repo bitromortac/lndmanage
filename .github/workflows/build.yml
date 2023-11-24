@@ -17,6 +17,9 @@ jobs:
         uses: octokit/graphql-action@v2.x
         id: latest_tag
         with:
+          variables: |
+            repo: lndmanage
+            owner: bitromortac
           query: |
             query tag($owner: String!, $repo: String!) {
               repository(owner: $owner, name: $repo) {
@@ -25,8 +28,6 @@ jobs:
                     node {
                       name
                } } } } }
-          repo: lndmanage
-          owner: bitromortac
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
