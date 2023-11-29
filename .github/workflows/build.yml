@@ -60,38 +60,11 @@ jobs:
         if: env.exists == 'false'
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0          
+          fetch-depth: 0
       - 
         name: Set up Docker Buildx
         if: env.exists == 'false'
         uses: docker/setup-buildx-action@v3
-      -
-        name: Prepare Docker build
-        if: env.exists == 'false'
-        id: prepare
-        run: |
-        
-          PLATFORMS="linux/amd64,linux/arm64"
-          
-          TAGS=()
-          TAGS=("${{ github.repository }}:latest")
-          TAGS+=("${{ github.repository }}:${{ env.latest_tag }}")
-          TAGS+=("ghcr.io/${{ github.repository }}:latest")
-          TAGS+=("ghcr.io/${{ github.repository }}:${{ env.latest_tag }}")
-          
-          echo "tags=${TAGS[@]}" >> $GITHUB_OUTPUT
-          echo "version=${{ env.latest_tag }}" >> $GITHUB_OUTPUT
-          echo "docker_platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
-          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT      
-      - 
-        name: Clone branch
-        if: env.exists == 'false'
-        run: |
-          rm -r lndmanage
-          git config --global url.https://github.com/.insteadOf git://github.com/
-          git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch v${{ steps.prepare.outputs.version }}
-          cp docker/Dockerfile lndmanage/docker/
-          cp .dockerignore lndmanage/
       -
         name: Login into Docker Hub
         if: env.exists == 'false'
@@ -107,31 +80,57 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - 
+      -
+        name: Clone remote branch
+        if: env.exists == 'false'
+        run: |
+          rm -r lndmanage
+          git config --global url.https://github.com/.insteadOf git://github.com/
+          git clone --recurse-submodules -j8 https://github.com/bitromortac/lndmanage.git --single-branch --branch v${{ env.latest_tag }}
+          cp docker/Dockerfile lndmanage/docker/
+          cp .dockerignore lndmanage/
+      -
         name: Build Docker image
         if: env.exists == 'false'
+        id: build
         run: |
-        
-          TAGS=(${{ steps.prepare.outputs.tags }})
+          #!/bin/bash
+          
+          DIRECTORY="lndmanage"
+          VERSION="${{ env.latest_tag }}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          PLATFORMS="linux/amd64,linux/arm64"
+          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          TITLE="$(grep --only-matching --perl-regex "(?<=image.title\=).*" $DIRECTORY/Dockerfile | sed -e 's/ /\xc2\xa0/g')"
+          DESC="$(grep --only-matching --perl-regex "(?<=image.description\=).*" $DIRECTORY/Dockerfile | sed -e 's/ /\xc2\xa0/g')"
 
-          echo "Build date: ${{ steps.prepare.outputs.build_date }}"
-          echo "Docker platform: ${{ steps.prepare.outputs.docker_platforms }}"
-          echo "Tags: ${{ steps.prepare.outputs.tags }}"
+          TAGS=()
+          TAGS=("${{ github.repository }}:latest")
+          TAGS+=("${{ github.repository }}:${VERSION}")
+          TAGS+=("ghcr.io/${{ github.repository }}:latest")
+          TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
 
-          cd lndmanage
-          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
-            --output "type=image,push=true" \
-            --progress=plain \
+          LABELS=()
+          LABELS=("org.opencontainers.image.licenses=GPL-3.0")
+          LABELS+=("org.opencontainers.image.title=${TITLE}")
+          LABELS+=("org.opencontainers.image.description=${DESC}")
+          LABELS+=("org.opencontainers.image.version=${VERSION}")
+          LABELS+=("org.opencontainers.image.created=${BUILD_DATE}")
+          LABELS+=("org.opencontainers.image.revision=${GITHUB_RUN_ID}")
+          LABELS+=("org.opencontainers.image.url=https://github.com/${{ github.repository }}")
+          LABELS+=("org.opencontainers.image.source=https://github.com/${{ github.repository }}")
+
+          cd "${DIRECTORY}"
+          docker buildx build --progress=plain \
             --file ./docker/Dockerfile \
-            --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
-            --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
-            --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
+            --platform "${PLATFORMS}" \
+            --output "type=image,push=true" \
+            --build-arg "VERSION_ARG=${VERSION}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
-      -
-        name: Clear Docker credentials
-        if: env.exists == 'false'
-        run: |
+            $(printf '%s' "${LABELS[@]/#/ --label }" ) \
+            $(printf '%s' "${LABELS[@]/#/ --annotation }" ) \
+            $(printf '%s' "${TAGS[@]/#/ --tag }" ) .
+
           rm -f ${HOME}/.docker/config.json
       -
         name: Create a release
@@ -140,8 +139,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
         with:
-          tag: "v${{ steps.prepare.outputs.version }}"
-          title: "v${{ steps.prepare.outputs.version }}"
+          tag: "v${{ steps.build.outputs.version }}"
+          title: "v${{ steps.build.outputs.version }}"
       -
        name: Send mail
        if: env.exists == 'false'
@@ -150,8 +149,8 @@ jobs:
          to: ${{secrets.MAILTO}}
          from: Github Actions <${{secrets.MAILTO}}>
          connection_url: ${{secrets.MAIL_CONNECTION}}
-         subject: Build of ${{ github.event.repository.name }} v${{ steps.prepare.outputs.version }} completed
+         subject: Build of ${{ github.event.repository.name }} v${{ steps.build.outputs.version }} completed
          body: |
-              The build job of ${{ github.event.repository.name }} v${{ steps.prepare.outputs.version }} was completed successfully! 
+              The build job of ${{ github.event.repository.name }} v${{ steps.build.outputs.version }} was completed successfully! 
               
               See https://github.com/${{ github.repository }}/actions for more information.
