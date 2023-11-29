@@ -39,17 +39,10 @@ ENV PATH="/root/.venv/bin:$PATH:/root"
 ENV TLS_CERT_FILE /root/aux/tls.cert
 ENV ADMIN_MACAROON_FILE /root/aux/admin.macaroon
 
-ARG DATE_ARG=""
-ARG BUILD_ARG=0
 ARG VERSION_ARG="0.0"
 ENV VERSION=$VERSION_ARG
 
 LABEL org.opencontainers.image.title="LND Manage"
-LABEL org.opencontainers.image.created=${DATE_ARG}
-LABEL org.opencontainers.image.revision=${BUILD_ARG}
-LABEL org.opencontainers.image.version=${VERSION_ARG}
-LABEL org.opencontainers.image.source="https://github.com/dobtc/lndmanage/"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/dobtc/lndmanage/"
 LABEL org.opencontainers.image.description="Channel management tool for lightning network daemon (LND) operators"
 
 # copy sources under /root/lndmanage
