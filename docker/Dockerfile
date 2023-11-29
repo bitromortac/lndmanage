@@ -39,12 +39,6 @@ ENV PATH="/root/.venv/bin:$PATH:/root"
 ENV TLS_CERT_FILE /root/aux/tls.cert
 ENV ADMIN_MACAROON_FILE /root/aux/admin.macaroon
 
-ARG VERSION_ARG="0.0"
-ENV VERSION=$VERSION_ARG
-
-LABEL org.opencontainers.image.title="LND Manage"
-LABEL org.opencontainers.image.description="Channel management tool for lightning network daemon (LND) operators"
-
 # copy sources under /root/lndmanage
 WORKDIR /root/lndmanage
 ARG LNDMANAGE_HOST_SRC_PATH=.
