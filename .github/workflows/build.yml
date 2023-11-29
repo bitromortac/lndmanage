@@ -111,7 +111,7 @@ jobs:
           TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
 
           LABELS=()
-          LABELS=("org.opencontainers.image.licenses=GPL-3.0")
+          LABELS=("org.opencontainers.image.licenses=MIT")
           LABELS+=("org.opencontainers.image.title=${TITLE}")
           LABELS+=("org.opencontainers.image.description=${DESC}")
           LABELS+=("org.opencontainers.image.version=${VERSION}")
