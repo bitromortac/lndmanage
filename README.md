@@ -401,7 +401,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmanage requires `>=python3.8`, `lnd v0.15.x`, `python3-venv`.
+Installation of lndmanage requires `>=python3.8`, `lnd v0.16.x`, `python3-venv`.
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
@@ -439,7 +439,7 @@ You can install lndmanage via three methods:
 1\. Install from repository:
 ```
 $ git clone https://github.com/bitromortac/lndmanage && cd lndmanage
-$ git checkout v0.15.0
+$ git checkout v0.16.0
 $ python3 -m venv venv
 $ git verify-commit HEAD
 $ source venv/bin/activate
@@ -452,11 +452,11 @@ $ pip install .
 * Download `.whl` and `.whl.asc` files
 * Verify signature and install:
 ```
-$ gpg --verify lndmanage-0.15.0-py3-none-any.whl.asc lndmanage-0.15.0-py3-none-any.whl
+$ gpg --verify lndmanage-0.16.0-py3-none-any.whl.asc lndmanage-0.16.0-py3-none-any.whl
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install --upgrade pip setuptools wheel
-$ pip install lndmanage-0.15.0-py3-none-any.whl
+$ pip install lndmanage-0.16.0-py3-none-any.whl
 ```
 
 3\. Install with pip (deprecated):
@@ -479,7 +479,7 @@ You need to set the environment variable `PYTHONIOENCODING` for proper encoding 
 ```
 $ git clone https://github.com/bitromortac/lndmanage
 $ cd lndmanage
-$ git checkout v0.15.0
+$ git checkout v0.16.0
 $ git verify-commit HEAD
 $ py -m venv venv
 $ .\venv\Scripts\activate
