@@ -27,6 +27,11 @@ class RouterStub(object):
                 request_serializer=router__pb2.TrackPaymentRequest.SerializeToString,
                 response_deserializer=lightning__pb2.Payment.FromString,
                 )
+        self.TrackPayments = channel.unary_stream(
+                '/routerrpc.Router/TrackPayments',
+                request_serializer=router__pb2.TrackPaymentsRequest.SerializeToString,
+                response_deserializer=lightning__pb2.Payment.FromString,
+                )
         self.EstimateRouteFee = channel.unary_unary(
                 '/routerrpc.Router/EstimateRouteFee',
                 request_serializer=router__pb2.RouteFeeRequest.SerializeToString,
@@ -128,6 +133,19 @@ class RouterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def TrackPayments(self, request, context):
+        """
+        TrackPayments returns an update stream for every payment that is not in a
+        terminal state. Note that if payments are in-flight while starting a new
+        subscription, the start of the payment stream could produce out-of-order
+        and/or duplicate events. In order to get updates for every in-flight
+        payment attempt make sure to subscribe to this method before initiating any
+        payments.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def EstimateRouteFee(self, request, context):
         """
         EstimateRouteFee allows callers to obtain a lower bound w.r.t how much it
@@ -208,8 +226,10 @@ class RouterServicer(object):
 
     def QueryProbability(self, request, context):
         """
-        QueryProbability returns the current success probability estimate for a
-        given node pair and amount.
+        Deprecated. QueryProbability returns the current success probability
+        estimate for a given node pair and amount. The call returns a zero success
+        probability if no channel is available or if the amount violates min/max
+        HTLC constraints.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -287,6 +307,11 @@ def add_RouterServicer_to_server(servicer, server):
             'TrackPaymentV2': grpc.unary_stream_rpc_method_handler(
                     servicer.TrackPaymentV2,
                     request_deserializer=router__pb2.TrackPaymentRequest.FromString,
+                    response_serializer=lightning__pb2.Payment.SerializeToString,
+            ),
+            'TrackPayments': grpc.unary_stream_rpc_method_handler(
+                    servicer.TrackPayments,
+                    request_deserializer=router__pb2.TrackPaymentsRequest.FromString,
                     response_serializer=lightning__pb2.Payment.SerializeToString,
             ),
             'EstimateRouteFee': grpc.unary_unary_rpc_method_handler(
@@ -406,6 +431,23 @@ class Router(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/routerrpc.Router/TrackPaymentV2',
             router__pb2.TrackPaymentRequest.SerializeToString,
+            lightning__pb2.Payment.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def TrackPayments(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/routerrpc.Router/TrackPayments',
+            router__pb2.TrackPaymentsRequest.SerializeToString,
             lightning__pb2.Payment.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

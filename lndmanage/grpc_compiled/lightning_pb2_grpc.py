@@ -362,6 +362,11 @@ class LightningStub(object):
                 request_serializer=lightning__pb2.ListAliasesRequest.SerializeToString,
                 response_deserializer=lightning__pb2.ListAliasesResponse.FromString,
                 )
+        self.LookupHtlcResolution = channel.unary_unary(
+                '/lnrpc.Lightning/LookupHtlcResolution',
+                request_serializer=lightning__pb2.LookupHtlcResolutionRequest.SerializeToString,
+                response_deserializer=lightning__pb2.LookupHtlcResolutionResponse.FromString,
+                )
 
 
 class LightningServicer(object):
@@ -1097,6 +1102,10 @@ class LightningServicer(object):
         """lncli: `subscribecustom`
         SubscribeCustomMessages subscribes to a stream of incoming custom peer
         messages.
+
+        To include messages with type outside of the custom range (>= 32768) lnd
+        needs to be compiled with  the `dev` build tag, and the message type to
+        override should be specified in lnd's experimental protocol configuration.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -1107,6 +1116,16 @@ class LightningServicer(object):
         ListAliases returns the set of all aliases that have ever existed with
         their confirmed SCID (if it exists) and/or the base SCID (in the case of
         zero conf).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def LookupHtlcResolution(self, request, context):
+        """
+        LookupHtlcResolution retrieves a final htlc resolution from the database.
+        If the htlc has no final resolution yet, a NotFound grpc status code is
+        returned.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -1444,6 +1463,11 @@ def add_LightningServicer_to_server(servicer, server):
                     servicer.ListAliases,
                     request_deserializer=lightning__pb2.ListAliasesRequest.FromString,
                     response_serializer=lightning__pb2.ListAliasesResponse.SerializeToString,
+            ),
+            'LookupHtlcResolution': grpc.unary_unary_rpc_method_handler(
+                    servicer.LookupHtlcResolution,
+                    request_deserializer=lightning__pb2.LookupHtlcResolutionRequest.FromString,
+                    response_serializer=lightning__pb2.LookupHtlcResolutionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2592,5 +2616,22 @@ class Lightning(object):
         return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/ListAliases',
             lightning__pb2.ListAliasesRequest.SerializeToString,
             lightning__pb2.ListAliasesResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def LookupHtlcResolution(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/lnrpc.Lightning/LookupHtlcResolution',
+            lightning__pb2.LookupHtlcResolutionRequest.SerializeToString,
+            lightning__pb2.LookupHtlcResolutionResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
