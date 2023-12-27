@@ -30,13 +30,11 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.9.0',
     install_requires=[
-        "googleapis-common-protos==1.58.0",
-        "grpcio==1.51.3",
-        "grpcio-tools==1.48.2",
+        "googleapis-common-protos==1.62.0",
+        "grpcio==1.60.0",
         "networkx==3.0",
         "numpy==1.24.2",
-        "protobuf==3.20.3",
-        "Pygments==2.14.0",
+        "Pygments==2.17.2",
     ],
     extras_require={
         "test": [
