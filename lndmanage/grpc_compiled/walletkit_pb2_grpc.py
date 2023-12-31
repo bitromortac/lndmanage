@@ -62,6 +62,21 @@ class WalletKitStub(object):
                 request_serializer=walletkit__pb2.RequiredReserveRequest.SerializeToString,
                 response_deserializer=walletkit__pb2.RequiredReserveResponse.FromString,
                 )
+        self.ListAddresses = channel.unary_unary(
+                '/walletrpc.WalletKit/ListAddresses',
+                request_serializer=walletkit__pb2.ListAddressesRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ListAddressesResponse.FromString,
+                )
+        self.SignMessageWithAddr = channel.unary_unary(
+                '/walletrpc.WalletKit/SignMessageWithAddr',
+                request_serializer=walletkit__pb2.SignMessageWithAddrRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.SignMessageWithAddrResponse.FromString,
+                )
+        self.VerifyMessageWithAddr = channel.unary_unary(
+                '/walletrpc.WalletKit/VerifyMessageWithAddr',
+                request_serializer=walletkit__pb2.VerifyMessageWithAddrRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.VerifyMessageWithAddrResponse.FromString,
+                )
         self.ImportAccount = channel.unary_unary(
                 '/walletrpc.WalletKit/ImportAccount',
                 request_serializer=walletkit__pb2.ImportAccountRequest.SerializeToString,
@@ -71,6 +86,11 @@ class WalletKitStub(object):
                 '/walletrpc.WalletKit/ImportPublicKey',
                 request_serializer=walletkit__pb2.ImportPublicKeyRequest.SerializeToString,
                 response_deserializer=walletkit__pb2.ImportPublicKeyResponse.FromString,
+                )
+        self.ImportTapscript = channel.unary_unary(
+                '/walletrpc.WalletKit/ImportTapscript',
+                request_serializer=walletkit__pb2.ImportTapscriptRequest.SerializeToString,
+                response_deserializer=walletkit__pb2.ImportTapscriptResponse.FromString,
                 )
         self.PublishTransaction = channel.unary_unary(
                 '/walletrpc.WalletKit/PublishTransaction',
@@ -217,6 +237,61 @@ class WalletKitServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListAddresses(self, request, context):
+        """
+        ListAddresses retrieves all the addresses along with their balance. An
+        account name filter can be provided to filter through all of the
+        wallet accounts and return the addresses of only those matching.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SignMessageWithAddr(self, request, context):
+        """
+        SignMessageWithAddr returns the compact signature (base64 encoded) created
+        with the private key of the provided address. This requires the address
+        to be solely based on a public key lock (no scripts). Obviously the internal
+        lnd wallet has to possess the private key of the address otherwise
+        an error is returned.
+
+        This method aims to provide full compatibility with the bitcoin-core and
+        btcd implementation. Bitcoin-core's algorithm is not specified in a
+        BIP and only applicable for legacy addresses. This method enhances the
+        signing for additional address types: P2WKH, NP2WKH, P2TR.
+        For P2TR addresses this represents a special case. ECDSA is used to create
+        a compact signature which makes the public key of the signature recoverable.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyMessageWithAddr(self, request, context):
+        """
+        VerifyMessageWithAddr returns the validity and the recovered public key of
+        the provided compact signature (base64 encoded). The verification is
+        twofold. First the validity of the signature itself is checked and then
+        it is verified that the recovered public key of the signature equals
+        the public key of the provided address. There is no dependence on the
+        private key of the address therefore also external addresses are allowed
+        to verify signatures.
+        Supported address types are P2PKH, P2WKH, NP2WKH, P2TR.
+
+        This method is the counterpart of the related signing method
+        (SignMessageWithAddr) and aims to provide full compatibility to
+        bitcoin-core's implementation. Although bitcoin-core/btcd only provide
+        this functionality for legacy addresses this function enhances it to
+        the address types: P2PKH, P2WKH, NP2WKH, P2TR.
+
+        The verification for P2TR addresses is a special case and requires the
+        ECDSA compact signature to compare the reovered public key to the internal
+        taproot key. The compact ECDSA signature format was used because there
+        are still no known compact signature schemes for schnorr signatures.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ImportAccount(self, request, context):
         """
         ImportAccount imports an account backed by an account extended public key.
@@ -249,11 +324,33 @@ class WalletKitServicer(object):
 
     def ImportPublicKey(self, request, context):
         """
-        ImportPublicKey imports a public key as watch-only into the wallet.
+        ImportPublicKey imports a public key as watch-only into the wallet. The
+        public key is converted into a simple address of the given type and that
+        address script is watched on chain. For Taproot keys, this will only watch
+        the BIP-0086 style output script. Use ImportTapscript for more advanced key
+        spend or script spend outputs.
 
         NOTE: Events (deposits/spends) for a key will only be detected by lnd if
         they happen after the import. Rescans to detect past events will be
         supported later on.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ImportTapscript(self, request, context):
+        """
+        ImportTapscript imports a Taproot script and internal key and adds the
+        resulting Taproot output key as a watch-only output script into the wallet.
+        For BIP-0086 style Taproot keys (no root hash commitment and no script spend
+        path) use ImportPublicKey.
+
+        NOTE: Events (deposits/spends) for a key will only be detected by lnd if
+        they happen after the import. Rescans to detect past events will be
+        supported later on.
+
+        NOTE: Taproot keys imported through this RPC currently _cannot_ be used for
+        funding PSBTs. Only tracking the balance and UTXOs is currently supported.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -467,6 +564,21 @@ def add_WalletKitServicer_to_server(servicer, server):
                     request_deserializer=walletkit__pb2.RequiredReserveRequest.FromString,
                     response_serializer=walletkit__pb2.RequiredReserveResponse.SerializeToString,
             ),
+            'ListAddresses': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListAddresses,
+                    request_deserializer=walletkit__pb2.ListAddressesRequest.FromString,
+                    response_serializer=walletkit__pb2.ListAddressesResponse.SerializeToString,
+            ),
+            'SignMessageWithAddr': grpc.unary_unary_rpc_method_handler(
+                    servicer.SignMessageWithAddr,
+                    request_deserializer=walletkit__pb2.SignMessageWithAddrRequest.FromString,
+                    response_serializer=walletkit__pb2.SignMessageWithAddrResponse.SerializeToString,
+            ),
+            'VerifyMessageWithAddr': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyMessageWithAddr,
+                    request_deserializer=walletkit__pb2.VerifyMessageWithAddrRequest.FromString,
+                    response_serializer=walletkit__pb2.VerifyMessageWithAddrResponse.SerializeToString,
+            ),
             'ImportAccount': grpc.unary_unary_rpc_method_handler(
                     servicer.ImportAccount,
                     request_deserializer=walletkit__pb2.ImportAccountRequest.FromString,
@@ -476,6 +588,11 @@ def add_WalletKitServicer_to_server(servicer, server):
                     servicer.ImportPublicKey,
                     request_deserializer=walletkit__pb2.ImportPublicKeyRequest.FromString,
                     response_serializer=walletkit__pb2.ImportPublicKeyResponse.SerializeToString,
+            ),
+            'ImportTapscript': grpc.unary_unary_rpc_method_handler(
+                    servicer.ImportTapscript,
+                    request_deserializer=walletkit__pb2.ImportTapscriptRequest.FromString,
+                    response_serializer=walletkit__pb2.ImportTapscriptResponse.SerializeToString,
             ),
             'PublishTransaction': grpc.unary_unary_rpc_method_handler(
                     servicer.PublishTransaction,
@@ -693,6 +810,57 @@ class WalletKit(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
+    def ListAddresses(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ListAddresses',
+            walletkit__pb2.ListAddressesRequest.SerializeToString,
+            walletkit__pb2.ListAddressesResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SignMessageWithAddr(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/SignMessageWithAddr',
+            walletkit__pb2.SignMessageWithAddrRequest.SerializeToString,
+            walletkit__pb2.SignMessageWithAddrResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def VerifyMessageWithAddr(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/VerifyMessageWithAddr',
+            walletkit__pb2.VerifyMessageWithAddrRequest.SerializeToString,
+            walletkit__pb2.VerifyMessageWithAddrResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
     def ImportAccount(request,
             target,
             options=(),
@@ -723,6 +891,23 @@ class WalletKit(object):
         return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ImportPublicKey',
             walletkit__pb2.ImportPublicKeyRequest.SerializeToString,
             walletkit__pb2.ImportPublicKeyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ImportTapscript(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/walletrpc.WalletKit/ImportTapscript',
+            walletkit__pb2.ImportTapscriptRequest.SerializeToString,
+            walletkit__pb2.ImportTapscriptResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

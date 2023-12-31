@@ -401,7 +401,7 @@ If you are running an older version of lnd checkout the according
 [tag](https://github.com/bitromortac/lndmanage/releases).
 
 ### Requirements
-Installation of lndmanage requires `>=python3.8`, `lnd v0.14.x`, `python3-venv`.
+Installation of lndmanage requires `>=python3.8`, `lnd v0.15.x`, `python3-venv`.
 
 #### Optional Requirements
 Depending on if you want to install from source dependency packages you may
@@ -419,25 +419,48 @@ make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
  and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
  configuration.
 
+#### Signature verification
+Commits and releases are signed with key `1965 063F C13B EBE2` available via
+
+`$ curl https://keybase.io/bitromortac/pgp_keys.asc | gpg --import`
+
+or 
+
+`$ curl https://github.com/bitromortac.gpg | gpg --import`
+
 ### Linux
 
-You can install lndmanage via two methods:
+You can install lndmanage via three methods:
 
-1\. Install with pip (recommended):
+1\. Install from repository:
+```
+$ git clone https://github.com/bitromortac/lndmanage && cd lndmanage
+$ git checkout v0.15.0
+$ python3 -m venv venv
+$ git verify-commit HEAD
+$ source venv/bin/activate
+$ pip install --upgrade pip setuptools wheel
+$ pip install .
+```
+
+2\. Via released assets:
+* Go to the release page https://github.com/bitromortac/lndmanage/releases
+* Download `.whl` and `.whl.asc` files
+* Verify signature and install:
+```
+$ gpg --verify lndmanage-0.15.0-py3-none-any.whl.asc lndmanage-0.15.0-py3-none-any.whl
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install --upgrade pip setuptools wheel
+$ pip install lndmanage-0.15.0-py3-none-any.whl
+```
+
+3\. Install with pip (deprecated):
 ```
 $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install --upgrade pip setuptools wheel
 $ python3 -m pip install lndmanage
-```
-2\. Install from source:
-```
-$ git clone https://github.com/bitromortac/lndmanage
-$ cd lndmanage
-$ python3 -m venv venv
-$ source venv/bin/activate
-$ pip install --upgrade pip setuptools wheel
-$ pip install .
 ```
 
 ### Windows (powershell)
@@ -448,7 +471,19 @@ Install [python3](https://www.python.org/downloads/release/python-374/),
 You need to set the environment variable `PYTHONIOENCODING` for proper encoding to:
 `$env:PYTHONIOENCODING="UTF-8"`
 
-1\. Install with pip (recommended):
+1\. Install from source:
+```
+$ git clone https://github.com/bitromortac/lndmanage
+$ cd lndmanage
+$ git checkout v0.15.0
+$ git verify-commit HEAD
+$ py -m venv venv
+$ .\venv\Scripts\activate
+$ pip install --upgrade pip setuptools wheel
+$ pip install .
+```
+
+2\. Install with pip (deprecated):
 ```
 $ py -m venv venv
 $ .\venv\Scripts\activate
@@ -456,15 +491,6 @@ $ pip install --upgrade pip setuptools wheel
 $ python -m pip install lndmanage
 ```
 
-2\. Install from source:
-```
-$ git clone https://github.com/bitromortac/lndmanage
-$ cd lndmanage
-$ py -m venv venv
-$ .\venv\Scripts\activate
-$ pip install --upgrade pip setuptools wheel
-$ pip install .
-```
 ### Configuration
 
 When starting lndmanage for the first time, it will create a runtime folder 
