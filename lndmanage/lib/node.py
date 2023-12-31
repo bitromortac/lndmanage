@@ -65,7 +65,8 @@ class LndNode:
 
     def __init__(self, config_file: Optional[str] = None,
                  lnd_home: Optional[str] = None,
-                 lnd_host: Optional[str] = None, regtest=False):
+                 lnd_host: Optional[str] = None, regtest=False,
+                 use_admin=False):
         """
         :param config_file: path to the config file
         :param lnd_home: path to lnd home folder
@@ -85,12 +86,13 @@ class LndNode:
         # configure lndmanage home: (TODO: separate into config)
         # if no lnd_home is given, then use the paths from the config,
         # else override them with default file paths in lnd_home
+        macaroon = 'readonly.macaroon' if not use_admin else 'admin.macaroon'
         if self.lnd_home is not None:
             self.cert_file_path = os.path.join(self.lnd_home, 'tls.cert')
             bitcoin_network = 'regtest' if self.regtest else 'mainnet'
             self.macaroon_file_path = os.path.join(
                 self.lnd_home, 'data/chain/bitcoin/',
-                bitcoin_network, 'readonly.macaroon')
+                bitcoin_network, macaroon)
             if self.lnd_host is None:
                 raise ValueError(
                     'if lnd_home is given, lnd_host must be given')
