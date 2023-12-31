@@ -9,14 +9,14 @@
 
 # note: docker uses network_mode: host
 
-if [[ -z "$ADMIN_MACAROON_FILE" || -z "$TLS_CERT_FILE" ]]; then
+if [[ -z "$MACAROON_FILE" || -z "$TLS_CERT_FILE" ]]; then
   if [[ -z "$LND_HOME" ]]; then
     export LND_HOME="$HOME/.lnd"
     echo "warning: LND_HOME is not set, assuming '$LND_HOME'"
   fi
 fi
 
-export ADMIN_MACAROON_FILE=${ADMIN_MACAROON_FILE:-$LND_HOME/data/chain/bitcoin/mainnet/admin.macaroon}
+export MACAROON_FILE=${MACAROON_FILE:-$LND_HOME/data/chain/bitcoin/mainnet/admin.macaroon}
 export TLS_CERT_FILE=${TLS_CERT_FILE:-$LND_HOME/tls.cert}
 export LND_GRPC_HOST=${LND_GRPC_HOST:-127.0.0.1:10009}
 
