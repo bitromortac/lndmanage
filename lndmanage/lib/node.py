@@ -90,7 +90,7 @@ class LndNode:
             bitcoin_network = 'regtest' if self.regtest else 'mainnet'
             self.macaroon_file_path = os.path.join(
                 self.lnd_home, 'data/chain/bitcoin/',
-                bitcoin_network, 'admin.macaroon')
+                bitcoin_network, 'readonly.macaroon')
             if self.lnd_host is None:
                 raise ValueError(
                     'if lnd_home is given, lnd_host must be given')
@@ -99,7 +99,7 @@ class LndNode:
                 self.config['network']['tls_cert_file']
             )
             self.macaroon_file_path = os.path.expanduser(
-                self.config['network']['admin_macaroon_file']
+                self.config['network']['macaroon_file']
             )
             self.lnd_host = self.config['network']['lnd_grpc_host']
 
@@ -120,7 +120,7 @@ class LndNode:
                 macaroon_bytes = f.read()
                 macaroon = codecs.encode(macaroon_bytes, 'hex')
         except FileNotFoundError:
-            logger.error("admin.macaroon not found, please configure %s.",
+            logger.error("macaroon not found, please configure %s.",
                          self.config_file)
             exit(1)
 

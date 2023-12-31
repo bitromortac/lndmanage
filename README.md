@@ -413,11 +413,15 @@ This can be done when compiling with minimal build tags of `make && make install
 tags="routerrpc signrpc walletrpc"`. If you use precompiled binaries, you can 
 ignore this.
 
-#### Admin Macaroon and TLS cert needed
+#### Macaroon and TLS cert needed
 If you run this tool from a different host than the lnd host, 
-make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
- and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
- configuration.
+make sure to copy `/path/to/.lnd/data/chain/bitcoin/mainnet/readonly.macaroon`
+and `/path/to/.lnd/tls.cert` to your local machine, which you need for later
+configuration.
+
+Note that if you want to run `update-fees` or `openchannels` you will need to
+create a custom macaroon, see `scripts/bakemacaroon.sh`. Don't use
+`admin.macaroon`, which is not recommended for best security practices.
 
 #### Signature verification
 Commits and releases are signed with key `1965 063F C13B EBE2` available via
