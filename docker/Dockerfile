@@ -37,7 +37,7 @@ COPY --from=builder /root/.venv /root/.venv
 
 ENV PATH="/root/.venv/bin:$PATH:/root"
 ENV TLS_CERT_FILE /root/aux/tls.cert
-ENV ADMIN_MACAROON_FILE /root/aux/admin.macaroon
+ENV MACAROON_FILE /root/aux/readonly.macaroon
 
 # copy sources under /root/lndmanage
 WORKDIR /root/lndmanage
