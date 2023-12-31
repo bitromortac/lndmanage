@@ -1,11 +1,10 @@
 import asyncio
-import binascii
 import codecs
 from collections import OrderedDict, defaultdict
 import datetime
 import os
 import time
-from typing import List, TYPE_CHECKING, Optional, Dict
+from typing import List, Optional, Dict
 
 import grpc
 from grpc._channel import _Rendezvous
@@ -20,11 +19,7 @@ import lndmanage.grpc_compiled.walletkit_pb2 as lndwalletkit
 import lndmanage.grpc_compiled.walletkit_pb2_grpc as lndwalletkitrpc
 
 from lndmanage.lib.network import Network
-from lndmanage.lib.exceptions import PaymentTimeOut, NoRoute, OurNodeFailure
-from lndmanage.lib import exceptions
 from lndmanage.lib.ln_utilities import (
-    extract_short_channel_id_from_string,
-    convert_short_channel_id_to_channel_id,
     convert_channel_id_to_short_channel_id,
     local_balance_to_unbalancedness
 )
@@ -32,9 +27,6 @@ from lndmanage.lib.data_types import UTXO, AddressType
 from lndmanage.lib.user import yes_no_question
 from lndmanage.lib.utilities import convert_dictionary_number_strings_to_ints
 from lndmanage import settings
-
-if TYPE_CHECKING:
-    from lndmanage.lib.routing import Route
 
 import logging
 logger = logging.getLogger(__name__)
@@ -100,7 +92,8 @@ class LndNode:
                 self.lnd_home, 'data/chain/bitcoin/',
                 bitcoin_network, 'admin.macaroon')
             if self.lnd_host is None:
-                raise ValueError('if lnd_home is given, lnd_host must be given')
+                raise ValueError(
+                    'if lnd_home is given, lnd_host must be given')
         else:
             self.cert_file_path = os.path.expanduser(
                 self.config['network']['tls_cert_file']
@@ -140,8 +133,8 @@ class LndNode:
         return grpc.composite_channel_credentials(cert_creds, auth_creds)
 
     async def connect_async_rpcs(self):
-        # This needs to be run within an async context, the loop is being used in the
-        # rpc connections.
+        # This needs to be run within an async context, the loop is being used
+        # in the rpc connections.
         logger.debug("Connecting async rpcs.")
 
         self._async_channel = grpc.aio.secure_channel(
@@ -201,108 +194,6 @@ class LndNode:
             channel, including_default_value_fields=True)
         channel_dict = convert_dictionary_number_strings_to_ints(channel_dict)
         return channel_dict
-
-    @staticmethod
-    def lnd_hops(hops) -> List[lnd.Hop]:
-        return [lnd.Hop(**hop) for hop in hops]
-
-    def _to_lnd_route(self, route: 'Route') -> lnd.Route:
-        """
-        Converts a cleartext route to an lnd route.
-        """
-        hops = self.lnd_hops(route.hops)
-        lnd_route = lnd.Route(
-            total_time_lock=route.total_time_lock,
-            total_fees=route.total_fee_msat // 1000,
-            total_amt=route.total_amt_msat // 1000,
-            hops=hops,
-            total_fees_msat=route.total_fee_msat,
-            total_amt_msat=route.total_amt_msat
-        )
-        return lnd_route
-
-    def get_invoice(self, amt_msat: int, memo: str) -> lnd.Invoice:
-        """
-        Creates a new invoice with amt_msat and memo.
-
-        :param amt_msat: int
-        :param memo: str
-        :return: Hash of invoice preimage.
-        """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(
-            value=amt_msat // 1000, memo=memo))
-        return invoice
-
-    def get_rebalance_invoice(self, memo) -> lnd.Invoice:
-        """
-        Creates a zero amount invoice and gives back it's hash.
-
-        :param memo: Comment for the invoice.
-        :return: Hash of the invoice preimage.
-        """
-        invoice = self._rpc.AddInvoice(lnd.Invoice(value=0, memo=memo))
-        return invoice
-
-    def send_to_route(self, route: lnd.Route, payment_hash: bytes):
-        """Takes a route and sends to it."""
-
-        request = lndrouter.SendToRouteRequest(
-            route=route,
-            payment_hash=payment_hash,
-        )
-
-        try:
-            payment = self._routerrpc.SendToRouteV2(
-                request, timeout=GRPC_TIMEOUT_SEC,
-            )
-
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
-                raise PaymentTimeOut
-
-            raise
-
-        if payment.HasField('failure'):
-            failure = payment.failure  # type: lnd.Failure.FailureCode
-            logger.debug(f"Routing failure: {failure}")
-            if failure.failure_source_index == 0:
-                raise OurNodeFailure("Not enough funds?")
-            if failure.code == 12:
-                raise exceptions.FeeInsufficient(payment)
-            elif failure.code == 13:
-                raise exceptions.IncorrectCLTVExpiry(payment)
-            elif failure.code == 14:
-                raise exceptions.ChannelDisabled(payment)
-            elif failure.code == 15:
-                raise exceptions.TemporaryChannelFailure(payment)
-            elif failure.code == 18:
-                raise exceptions.UnknownNextPeer(payment)
-            elif failure.code == 19:
-                raise exceptions.TemporaryNodeFailure(payment)
-            else:
-                logger.info(f"Unknown error: code: {failure.code}")
-                raise exceptions.TemporaryChannelFailure(payment)
-
-        return payment
-
-    def build_route(self, amt_msat: int, outgoing_chan_id: int,
-        hop_pubkeys: List[str], payment_addr: bytes) -> lnd.Route:
-        """ Queries the routerrpc endpoint to build a route."""
-
-        final_cltv_delta = 144
-
-        # Convert hop_pubkeys to List[bytes]
-        hop_pubkeys = [bytes.fromhex(n) for n in hop_pubkeys]
-
-        request = lndrouter.BuildRouteRequest(
-            amt_msat = amt_msat,
-            final_cltv_delta = final_cltv_delta,
-            outgoing_chan_id = outgoing_chan_id,
-            hop_pubkeys = hop_pubkeys,
-            payment_addr = payment_addr,
-        )
-
-        return self._routerrpc.BuildRoute(request, timeout=5 * 60).route
 
     def get_raw_network_graph(self):
         try:
@@ -400,11 +291,15 @@ class LndNode:
                 # interested in node2
                 policies = edge_info['policies']
                 if edge_info['node1_pub'] == self.pub_key:
-                    policy_peer = policies[edge_info['node2_pub'] > edge_info['node1_pub']]
-                    policy_local = policies[edge_info['node1_pub'] > edge_info['node2_pub']]
+                    policy_peer = policies[edge_info['node2_pub']
+                                           > edge_info['node1_pub']]
+                    policy_local = policies[edge_info['node1_pub']
+                                            > edge_info['node2_pub']]
                 else:  # interested in node1
-                    policy_peer = policies[edge_info['node1_pub'] > edge_info['node2_pub']]
-                    policy_local = policies[edge_info['node2_pub'] > edge_info['node1_pub']]
+                    policy_peer = policies[edge_info['node1_pub']
+                                           > edge_info['node2_pub']]
+                    policy_local = policies[edge_info['node2_pub']
+                                            > edge_info['node1_pub']]
             except KeyError:
                 # if channel is unknown in describegraph
                 # we need to set the fees to some error value
@@ -492,7 +387,8 @@ class LndNode:
 
     def node_id_to_channel_ids(self, open_only=False) -> Dict[str, List[int]]:
         node_channels_mapping = defaultdict(list)
-        for cid, nid in self.channel_id_to_node_id(open_only=open_only).items():
+        mappings = self.channel_id_to_node_id(open_only=open_only)
+        for cid, nid in mappings.items():
             node_channels_mapping[nid].append(cid)
         return node_channels_mapping
 
@@ -513,22 +409,29 @@ class LndNode:
         channels = self.get_open_channels(public_only=False, active_only=False)
         return channels
 
-    def get_unbalanced_channels(self, unbalancedness_greater_than=0.0, excluded_channels: List[int] = None, public_only=True, active_only=True):
+    def get_unbalanced_channels(
+            self, unbalancedness_greater_than=0.0,
+            excluded_channels: List[int] = None,
+            public_only=True, active_only=True):
         """
         Gets all channels which have an absolute unbalancedness
         (-1...1, -1 for outbound unbalanced, 1 for inbound unbalanced)
         larger than unbalancedness_greater_than.
 
-        :param unbalancedness_greater_than: unbalancedness interval, default returns all channels
-        :return: all channels which are more unbalanced than the specified interval
+        :param unbalancedness_greater_than: unbalancedness interval,
+            default returns all channels
+        :return: all channels which are more unbalanced than the
+            specified interval
         """
         self.public_active_channels = \
-            self.get_open_channels(public_only=public_only, active_only=active_only)
+            self.get_open_channels(
+                public_only=public_only, active_only=active_only)
         channels = {
             k: c for k, c in self.public_active_channels.items()
             if abs(c['unbalancedness']) >= unbalancedness_greater_than
         }
-        channels = {k: v for k, v in channels.items() if k not in (excluded_channels if excluded_channels else [])}
+        channels = {k: v for k, v in channels.items() if k not in (
+            excluded_channels if excluded_channels else [])}
         return channels
 
     def get_channel_fee_policies(self):
@@ -632,99 +535,6 @@ class LndNode:
             }
         return closed_channels_dict
 
-    @staticmethod
-    def handle_payment_error(payment_error):
-        """
-        Handles payment errors and determines the failed channel.
-
-        :param payment_error:
-        :return: int, channel_id of the failed channel.
-        """
-        if "TemporaryChannelFailure" in payment_error:
-            logger.error("   Encountered temporary channel failure.")
-            short_channel_groups = extract_short_channel_id_from_string(payment_error)
-            channel_id = convert_short_channel_id_to_channel_id(*short_channel_groups)
-            return channel_id
-
-    def queryroute_external(self, source_pubkey, target_pubkey, amt_msat,
-                            ignored_nodes=(), ignored_channels={},
-                            use_mc=False):
-        """
-        Queries the lnd node for a route.
-
-        Channels and nodes can be ignored if they failed before.
-
-        :param source_pubkey: source node public key
-        :type source_pubkey: str
-        :param target_pubkey: target node public key
-        :type target_pubkey: str
-        :param amt_msat: amount to send in msat
-        :type amt_msat: int
-        :param ignored_nodes: ignored node pubilc keys for the route
-        :type ignored_nodes: list[str]
-        :param ignored_channels: ignored channel directions for the route
-        :type ignored_channels: dict
-        :param use_mc: true if mission control should be used to blacklist
-                       channels
-        :type use_mc: bool
-        :return: route expressed in terms of short channel ids
-        :rtype: list[int]
-        """
-        amt_sat = amt_msat // 1000
-
-        # put safety margin when using mc based routing
-        # reason is that routes will not be diverse when sending with a larger
-        # amount later on due to fees
-        # the fees for the route are somewhat accounted for by the margin
-        if use_mc:
-            amt_sat = int(amt_sat * 1.02)
-
-        # have a safety max fee in sat
-        max_fee = 10000
-
-        # convert ignored nodes to api format
-        if ignored_nodes:
-            ignored_nodes_api = [bytes.fromhex(n) for n in ignored_nodes]
-        else:
-            ignored_nodes_api = []
-
-        # convert ignored channels to api format
-        if ignored_channels:
-            ignored_channels_api = []
-            for c, cv in ignored_channels.items():
-                direction_reverse = cv['source'] > cv['target']
-                ignored_channels_api.append(
-                    lnd.EdgeLocator(channel_id=c,
-                                    direction_reverse=direction_reverse))
-        else:
-            ignored_channels_api = []
-
-        logger.debug(f"Ignored for queryroutes: channels: "
-                     f"{ignored_channels_api}, nodes: {ignored_nodes_api}")
-
-        request = lnd.QueryRoutesRequest(
-            pub_key=target_pubkey,
-            amt=amt_sat,
-            final_cltv_delta=0,
-            fee_limit=lnd.FeeLimit(fixed=max_fee),
-            ignored_nodes=ignored_nodes_api,
-            ignored_edges=ignored_channels_api,
-            source_pub_key=source_pubkey,
-            use_mission_control=use_mc,
-        )
-        try:
-            response = self._rpc.QueryRoutes(request)
-        except Exception as e:
-            if "unable to find a path" in e.details():
-                raise NoRoute
-            else:
-                raise e
-
-        # We give back only one route, as multiple routes will be deprecated
-        channel_route = [h.chan_id for h in response.routes[0].hops]
-
-        return channel_route
-
     def get_node_info(self, pub_key):
         """
         Retrieves information on a node with a specific pub key.
@@ -778,8 +588,10 @@ class LndNode:
             balancedness_local = 0
             balancedness_remote = 0
         else:
-            balancedness_local = self.total_local_balance / self.total_capacity
-            balancedness_remote = self.total_remote_balance / self.total_capacity
+            balancedness_local = self.total_local_balance \
+                / self.total_capacity
+            balancedness_remote = self.total_remote_balance \
+                / self.total_capacity
         logger.info(f"alias: {self.alias}")
         logger.info(f"pub key: {self.pub_key}")
         logger.info(f"blockheight: {self.blockheight}")
@@ -788,9 +600,15 @@ class LndNode:
         logger.info(f"active channels: {self.total_active_channels}")
         logger.info(f"private channels: {self.total_private_channels}")
         logger.info(f"capacity: {self.total_capacity}")
-        logger.info(f"balancedness: l:{balancedness_local:.2%} r:{balancedness_remote:.2%}")
-        logger.info(f"total satoshis received (current channels): {self.total_satoshis_received}")
-        logger.info(f"total satoshis sent (current channels): {self.total_satoshis_sent}")
+        logger.info(
+            f"balancedness: l:{balancedness_local:.2%} "
+            f"r:{balancedness_remote:.2%}")
+        logger.info(
+            "total satoshis received (current channels): "
+            f"{self.total_satoshis_received}")
+        logger.info(
+            "total satoshis sent (current channels): "
+            f"{self.total_satoshis_sent}")
 
     def open_channels(self, pubkeys: List[bytes],
                       amounts_sat: List[int],
@@ -808,8 +626,8 @@ class LndNode:
                 private=private,
             ))
 
-        logger.info("\n>>> WARNING: This feature is new, use at your own risk. "
-                    "Please check the above output carefully.\n")
+        logger.info("\n>>> WARNING: This feature is new, use at your own "
+                    "risk. Please check the above output carefully.\n")
         logger.info("\n>>> Do you want to open the channel(s) (y/n)?")
         if not test:
             if not yes_no_question('no'):
@@ -834,7 +652,8 @@ class LndNode:
                 raise ValueError(f"pubkey of unknown format {pubkey}")
             info = self.get_node_info(pubkey)
             if not info['addresses']:
-                raise ConnectionRefusedError(f"Could not find connection address for {pubkey}.")
+                raise ConnectionRefusedError(
+                    f"Could not find connection address for {pubkey}.")
         logger.info(">>> Connecting to channel peer candidates.")
         for pubkey in pubkeys:
             info = self.get_node_info(pubkey)
