@@ -22,7 +22,7 @@ LNDMANAGE_AUX_DIR_ABSOLUTE=$(abs_path "$LNDMANAGE_AUX_DIR")
 
 # we use LNDMANAGE_AUX_DIR as ad-hoc volume to pass admin.macaroon and tls.cert into our container
 # it is mapped to /root/aux, config_template.ini assumes that
-cp "$ADMIN_MACAROON_FILE" "$LNDMANAGE_AUX_DIR/admin.macaroon"
+cp "$MACAROON_FILE" "$LNDMANAGE_AUX_DIR/lndmanage.macaroon"
 cp "$TLS_CERT_FILE" "$LNDMANAGE_AUX_DIR/tls.cert"
 
 if [[ -n "$LNDMANAGE_VERBOSE" ]]; then
@@ -36,7 +36,7 @@ exec docker run \
   -v "$LNDMANAGE_AUX_DIR_ABSOLUTE:/root/aux" \
   -e "LND_GRPC_HOST=${LND_GRPC_HOST}" \
   -e "TLS_CERT_FILE=/root/aux/tls.cert" \
-  -e "ADMIN_MACAROON_FILE=/root/aux/admin.macaroon" \
+  -e "MACAROON_FILE=/root/aux/lndmanage.macaroon" \
   -ti \
   lndmanage:local \
   run-lndmanage "$@"
