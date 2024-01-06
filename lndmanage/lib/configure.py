@@ -36,7 +36,7 @@ def check_or_create_configuration(home_dir):
     :type home_dir: str
     """
     if not os.path.exists(home_dir):  # user runs for the first time
-        print(f"Running lndmanage for the first time.")
+        print("Running lndmanage for the first time.")
         print(f"Creating configuration folder at {home_dir}.")
         print("The default path can be overridden by setting the "
               "LNDMANAGE_HOME environment variable.")
@@ -44,17 +44,18 @@ def check_or_create_configuration(home_dir):
         lnd_home = os.path.expanduser('~/.lnd')
         lnd_grpc_host = 'localhost:10009'
 
-        admin_macaroon_path = os.path.join(
-            lnd_home, 'data/chain/bitcoin/mainnet/admin.macaroon')
+        macaroon_path = os.path.join(
+            lnd_home, 'data/chain/bitcoin/mainnet/readonly.macaroon')
         tls_cert_path = os.path.join(
             lnd_home, 'tls.cert')
         if os.path.exists(lnd_home):
             remote = False
             print(f"Detected a local lnd configuration folder {lnd_home}.", )
-            print("Will use admin.macaroon and tls.cert from this directory.")
+            print("Will use macaroon and tls.cert from this directory.")
         else:
             remote = True
-            print(f"IF LND RUNS ON A REMOTE HOST, CONFIGURE {home_dir}/config.ini.")
+            print(
+                f"IF LND RUNS ON A REMOTE HOST, CONFIGURE {home_dir}/config.ini.")
 
         # build config file
         config = configparser.ConfigParser()
@@ -64,7 +65,7 @@ def check_or_create_configuration(home_dir):
         config.read(config_template_path)
 
         config['network']['lnd_grpc_host'] = str(lnd_grpc_host)
-        config['network']['admin_macaroon_file'] = str(admin_macaroon_path)
+        config['network']['macaroon_file'] = str(macaroon_path)
         config['network']['tls_cert_file'] = str(tls_cert_path)
 
         config_path = os.path.join(home_dir, 'config.ini')

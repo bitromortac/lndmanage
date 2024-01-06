@@ -21,7 +21,7 @@ class Lncli(object):
 
         cert_file = os.path.expanduser(config['network']['tls_cert_file'])
         macaroon_file = \
-            os.path.expanduser(config['network']['admin_macaroon_file'])
+            os.path.expanduser(config['network']['macaroon_file'])
         lnd_host = config['network']['lnd_grpc_host']
 
         # assemble the command for lncli for execution with flags

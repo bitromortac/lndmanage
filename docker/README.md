@@ -8,19 +8,21 @@ To run `lndmanage` from a docker container:
 # so $HOME directory is /root
 
 # build the container
-./build.sh 
+./build.sh
 
 # if you have local lnd node on host machine, point LND_HOME to your actual lnd directory:
 export LND_HOME=~/.lnd
 
 # or alternatively if you have remote lnd node, specify paths to auth files explicitly:
 # export TLS_CERT_FILE=/path/to/tls.cert
-# export ADMIN_MACAROON_FILE=/path/to/admin.macaroon  
+# export MACAROON_FILE=/path/to/readonly.macaroon
 # export LND_GRPC_HOST=<remoteip>:10009
+# note that in order to have all features available, you will need to create a
+# custom macaroon, see `scripts/bakemacaroon.sh`
 
 # look into _settings.sh for more details on container configuration
 
-# run lndmanage from the container: 
+# run lndmanage from the container:
 ./lndmanage.sh status
 
 # lndmanage cache will be mapped to host folder at ./_volumes/lndmanage-cache

@@ -2,6 +2,15 @@
 import os
 import shutil
 from unittest import TestCase
+import logging.config
+
+from lnregtest.lib.network import Network
+
+from lndmanage import settings
+from lndmanage.lib.node import LndNode
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # testing base folder
 test_dir = os.path.dirname(os.path.realpath(__file__))
@@ -14,19 +23,11 @@ test_data_dir = os.path.join(test_dir, 'test_data')
 lndmanage_home = os.path.join(test_data_dir, 'lndmanage')
 os.makedirs(lndmanage_home, exist_ok=True)
 
-# create empty config and set env var to not trigger error when importing settings
+# create empty config and set env var to not trigger error when importing
+# settings
 open(os.path.join(lndmanage_home, 'config.ini'), 'a').close()
 os.environ.setdefault('LNDMANAGE_HOME', lndmanage_home)
 
-from lnregtest.lib.network import Network
-
-from lndmanage.lib.node import LndNode
-
-import logging.config
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-from lndmanage import settings
 settings.CACHING_RETENTION_MINUTES = 0
 
 # constants for testing
@@ -95,7 +96,7 @@ class TestNetwork(TestCase):
         self.lndnode = LndNode(
             lnd_home=master_node_data_dir,
             lnd_host='localhost:' + str(master_node_port),
-            regtest=True
+            regtest=True, use_admin=True,
         )
         self.graph_test()
 
