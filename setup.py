@@ -34,7 +34,7 @@ setuptools.setup(
         "grpcio==1.60.0",
         "networkx==3.0",
         "numpy==1.24.2",
-        "Pygments==2.17.2",
+        "Pygments==2.20.0",
     ],
     extras_require={
         "test": [
